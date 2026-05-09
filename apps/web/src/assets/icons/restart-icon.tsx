@@ -1,0 +1,18 @@
+import type { SVGProps } from "react";
+
+export function RestartLinear(props: SVGProps<SVGSVGElement>) {
+  const { color = "#888888" } = props;
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
+      {/* Icon from Solar by 480 Design - https://creativecommons.org/licenses/by/4.0/ */}
+      <path
+        fill="none"
+        stroke={color}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+        d="m18.364 8.05l-.707-.707a8 8 0 1 0 2.28 4.658m-1.573-3.95h-4.243m4.243 0V3.807"
+      />
+    </svg>
+  );
+}

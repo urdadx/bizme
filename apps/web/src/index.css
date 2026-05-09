@@ -1,1 +1,45 @@
-@import "@better-comments/ui/globals.css";
+@import "./styles/globals.css";
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/inter/Inter-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/inter/Inter-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/inter/Inter-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Recoleta";
+  src: url("./assets/fonts/inter/Recoleta-RegularDEMO.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Recoleta";
+  src: url("./assets/fonts/inter/recoleta-bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-sans: "Inter", sans-serif;
+}

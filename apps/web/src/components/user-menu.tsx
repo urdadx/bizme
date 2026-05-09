@@ -1,4 +1,4 @@
-import { Button } from "@better-comments/ui/components/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,8 +7,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@better-comments/ui/components/dropdown-menu";
-import { Skeleton } from "@better-comments/ui/components/skeleton";
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";

@@ -1,0 +1,31 @@
+import type { SVGProps } from "react";
+
+export function ChatFeedback(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
+      {/* Icon from Huge Icons by Hugeicons - undefined */}
+      <g fill="none" stroke="#000000" strokeLinecap="round" strokeLinejoin="round">
+        <path strokeWidth="2" d="M12.005 10.5h.008m3.987 0h.009m-8 0h.009" />
+        <path
+          strokeWidth="2"
+          d="M22 10.5c0-.77-.014-1.523-.04-2.25c-.083-2.373-.125-3.56-1.09-4.533c-.965-.972-2.186-1.024-4.626-1.129A100 100 0 0 0 12 2.5c-1.48 0-2.905.03-4.244.088c-2.44.105-3.66.157-4.626 1.13c-.965.972-1.007 2.159-1.09 4.532a64 64 0 0 0 0 4.5c.083 2.373.125 3.56 1.09 4.533c.965.972 2.186 1.024 4.626 1.129q1.102.047 2.275.07c.74.014 1.111.02 1.437.145s.6.358 1.148.828l2.179 1.87A.73.73 0 0 0 16 20.77v-2.348l.244-.01c2.44-.105 3.66-.157 4.626-1.13c.965-.972 1.007-2.159 1.09-4.532c.026-.727.04-1.48.04-2.25"
+        />
+      </g>
+    </svg>
+  );
+}
+
+export function HugeiconsChatFeedback(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
+      {/* Icon from Huge Icons by Hugeicons - undefined */}
+      <g fill="none" stroke="#888888" strokeLinecap="round" strokeLinejoin="round">
+        <path strokeWidth="2" d="M12.005 10.5h.008m3.987 0h.009m-8 0h.009" />
+        <path
+          strokeWidth="1.5"
+          d="M22 10.5c0-.77-.014-1.523-.04-2.25c-.083-2.373-.125-3.56-1.09-4.533c-.965-.972-2.186-1.024-4.626-1.129A100 100 0 0 0 12 2.5c-1.48 0-2.905.03-4.244.088c-2.44.105-3.66.157-4.626 1.13c-.965.972-1.007 2.159-1.09 4.532a64 64 0 0 0 0 4.5c.083 2.373.125 3.56 1.09 4.533c.965.972 2.186 1.024 4.626 1.129q1.102.047 2.275.07c.74.014 1.111.02 1.437.145s.6.358 1.148.828l2.179 1.87A.73.73 0 0 0 16 20.77v-2.348l.244-.01c2.44-.105 3.66-.157 4.626-1.13c.965-.972 1.007-2.159 1.09-4.532c.026-.727.04-1.48.04-2.25"
+        />
+      </g>
+    </svg>
+  );
+}

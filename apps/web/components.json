@@ -1,11 +1,11 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "base-lyra",
+  "style": "base-vega",
   "rsc": false,
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "../../packages/ui/src/styles/globals.css",
+    "css": "src/styles/globals.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
@@ -13,8 +13,8 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
-    "utils": "@better-comments/ui/lib/utils",
-    "ui": "@better-comments/ui/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },

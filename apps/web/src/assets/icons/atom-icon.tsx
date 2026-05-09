@@ -1,0 +1,20 @@
+import type { SVGProps } from "react";
+
+export function SolarAtomBoldDuotone(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
+      {/* Icon from Solar by 480 Design - https://creativecommons.org/licenses/by/4.0/ */}
+      <path
+        fill="#888888"
+        d="M16.471 16.471c4.939-4.939 6.94-10.944 4.471-13.413c-2.469-2.47-8.474-.468-13.413 4.47c-4.939 4.94-6.94 10.945-4.471 13.414c2.47 2.47 8.475.468 13.413-4.47"
+        opacity=".3"
+      />
+      <path
+        fill="#888888"
+        d="M7.529 16.471C2.59 11.533.589 5.527 3.058 3.058c2.469-2.47 8.474-.468 13.413 4.47c4.939 4.94 6.94 10.945 4.471 13.414c-2.47 2.47-8.475.468-13.413-4.47"
+        opacity=".3"
+      />
+      <path fill="#888888" d="M14.5 12a2.5 2.5 0 1 1-5 0a2.5 2.5 0 0 1 5 0" />
+    </svg>
+  );
+}
