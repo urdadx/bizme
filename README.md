@@ -1,6 +1,6 @@
 # better-comments
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Start, Hono, TRPC, and more.
+A better audience engagement backend for your blogs and newsletters
 
 ## Features
 
@@ -109,4 +109,5 @@ better-comments/
 - `pnpm run db:studio`: Open database studio UI
 - `pnpm run db:local`: Start the local SQLite database
 - `pnpm run check`: Run Oxlint and Oxfmt
+
 # better-comments
