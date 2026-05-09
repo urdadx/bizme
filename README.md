@@ -109,3 +109,4 @@ better-comments/
 - `pnpm run db:studio`: Open database studio UI
 - `pnpm run db:local`: Start the local SQLite database
 - `pnpm run check`: Run Oxlint and Oxfmt
+# better-comments
