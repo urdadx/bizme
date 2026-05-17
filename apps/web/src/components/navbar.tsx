@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "./ui/sidebar";
+import { HugeRocket } from "@/assets/icons/rocket";
 
 export const Navbar = () => {
 	return (
@@ -8,7 +9,10 @@ export const Navbar = () => {
 				<SidebarTrigger className="w-7 h-7 text-muted-foreground" />
 			</div>
 			<div className="flex gap-1 sm:gap-2 items-center ml-auto">
-				<Button className="font-mono">DEPLOY</Button>
+				<Button className="">
+					<HugeRocket color="white" />
+					Deploy to your site
+				</Button>
 			</div>
 		</header>
 	);

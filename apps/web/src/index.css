@@ -25,16 +25,24 @@
 }
 
 @font-face {
-  font-family: "Recoleta";
-  src: url("./assets/fonts/inter/Recoleta-RegularDEMO.otf") format("opentype");
+  font-family: "Erode";
+  src: url("./assets/fonts/erode/Erode-Regular.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Recoleta";
-  src: url("./assets/fonts/inter/recoleta-bold.otf") format("opentype");
+  font-family: "Erode";
+  src: url("./assets/fonts/erode/Erode-Semibold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Erode";
+  src: url("./assets/fonts/erode/Erode-Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
