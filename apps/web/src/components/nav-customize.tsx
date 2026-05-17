@@ -8,7 +8,7 @@ import {
 import { useSidebar } from "@/components/ui/sidebar";
 import { Link, useLocation } from "@tanstack/react-router";
 
-export function NavMain({
+export function NavCustomize({
 	items,
 }: {
 	items: {
@@ -36,9 +36,9 @@ export function NavMain({
 	const iconClassName = "size-4! text-current";
 
 	return (
-		<SidebarGroup className="py-0 my-0 mt-2">
+		<SidebarGroup className="py-0 my-0 ">
 			<SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">
-				GENERAL
+				APPEARANCE
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-2">
 				{items.map((item) => {

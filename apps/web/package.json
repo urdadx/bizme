@@ -8,9 +8,10 @@
     "dev": "vite dev"
   },
   "dependencies": {
+    "@base-ui/react": "^1.0.0",
     "@better-comments/api": "workspace:*",
     "@better-comments/env": "workspace:*",
-    "@base-ui/react": "^1.0.0",
+    "@number-flow/react": "^0.6.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-form": "^1.28.0",
     "@tanstack/react-query": "^5.99.0",
@@ -33,8 +34,8 @@
     "recharts": "3.8.0",
     "shadcn": "^3.6.2",
     "sonner": "^2.0.7",
-    "tailwindcss": "^4.2.2",
     "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.2.2",
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
     "zod": "catalog:"

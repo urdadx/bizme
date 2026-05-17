@@ -10,14 +10,19 @@ import {
 import { Outlet } from "@tanstack/react-router";
 import { Navbar } from "./navbar";
 import { HomeLinear } from "@/assets/icons/home-duotone";
-import { ChartLinear } from "@/assets/icons/chart-icon";
+import { ChartLinear, ChartUp } from "@/assets/icons/chart-icon";
 import { SettingsLinear } from "@/assets/icons/settings-duotone";
 
 import { NavMain } from "./nav-main";
 import { PaletteRoundLinear } from "@/assets/icons/palette-icon";
-import { PlaneLinear } from "@/assets/icons/plane-icon";
 import { SiteSwitcher } from "./site-switcher";
 import { NavUser } from "./nav-user";
+import { MessageIcon } from "@/assets/icons/message-icon";
+import { NavCustomize } from "./nav-customize";
+import { NavSettings } from "./nav-settings";
+import { ChatLogsIcon } from "@/assets/icons/chatlogs-icon";
+import { NavActivity } from "./nav-activity";
+import { IntegrationLinear } from "@/assets/icons/integration-icon";
 
 const data = {
 	overview: [
@@ -27,24 +32,46 @@ const data = {
 			icon: HomeLinear,
 		},
 		{
-			title: "Customize",
-			url: "/customize",
-			icon: PaletteRoundLinear,
+			title: "Pages",
+			url: "/pages",
+			icon: ChatLogsIcon,
 		},
+	],
+
+	activity: [
 		{
 			title: "Comments",
 			url: "/comments",
-			icon: PlaneLinear,
+			icon: MessageIcon,
 		},
 		{
 			title: "Polls",
 			url: "/polls",
 			icon: ChartLinear,
 		},
+	],
+	customize: [
+		{
+			title: "Themes",
+			url: "/themes",
+			icon: PaletteRoundLinear,
+		},
+	],
+	settings: [
 		{
 			title: "Settings",
 			url: "/settings",
 			icon: SettingsLinear,
+		},
+		{
+			title: "Analytics",
+			url: "/analytics",
+			icon: ChartUp,
+		},
+		{
+			title: "Integrations",
+			url: "/integrations",
+			icon: IntegrationLinear,
 		},
 	],
 };
@@ -58,6 +85,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarHeader>
 				<SidebarContent className="">
 					<NavMain items={data.overview} />
+					<NavCustomize items={data.customize} />
+					<NavActivity items={data.activity} />
+					<NavSettings items={data.settings} />
 				</SidebarContent>
 				<SidebarFooter>
 					<NavUser />

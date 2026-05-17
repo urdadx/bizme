@@ -34,7 +34,7 @@ const dummySites = [
 ];
 
 export function SiteSwitcher() {
-	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [_isDialogOpen, setIsDialogOpen] = useState(false);
 	const [activeSiteId, setActiveSiteId] = useState(dummySites[0].id);
 
 	const activeSite = dummySites.find((site) => site.id === activeSiteId);

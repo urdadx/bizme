@@ -8,7 +8,7 @@ export const Navbar = () => {
 				<SidebarTrigger className="w-7 h-7 text-muted-foreground" />
 			</div>
 			<div className="flex gap-1 sm:gap-2 items-center ml-auto">
-				<Button>Deploy your agent</Button>
+				<Button className="font-mono">DEPLOY</Button>
 			</div>
 		</header>
 	);
