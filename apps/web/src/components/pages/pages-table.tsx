@@ -110,10 +110,7 @@ const lastActivityFilterLabels: Record<LastActivityFilter, string> = {
 	older: "Older",
 };
 
-function matchesLastActivityFilter(
-	value: string,
-	filter: LastActivityFilter,
-) {
+function matchesLastActivityFilter(value: string, filter: LastActivityFilter) {
 	if (filter === "all") {
 		return true;
 	}
@@ -156,7 +153,7 @@ const columns: ColumnDef<PageRow>[] = [
 		accessorKey: "url",
 		header: "URL",
 		cell: ({ row }) => (
-			<span className="block max-w-40 truncate font-mono text-muted-foreground md:max-w-56">
+			<span className="block max-w-40 truncate text-muted-foreground md:max-w-56">
 				{row.getValue("url")}
 			</span>
 		),
@@ -220,8 +217,7 @@ export function PagesTable() {
 		pageIndex: 0,
 		pageSize: 6,
 	});
-	const [lastActivityFilter, setLastActivityFilter] =
-		useState<LastActivityFilter>("all");
+	const [lastActivityFilter, setLastActivityFilter] = useState<LastActivityFilter>("all");
 	const [sorting, setSorting] = useState<SortingState>([
 		{
 			id: "totalComments",
@@ -254,20 +250,21 @@ export function PagesTable() {
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-center">
 					<div className="relative w-full sm:max-w-sm">
-					<Input
-						placeholder="Search pages..."
-						className="h-9 w-full pl-9"
-						value={
-							(table.getColumn("name")?.getFilterValue() as string) ??
-							""
-						}
-						onChange={(event) =>
-							table
-								.getColumn("name")
-								?.setFilterValue(event.target.value)
-						}
-					/>
-					<SearchLinear className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+						<Input
+							placeholder="Search pages..."
+							className="h-9 w-full pl-9"
+							value={
+								(table
+									.getColumn("name")
+									?.getFilterValue() as string) ?? ""
+							}
+							onChange={(event) =>
+								table
+									.getColumn("name")
+									?.setFilterValue(event.target.value)
+							}
+						/>
+						<SearchLinear className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					</div>
 					<Select
 						value={lastActivityFilter}

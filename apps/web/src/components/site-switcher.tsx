@@ -15,7 +15,7 @@ import { CheckMarkIcon } from "@/assets/icons/checkmark-icon";
 const dummySites = [
 	{
 		id: "better-comments",
-		name: "Better Comments",
+		name: "Bizme",
 		image: "",
 		primaryColor: "#6366f1",
 	},
