@@ -1,8 +1,6 @@
-import { Globe, SmileIcon, StarIcon } from "lucide-react";
+import { HeartIcon, OctagonAlertIcon, SmileIcon, StarIcon, ThumbsUpIcon } from "lucide-react";
 import { MetricCard } from "./metrics-card";
 import { ChatFeedback } from "@/assets/icons/chat-feedback";
-import { ChartLinear2 } from "@/assets/icons/chart-icon";
-import { InfoDiamondIcon } from "@/assets/icons/info-diamond-icon";
 
 interface MetricsProps {
 	totalComments: number;
@@ -32,14 +30,14 @@ export function Metrics({
 				href="/chat-logs"
 			/>
 			<MetricCard
-				icon={InfoDiamondIcon}
+				icon={OctagonAlertIcon}
 				title="Spam comments"
 				value={spamComments}
 				gradientFrom="red-50"
 				gradientVia="red-25"
 			/>
 			<MetricCard
-				icon={ChartLinear2}
+				icon={ThumbsUpIcon}
 				title="Total votes"
 				value={totalVotes}
 				gradientFrom="purple-50"
@@ -48,7 +46,7 @@ export function Metrics({
 			/>
 
 			<MetricCard
-				icon={Globe}
+				icon={HeartIcon}
 				title="Engagement rate"
 				value={engagementRate}
 				gradientFrom="orange-50"

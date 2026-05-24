@@ -1,3 +1,4 @@
+import { CustomizeSettings } from "@/components/customization/customize-settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -12,7 +13,10 @@ function RouteComponent() {
 			className="flex h-full min-h-0 w-full overflow-hidden flex-col lg:flex-row lg:gap-0">
 			<div className="hidden min-h-0 lg:flex lg:w-100 lg:shrink-0 lg:border-r lg:bg-background">
 				<div className="flex min-h-0 h-full w-full flex-col">
-					<div className="flex-1 overflow-y-auto smooth-div p-5"></div>
+					<div className="flex-1 overflow-y-auto smooth-div p-5">
+						<h2 className="text-2xl font-semibold mb-4">Customize</h2>
+						<CustomizeSettings />
+					</div>
 				</div>
 			</div>
 
