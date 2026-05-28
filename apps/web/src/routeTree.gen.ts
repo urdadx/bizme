@@ -13,7 +13,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as adminRouteRouteImport } from './routes/(admin)/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as adminThemesRouteImport } from './routes/(admin)/themes'
 import { Route as adminSettingsRouteImport } from './routes/(admin)/settings'
 import { Route as adminPollsRouteImport } from './routes/(admin)/polls'
 import { Route as adminPagesRouteImport } from './routes/(admin)/pages'
@@ -21,6 +20,7 @@ import { Route as adminOverviewRouteImport } from './routes/(admin)/overview'
 import { Route as adminModerationRouteImport } from './routes/(admin)/moderation'
 import { Route as adminIntegrationsRouteImport } from './routes/(admin)/integrations'
 import { Route as adminDeployRouteImport } from './routes/(admin)/deploy'
+import { Route as adminCustomizeRouteImport } from './routes/(admin)/customize'
 import { Route as adminCommentsRouteImport } from './routes/(admin)/comments'
 import { Route as adminAnalyticsRouteImport } from './routes/(admin)/analytics'
 
@@ -42,11 +42,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const adminThemesRoute = adminThemesRouteImport.update({
-  id: '/themes',
-  path: '/themes',
-  getParentRoute: () => adminRouteRoute,
 } as any)
 const adminSettingsRoute = adminSettingsRouteImport.update({
   id: '/settings',
@@ -83,6 +78,11 @@ const adminDeployRoute = adminDeployRouteImport.update({
   path: '/deploy',
   getParentRoute: () => adminRouteRoute,
 } as any)
+const adminCustomizeRoute = adminCustomizeRouteImport.update({
+  id: '/customize',
+  path: '/customize',
+  getParentRoute: () => adminRouteRoute,
+} as any)
 const adminCommentsRoute = adminCommentsRouteImport.update({
   id: '/comments',
   path: '/comments',
@@ -100,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/analytics': typeof adminAnalyticsRoute
   '/comments': typeof adminCommentsRoute
+  '/customize': typeof adminCustomizeRoute
   '/deploy': typeof adminDeployRoute
   '/integrations': typeof adminIntegrationsRoute
   '/moderation': typeof adminModerationRoute
@@ -107,7 +108,6 @@ export interface FileRoutesByFullPath {
   '/pages': typeof adminPagesRoute
   '/polls': typeof adminPollsRoute
   '/settings': typeof adminSettingsRoute
-  '/themes': typeof adminThemesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,6 +115,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/analytics': typeof adminAnalyticsRoute
   '/comments': typeof adminCommentsRoute
+  '/customize': typeof adminCustomizeRoute
   '/deploy': typeof adminDeployRoute
   '/integrations': typeof adminIntegrationsRoute
   '/moderation': typeof adminModerationRoute
@@ -122,7 +123,6 @@ export interface FileRoutesByTo {
   '/pages': typeof adminPagesRoute
   '/polls': typeof adminPollsRoute
   '/settings': typeof adminSettingsRoute
-  '/themes': typeof adminThemesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +132,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/(admin)/analytics': typeof adminAnalyticsRoute
   '/(admin)/comments': typeof adminCommentsRoute
+  '/(admin)/customize': typeof adminCustomizeRoute
   '/(admin)/deploy': typeof adminDeployRoute
   '/(admin)/integrations': typeof adminIntegrationsRoute
   '/(admin)/moderation': typeof adminModerationRoute
@@ -139,7 +140,6 @@ export interface FileRoutesById {
   '/(admin)/pages': typeof adminPagesRoute
   '/(admin)/polls': typeof adminPollsRoute
   '/(admin)/settings': typeof adminSettingsRoute
-  '/(admin)/themes': typeof adminThemesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -149,6 +149,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/analytics'
     | '/comments'
+    | '/customize'
     | '/deploy'
     | '/integrations'
     | '/moderation'
@@ -156,7 +157,6 @@ export interface FileRouteTypes {
     | '/pages'
     | '/polls'
     | '/settings'
-    | '/themes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -164,6 +164,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/analytics'
     | '/comments'
+    | '/customize'
     | '/deploy'
     | '/integrations'
     | '/moderation'
@@ -171,7 +172,6 @@ export interface FileRouteTypes {
     | '/pages'
     | '/polls'
     | '/settings'
-    | '/themes'
   id:
     | '__root__'
     | '/'
@@ -180,6 +180,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/(admin)/analytics'
     | '/(admin)/comments'
+    | '/(admin)/customize'
     | '/(admin)/deploy'
     | '/(admin)/integrations'
     | '/(admin)/moderation'
@@ -187,7 +188,6 @@ export interface FileRouteTypes {
     | '/(admin)/pages'
     | '/(admin)/polls'
     | '/(admin)/settings'
-    | '/(admin)/themes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -226,13 +226,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/(admin)/themes': {
-      id: '/(admin)/themes'
-      path: '/themes'
-      fullPath: '/themes'
-      preLoaderRoute: typeof adminThemesRouteImport
-      parentRoute: typeof adminRouteRoute
     }
     '/(admin)/settings': {
       id: '/(admin)/settings'
@@ -283,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof adminDeployRouteImport
       parentRoute: typeof adminRouteRoute
     }
+    '/(admin)/customize': {
+      id: '/(admin)/customize'
+      path: '/customize'
+      fullPath: '/customize'
+      preLoaderRoute: typeof adminCustomizeRouteImport
+      parentRoute: typeof adminRouteRoute
+    }
     '/(admin)/comments': {
       id: '/(admin)/comments'
       path: '/comments'
@@ -303,6 +303,7 @@ declare module '@tanstack/react-router' {
 interface adminRouteRouteChildren {
   adminAnalyticsRoute: typeof adminAnalyticsRoute
   adminCommentsRoute: typeof adminCommentsRoute
+  adminCustomizeRoute: typeof adminCustomizeRoute
   adminDeployRoute: typeof adminDeployRoute
   adminIntegrationsRoute: typeof adminIntegrationsRoute
   adminModerationRoute: typeof adminModerationRoute
@@ -310,12 +311,12 @@ interface adminRouteRouteChildren {
   adminPagesRoute: typeof adminPagesRoute
   adminPollsRoute: typeof adminPollsRoute
   adminSettingsRoute: typeof adminSettingsRoute
-  adminThemesRoute: typeof adminThemesRoute
 }
 
 const adminRouteRouteChildren: adminRouteRouteChildren = {
   adminAnalyticsRoute: adminAnalyticsRoute,
   adminCommentsRoute: adminCommentsRoute,
+  adminCustomizeRoute: adminCustomizeRoute,
   adminDeployRoute: adminDeployRoute,
   adminIntegrationsRoute: adminIntegrationsRoute,
   adminModerationRoute: adminModerationRoute,
@@ -323,7 +324,6 @@ const adminRouteRouteChildren: adminRouteRouteChildren = {
   adminPagesRoute: adminPagesRoute,
   adminPollsRoute: adminPollsRoute,
   adminSettingsRoute: adminSettingsRoute,
-  adminThemesRoute: adminThemesRoute,
 }
 
 const adminRouteRouteWithChildren = adminRouteRoute._addFileChildren(

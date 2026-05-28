@@ -53,7 +53,7 @@ const data = {
 	customize: [
 		{
 			title: "Customize",
-			url: "/themes",
+			url: "/customize",
 			icon: PaletteRoundLinear,
 		},
 	],

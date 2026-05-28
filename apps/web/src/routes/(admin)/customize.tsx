@@ -2,7 +2,7 @@ import { CustomizeSettings } from "@/components/customization/customize-settings
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/(admin)/themes")({
+export const Route = createFileRoute("/(admin)/customize")({
 	component: RouteComponent,
 });
 
