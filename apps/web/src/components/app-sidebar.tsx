@@ -10,7 +10,7 @@ import {
 import { Outlet } from "@tanstack/react-router";
 import { Navbar } from "./navbar";
 import { HomeLinear } from "@/assets/icons/home-duotone";
-import { ChartLinear, ChartUp } from "@/assets/icons/chart-icon";
+import { ChartLinear } from "@/assets/icons/chart-icon";
 import { SettingsLinear } from "@/assets/icons/settings-duotone";
 
 import { NavMain } from "./nav-main";
@@ -23,6 +23,7 @@ import { NavSettings } from "./nav-settings";
 import { ChatLogsIcon } from "@/assets/icons/chatlogs-icon";
 import { NavActivity } from "./nav-activity";
 import { IntegrationLinear } from "@/assets/icons/integration-icon";
+import { HugeRocket } from "@/assets/icons/rocket";
 
 const data = {
 	overview: [
@@ -30,11 +31,6 @@ const data = {
 			title: "Overview",
 			url: "/overview",
 			icon: HomeLinear,
-		},
-		{
-			title: "Pages",
-			url: "/pages",
-			icon: ChatLogsIcon,
 		},
 	],
 
@@ -47,7 +43,7 @@ const data = {
 		{
 			title: "Polls",
 			url: "/polls",
-			icon: ChartLinear,
+			icon: ChatLogsIcon,
 		},
 	],
 	customize: [
@@ -66,7 +62,12 @@ const data = {
 		{
 			title: "Analytics",
 			url: "/analytics",
-			icon: ChartUp,
+			icon: ChartLinear,
+		},
+		{
+			title: "Deployment",
+			url: "/deploy",
+			icon: HugeRocket,
 		},
 		{
 			title: "Integrations",

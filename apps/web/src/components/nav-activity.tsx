@@ -38,7 +38,7 @@ export function NavActivity({
 	return (
 		<SidebarGroup className="py-0 my-0 ">
 			<SidebarGroupLabel className="text-muted-foreground group-data-[collapsible=icon]:hidden">
-				ENGAGEMENT
+				CONTENT
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-2">
 				{items.map((item) => {
