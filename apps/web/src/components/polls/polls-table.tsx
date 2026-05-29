@@ -80,6 +80,7 @@ const dummyPolls: PollRow[] = [
 ];
 
 type PollStatusFilter = "all" | PollRow["status"];
+type PollPageFilter = "all" | PollRow["page"];
 
 const pollStatusFilterItems = [
 	{ label: "All statuses", value: "all" },
@@ -87,6 +88,13 @@ const pollStatusFilterItems = [
 	{ label: "Closed", value: "Closed" },
 	{ label: "Draft", value: "Draft" },
 ] satisfies { label: string; value: PollStatusFilter }[];
+
+const pollPageFilterItems = [
+	{ label: "All pages", value: "all" },
+	{ label: "/posts/hello", value: "/posts/hello" },
+	{ label: "/posts/my-story", value: "/posts/my-story" },
+	{ label: "/posts/review", value: "/posts/review" },
+] satisfies { label: string; value: PollPageFilter }[];
 
 const columns: ColumnDef<PollRow>[] = [
 	{
@@ -105,6 +113,7 @@ const columns: ColumnDef<PollRow>[] = [
 	{
 		accessorKey: "page",
 		header: "Page",
+		filterFn: "equalsString",
 		cell: ({ row }) => (
 			<span className="text-muted-foreground">{row.getValue("page")}</span>
 		),
@@ -223,13 +232,15 @@ export function PollsTable() {
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-center">
+				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
 					<div className="relative w-full sm:max-w-sm">
 						<Input
 							placeholder="Search polls..."
 							className="h-9 w-full pl-9"
 							value={globalFilter}
-							onChange={(event) => table.setGlobalFilter(event.target.value)}
+							onChange={(event) =>
+								table.setGlobalFilter(event.target.value)
+							}
 						/>
 						<SearchLinear className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					</div>
@@ -239,9 +250,9 @@ export function PollsTable() {
 						modal={false}
 						onValueChange={(value) => {
 							if (typeof value === "string") {
-								table
-									.getColumn("status")
-									?.setFilterValue(value === "all" ? undefined : value);
+								table.getColumn("status")?.setFilterValue(
+									value === "all" ? undefined : value,
+								);
 							}
 						}}>
 						<SelectTrigger className="w-full sm:w-40">
@@ -251,6 +262,33 @@ export function PollsTable() {
 							<SelectGroup>
 								<SelectLabel>Status</SelectLabel>
 								{pollStatusFilterItems.map((item) => (
+									<SelectItem
+										key={item.value}
+										value={item.value}>
+										{item.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<Select
+						items={pollPageFilterItems}
+						defaultValue="all"
+						modal={false}
+						onValueChange={(value) => {
+							if (typeof value === "string") {
+								table
+									.getColumn("page")
+									?.setFilterValue(value === "all" ? undefined : value);
+							}
+						}}>
+						<SelectTrigger className="w-full sm:w-44">
+							<SelectValue placeholder="All pages" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								<SelectLabel>Page</SelectLabel>
+								{pollPageFilterItems.map((item) => (
 									<SelectItem key={item.value} value={item.value}>
 										{item.label}
 									</SelectItem>

@@ -104,6 +104,7 @@ const dummyPages: PageRow[] = [
 ];
 
 type LastActivityFilter = "all" | "today" | "last-24h" | "last-7d" | "older";
+type CommentVolumeFilter = "all" | "high" | "medium" | "low";
 
 const lastActivityFilterLabels: Record<LastActivityFilter, string> = {
 	all: "All activity",
@@ -120,6 +121,13 @@ const lastActivityFilterItems = [
 	{ label: "Last 7 days", value: "last-7d" },
 	{ label: "Older", value: "older" },
 ] satisfies { label: string; value: LastActivityFilter }[];
+
+const commentVolumeFilterItems = [
+	{ label: "All comments", value: "all" },
+	{ label: "100+ comments", value: "high" },
+	{ label: "50-99 comments", value: "medium" },
+	{ label: "Under 50 comments", value: "low" },
+] satisfies { label: string; value: CommentVolumeFilter }[];
 
 function matchesLastActivityFilter(value: string, filter: LastActivityFilter) {
 	if (filter === "all") {
@@ -144,6 +152,22 @@ function matchesLastActivityFilter(value: string, filter: LastActivityFilter) {
 	}
 
 	return !isLast7Days;
+}
+
+function matchesCommentVolumeFilter(value: number, filter: CommentVolumeFilter) {
+	if (filter === "all") {
+		return true;
+	}
+
+	if (filter === "high") {
+		return value >= 100;
+	}
+
+	if (filter === "medium") {
+		return value >= 50 && value < 100;
+	}
+
+	return value < 50;
 }
 
 const columns: ColumnDef<PageRow>[] = [
@@ -174,6 +198,11 @@ const columns: ColumnDef<PageRow>[] = [
 		accessorKey: "totalComments",
 		header: "Total comments",
 		cell: ({ row }) => <span>{row.getValue("totalComments")}</span>,
+		filterFn: (row, columnId, filterValue) =>
+			matchesCommentVolumeFilter(
+				row.getValue(columnId) as number,
+				filterValue as CommentVolumeFilter,
+			),
 	},
 	{
 		accessorKey: "totalVotes",
@@ -277,7 +306,7 @@ export function PagesTable() {
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-center">
+				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
 					<div className="relative w-full sm:max-w-sm">
 						<Input
 							placeholder="Search pages..."
@@ -305,6 +334,31 @@ export function PagesTable() {
 							<SelectGroup>
 								<SelectLabel>Last activity</SelectLabel>
 								{lastActivityFilterItems.map((item) => (
+									<SelectItem key={item.value} value={item.value}>
+										{item.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<Select
+						items={commentVolumeFilterItems}
+						defaultValue="all"
+						modal={false}
+						onValueChange={(value) => {
+							if (typeof value === "string") {
+								table
+									.getColumn("totalComments")
+									?.setFilterValue(value === "all" ? undefined : value);
+							}
+						}}>
+						<SelectTrigger className="w-full sm:w-44">
+							<SelectValue placeholder="All comments" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								<SelectLabel>Comments</SelectLabel>
+								{commentVolumeFilterItems.map((item) => (
 									<SelectItem key={item.value} value={item.value}>
 										{item.label}
 									</SelectItem>

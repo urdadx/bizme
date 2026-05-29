@@ -16,13 +16,11 @@ export type AnalyticsChartDatum = {
 };
 
 export const EMPTY_ANALYTICS_CHART_DATA: AnalyticsChartDatum[] = [
-	{ date: "2026-01-03", comments: 24, votes: 20 },
-	{ date: "2026-01-04", comments: 31, votes: 75 },
-	{ date: "2026-01-05", comments: 28, votes: 40 },
+	{ date: "2026-01-03", comments: 124, votes: 120 },
+	{ date: "2026-01-04", comments: 71, votes: 175 },
+	{ date: "2026-01-05", comments: 88, votes: 100 },
 	{ date: "2026-01-06", comments: 36, votes: 35 },
-	{ date: "2026-01-07", comments: 42, votes: 58 },
-	{ date: "2026-01-08", comments: 34, votes: 64 },
-	{ date: "2026-01-09", comments: 39, votes: 16 },
+	{ date: "2026-01-07", comments: 42, votes: 98 },
 ];
 
 interface AnalyticsChartProps {

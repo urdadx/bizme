@@ -22,7 +22,6 @@ import { NavCustomize } from "./nav-customize";
 import { NavSettings } from "./nav-settings";
 import { ChatLogsIcon } from "@/assets/icons/chatlogs-icon";
 import { NavActivity } from "./nav-activity";
-import { IntegrationLinear } from "@/assets/icons/integration-icon";
 import { HugeRocket } from "@/assets/icons/rocket";
 
 const data = {
@@ -68,11 +67,6 @@ const data = {
 			title: "Deployment",
 			url: "/deploy",
 			icon: HugeRocket,
-		},
-		{
-			title: "Integrations",
-			url: "/integrations",
-			icon: IntegrationLinear,
 		},
 	],
 };

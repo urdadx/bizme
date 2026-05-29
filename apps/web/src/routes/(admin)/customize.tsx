@@ -1,4 +1,7 @@
 import { CustomizeSettings } from "@/components/customization/customize-settings";
+import { ComposerPreview } from "@/components/composer-preview";
+import { CommentsPreview } from "@/components/comments-preview";
+import { PollPreview } from "@/components/poll-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -46,15 +49,51 @@ function RouteComponent() {
 					value="preview"
 					className="mt-0 min-h-0 flex-1 overflow-hidden">
 					<aside
-						className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[28px_28px]"
-						aria-label="Preview panel"></aside>
+						className="relative flex h-full min-h-0 flex-1 items-center justify-center overflow-hidden bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[28px_28px] p-5"
+						aria-label="Preview panel">
+						<PreviewTabs />
+					</aside>
 				</TabsContent>
 			</div>
 
 			<div className="hidden min-h-0 flex-1 overflow-hidden lg:flex">
 				<aside
-					className="relative flex h-full min-h-0 flex-1 overflow-hidden bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[28px_28px]"
-					aria-label="Preview panel"></aside>{" "}
+					className="relative flex h-full min-h-0 flex-1 items-center justify-center overflow-hidden bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] bg-size-[28px_28px] p-8"
+					aria-label="Preview panel">
+					<PreviewTabs />
+				</aside>
+			</div>
+		</Tabs>
+	);
+}
+
+function PreviewTabs() {
+	return (
+		<Tabs
+			defaultValue="composer"
+			className="flex h-full w-full flex-col items-center justify-center gap-6">
+			<TabsList className="h-auto gap-2 rounded-3xl">
+				<TabsTrigger className="rounded-3xl" value="composer">
+					Composer
+				</TabsTrigger>
+				<TabsTrigger className="rounded-3xl" value="comments">
+					Comments
+				</TabsTrigger>
+				<TabsTrigger className="rounded-3xl" value="poll">
+					Polls
+				</TabsTrigger>
+			</TabsList>
+
+			<div className="flex w-full flex-1 items-center justify-center">
+				<TabsContent value="composer" className="mt-0 flex w-full justify-center">
+					<ComposerPreview />
+				</TabsContent>
+				<TabsContent value="comments" className="mt-0 flex w-full justify-center">
+					<CommentsPreview />
+				</TabsContent>
+				<TabsContent value="poll" className="mt-0 flex w-full justify-center">
+					<PollPreview />
+				</TabsContent>
 			</div>
 		</Tabs>
 	);

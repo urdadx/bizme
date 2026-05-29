@@ -19,13 +19,13 @@ const overviewData = {
 };
 
 const chartData = [
-	{ date: "2026-05-11", comments: 182, votes: 42 },
+	{ date: "2026-05-11", comments: 100, votes: 142 },
 	{ date: "2026-05-12", comments: 205, votes: 51 },
-	{ date: "2026-05-13", comments: 191, votes: 46 },
-	{ date: "2026-05-14", comments: 224, votes: 58 },
-	{ date: "2026-05-15", comments: 213, votes: 49 },
-	{ date: "2026-05-16", comments: 236, votes: 61 },
-	{ date: "2026-05-17", comments: 231, votes: 55 },
+	{ date: "2026-05-13", comments: 20, votes: 96 },
+	{ date: "2026-05-14", comments: 84, votes: 68 },
+	{ date: "2026-05-15", comments: 60, votes: 49 },
+	{ date: "2026-05-16", comments: 79, votes: 121 },
+	{ date: "2026-05-17", comments: 40, votes: 55 },
 ];
 
 const pagesData = [

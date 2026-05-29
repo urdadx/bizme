@@ -1,7 +1,6 @@
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Switch } from "../ui/switch";
-import { CornerRoundnessOptions } from "./corner-roundness";
 import ColorScheme from "../colorscheme";
 
 export const THEMES = [
@@ -27,7 +26,9 @@ export const CustomizeSettings = () => {
 				<Select defaultValue="inter">
 					<SelectTrigger className="w-full">
 						<SelectValue>
-							{value => FONT_FAMILIES.find(f => f.value === value)?.label}
+							{(value) =>
+								FONT_FAMILIES.find((f) => f.value === value)?.label
+							}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
@@ -46,7 +47,7 @@ export const CustomizeSettings = () => {
 				<Select defaultValue="one-dark">
 					<SelectTrigger className="w-full">
 						<SelectValue>
-							{value => THEMES.find(t => t.value === value)?.label}
+							{(value) => THEMES.find((t) => t.value === value)?.label}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
@@ -57,12 +58,6 @@ export const CustomizeSettings = () => {
 						))}
 					</SelectContent>
 				</Select>
-			</div>
-			<div className="flex flex-col gap-3">
-				<Label className="text-muted-foreground font-medium flex items-center gap-1.5">
-					Corner roundness
-				</Label>
-				<CornerRoundnessOptions />
 			</div>
 
 			<div className="flex flex-col gap-3">
@@ -87,12 +82,6 @@ export const CustomizeSettings = () => {
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between">
-				<Label className="text-muted-foreground font-medium">
-					Show reactions bar
-				</Label>
-				<Switch checked={true} onCheckedChange={() => {}} />
-			</div>
 			<div className="flex items-center justify-between">
 				<Label className="text-muted-foreground font-medium">
 					Hide "Powered by Bizme" text

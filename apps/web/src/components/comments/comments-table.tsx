@@ -76,6 +76,7 @@ const dummyComments: CommentRow[] = [
 ];
 
 type CommenterFilter = "all" | "github" | "google" | "anonymous";
+type CommentPageFilter = "all" | CommentRow["page"];
 
 const commenterFilterItems = [
 	{ label: "All commenters", value: "all" },
@@ -83,6 +84,13 @@ const commenterFilterItems = [
 	{ label: "Google", value: "google" },
 	{ label: "Anonymous", value: "anonymous" },
 ] satisfies { label: string; value: CommenterFilter }[];
+
+const commentPageFilterItems = [
+	{ label: "All pages", value: "all" },
+	{ label: "/posts/hello", value: "/posts/hello" },
+	{ label: "/posts/my-story", value: "/posts/my-story" },
+	{ label: "/posts/review", value: "/posts/review" },
+] satisfies { label: string; value: CommentPageFilter }[];
 
 function getCommenterType(commenter: string): Exclude<CommenterFilter, "all"> {
 	const normalized = commenter.toLowerCase();
@@ -127,6 +135,7 @@ const columns: ColumnDef<CommentRow>[] = [
 	{
 		accessorKey: "page",
 		header: "Page",
+		filterFn: "equalsString",
 		cell: ({ row }) => (
 			<span className="text-muted-foreground">{row.getValue("page")}</span>
 		),
@@ -212,7 +221,7 @@ export function CommentsTable() {
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:items-center">
+				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
 					<div className="relative w-full sm:max-w-sm">
 						<Input
 							placeholder="Search comments..."
@@ -240,6 +249,31 @@ export function CommentsTable() {
 							<SelectGroup>
 								<SelectLabel>Commenter</SelectLabel>
 								{commenterFilterItems.map((item) => (
+									<SelectItem key={item.value} value={item.value}>
+										{item.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<Select
+						items={commentPageFilterItems}
+						defaultValue="all"
+						modal={false}
+						onValueChange={(value) => {
+							if (typeof value === "string") {
+								table
+									.getColumn("page")
+									?.setFilterValue(value === "all" ? undefined : value);
+							}
+						}}>
+						<SelectTrigger className="w-full sm:w-44">
+							<SelectValue placeholder="All pages" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								<SelectLabel>Page</SelectLabel>
+								{commentPageFilterItems.map((item) => (
 									<SelectItem key={item.value} value={item.value}>
 										{item.label}
 									</SelectItem>
