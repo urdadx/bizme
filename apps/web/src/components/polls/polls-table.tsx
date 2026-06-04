@@ -11,7 +11,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, PlusIcon } from "lucide-react";
 
 import { ChartLinear } from "@/assets/icons/chart-icon";
 import { SearchLinear } from "@/assets/icons/search-icon";
@@ -80,7 +80,6 @@ const dummyPolls: PollRow[] = [
 ];
 
 type PollStatusFilter = "all" | PollRow["status"];
-type PollPageFilter = "all" | PollRow["page"];
 
 const pollStatusFilterItems = [
 	{ label: "All statuses", value: "all" },
@@ -88,13 +87,6 @@ const pollStatusFilterItems = [
 	{ label: "Closed", value: "Closed" },
 	{ label: "Draft", value: "Draft" },
 ] satisfies { label: string; value: PollStatusFilter }[];
-
-const pollPageFilterItems = [
-	{ label: "All pages", value: "all" },
-	{ label: "/posts/hello", value: "/posts/hello" },
-	{ label: "/posts/my-story", value: "/posts/my-story" },
-	{ label: "/posts/review", value: "/posts/review" },
-] satisfies { label: string; value: PollPageFilter }[];
 
 const columns: ColumnDef<PollRow>[] = [
 	{
@@ -110,15 +102,7 @@ const columns: ColumnDef<PollRow>[] = [
 		),
 		minSize: 300,
 	},
-	{
-		accessorKey: "page",
-		header: "Page",
-		filterFn: "equalsString",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("page")}</span>
-		),
-		minSize: 180,
-	},
+
 	{
 		accessorKey: "votes",
 		header: "Votes",
@@ -149,7 +133,7 @@ const columns: ColumnDef<PollRow>[] = [
 	},
 	{
 		accessorKey: "created",
-		header: "Created",
+		header: "Last Activity",
 		cell: ({ row }) => (
 			<span className="text-muted-foreground">{row.getValue("created")}</span>
 		),
@@ -271,32 +255,11 @@ export function PollsTable() {
 							</SelectGroup>
 						</SelectContent>
 					</Select>
-					<Select
-						items={pollPageFilterItems}
-						defaultValue="all"
-						modal={false}
-						onValueChange={(value) => {
-							if (typeof value === "string") {
-								table
-									.getColumn("page")
-									?.setFilterValue(value === "all" ? undefined : value);
-							}
-						}}>
-						<SelectTrigger className="w-full sm:w-44">
-							<SelectValue placeholder="All pages" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectGroup>
-								<SelectLabel>Page</SelectLabel>
-								{pollPageFilterItems.map((item) => (
-									<SelectItem key={item.value} value={item.value}>
-										{item.label}
-									</SelectItem>
-								))}
-							</SelectGroup>
-						</SelectContent>
-					</Select>
 				</div>
+				<Button>
+					<PlusIcon className=" h-4 w-4" />
+					Create a new poll
+				</Button>
 			</div>
 			<div className="max-w-sm overflow-hidden rounded-xl border md:max-w-full">
 				<Table>

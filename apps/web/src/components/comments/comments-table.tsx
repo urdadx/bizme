@@ -48,7 +48,9 @@ type CommentRow = {
 	commenter: string;
 	preview: string;
 	page: string;
-	date: string;
+	likes: number;
+	replies: number;
+	lastActivity: string;
 };
 
 const dummyComments: CommentRow[] = [
@@ -56,22 +58,28 @@ const dummyComments: CommentRow[] = [
 		id: "comment_1",
 		commenter: "John (GitHub)",
 		preview: '"This is a great..."',
+		likes: 10,
+		replies: 2,
 		page: "/posts/hello",
-		date: "2 hrs ago",
+		lastActivity: "2 hrs ago",
 	},
 	{
 		id: "comment_2",
 		commenter: "Anonymous",
 		preview: '"I disagree because..."',
+		likes: 5,
+		replies: 1,
 		page: "/posts/my-story",
-		date: "3 days ago",
+		lastActivity: "3 days ago",
 	},
 	{
 		id: "comment_3",
 		commenter: "Jane (Google)",
 		preview: '"Love this post!"',
+		likes: 8,
+		replies: 0,
 		page: "/posts/review",
-		date: "1 week ago",
+		lastActivity: "1 week ago",
 	},
 ];
 
@@ -133,19 +141,26 @@ const columns: ColumnDef<CommentRow>[] = [
 		minSize: 280,
 	},
 	{
-		accessorKey: "page",
-		header: "Page",
-		filterFn: "equalsString",
+		accessorKey: "likes",
+		header: "Likes",
 		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("page")}</span>
+			<span className="text-muted-foreground">{row.getValue("likes")}</span>
 		),
-		minSize: 180,
+		minSize: 100,
 	},
 	{
-		accessorKey: "date",
-		header: "Date",
+		accessorKey: "replies",
+		header: "Replies",
 		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("date")}</span>
+			<span className="text-muted-foreground">{row.getValue("replies")}</span>
+		),
+		minSize: 100,
+	},
+	{
+		accessorKey: "lastActivity",
+		header: "Last activity",
+		cell: ({ row }) => (
+			<span className="text-muted-foreground">{row.getValue("lastActivity")}</span>
 		),
 		minSize: 140,
 	},
@@ -156,12 +171,18 @@ const columns: ColumnDef<CommentRow>[] = [
 			<DropdownMenu>
 				<DropdownMenuTrigger
 					render={
-						<Button variant="outline" size="icon-sm" aria-label="Open actions" />
+						<Button
+							variant="outline"
+							size="icon-sm"
+							aria-label="Open actions"
+						/>
 					}>
 					<MoreHorizontal className="h-4 w-4" />
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-40 min-w-40">
-					<DropdownMenuItem render={<a href={row.original.page} />}>Open page</DropdownMenuItem>
+					<DropdownMenuItem render={<a href={row.original.page} />}>
+						Open page
+					</DropdownMenuItem>
 					<DropdownMenuItem>Moderate comment</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
@@ -180,7 +201,7 @@ export function CommentsTable() {
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [sorting, setSorting] = useState<SortingState>([
 		{
-			id: "date",
+			id: "lastActivity",
 			desc: false,
 		},
 	]);
@@ -227,7 +248,9 @@ export function CommentsTable() {
 							placeholder="Search comments..."
 							className="h-9 w-full pl-9"
 							value={globalFilter}
-							onChange={(event) => table.setGlobalFilter(event.target.value)}
+							onChange={(event) =>
+								table.setGlobalFilter(event.target.value)
+							}
 						/>
 						<SearchLinear className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					</div>
@@ -237,9 +260,9 @@ export function CommentsTable() {
 						modal={false}
 						onValueChange={(value) => {
 							if (typeof value === "string") {
-								table
-									.getColumn("commenter")
-									?.setFilterValue(value === "all" ? undefined : value);
+								table.getColumn("commenter")?.setFilterValue(
+									value === "all" ? undefined : value,
+								);
 							}
 						}}>
 						<SelectTrigger className="w-full sm:w-44">
@@ -249,7 +272,9 @@ export function CommentsTable() {
 							<SelectGroup>
 								<SelectLabel>Commenter</SelectLabel>
 								{commenterFilterItems.map((item) => (
-									<SelectItem key={item.value} value={item.value}>
+									<SelectItem
+										key={item.value}
+										value={item.value}>
 										{item.label}
 									</SelectItem>
 								))}
@@ -262,9 +287,9 @@ export function CommentsTable() {
 						modal={false}
 						onValueChange={(value) => {
 							if (typeof value === "string") {
-								table
-									.getColumn("page")
-									?.setFilterValue(value === "all" ? undefined : value);
+								table.getColumn("page")?.setFilterValue(
+									value === "all" ? undefined : value,
+								);
 							}
 						}}>
 						<SelectTrigger className="w-full sm:w-44">
@@ -274,7 +299,9 @@ export function CommentsTable() {
 							<SelectGroup>
 								<SelectLabel>Page</SelectLabel>
 								{commentPageFilterItems.map((item) => (
-									<SelectItem key={item.value} value={item.value}>
+									<SelectItem
+										key={item.value}
+										value={item.value}>
 										{item.label}
 									</SelectItem>
 								))}
@@ -287,30 +314,51 @@ export function CommentsTable() {
 				<Table>
 					<TableHeader className="bg-gray-50">
 						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id} className="hover:bg-transparent">
+							<TableRow
+								key={headerGroup.id}
+								className="hover:bg-transparent">
 								{headerGroup.headers.map((header) => (
 									<TableHead
 										key={header.id}
 										className="h-11"
-										style={{ width: `${header.getSize()}px` }}>
+										style={{
+											width: `${header.getSize()}px`,
+										}}>
 										{header.isPlaceholder ? null : header.column.getCanSort() ? (
 											<div
 												className={cn(
 													"flex h-full select-none items-center justify-between gap-2",
-													header.column.getCanSort() && "cursor-pointer",
+													header.column.getCanSort() &&
+													"cursor-pointer",
 												)}
 												onClick={header.column.getToggleSortingHandler()}
 												onKeyDown={(event) => {
-													if (event.key === "Enter" || event.key === " ") {
+													if (
+														event.key ===
+														"Enter" ||
+														event.key ===
+														" "
+													) {
 														event.preventDefault();
-														header.column.getToggleSortingHandler()?.(event);
+														header.column.getToggleSortingHandler()?.(
+															event,
+														);
 													}
 												}}
 												tabIndex={0}>
-												{flexRender(header.column.columnDef.header, header.getContext())}
+												{flexRender(
+													header.column
+														.columnDef
+														.header,
+													header.getContext(),
+												)}
 											</div>
 										) : (
-											flexRender(header.column.columnDef.header, header.getContext())
+											flexRender(
+												header.column.columnDef
+													.header,
+												header.getContext(),
+											)
 										)}
 									</TableHead>
 								))}
@@ -322,7 +370,10 @@ export function CommentsTable() {
 							<TableRow key={row.id}>
 								{row.getVisibleCells().map((cell) => (
 									<TableCell key={cell.id} className="h-14">
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+										{flexRender(
+											cell.column.columnDef.cell,
+											cell.getContext(),
+										)}
 									</TableCell>
 								))}
 							</TableRow>
@@ -333,7 +384,8 @@ export function CommentsTable() {
 
 			<div className="flex items-center justify-between gap-3">
 				<p className="text-sm text-muted-foreground">
-					Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+					Page {table.getState().pagination.pageIndex + 1} of{" "}
+					{table.getPageCount()}
 				</p>
 				<div className="flex items-center gap-2">
 					<Button

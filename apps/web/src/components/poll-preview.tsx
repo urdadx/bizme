@@ -1,45 +1,65 @@
-import { Button } from "@/components/ui/button";
+import { ReactIcon } from "@/assets/icons/react-icon";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const options = [
-	{ label: "React", votes: 64, percent: 53 },
-	{ label: "Vue", votes: 34, percent: 28 },
-	{ label: "Svelte", votes: 22, percent: 19 },
+	{ label: "React", votes: 64, percent: 53, icon: ReactIcon },
+	{ label: "Vue", votes: 34, percent: 28, icon: ReactIcon },
+	{ label: "Svelte", votes: 22, percent: 19, icon: ReactIcon },
 ];
 
 export function PollPreview() {
 	return (
-		<div className="w-full max-w-xl rounded-xl border bg-white p-4 text-sm text-zinc-900 shadow-sm">
-			<div className="flex items-start justify-between gap-4">
-				<div>
-					<p className="text-xs font-medium uppercase tracking-wide text-zinc-500">Poll</p>
-					<h3 className="mt-1 text-base font-semibold">What&apos;s your fav stack?</h3>
+		<div className="h-fit pb-4 w-full max-w-lg z-0 rounded-xl border bg-white flex flex-col overflow-hidden text-sm text-zinc-900">
+			<Tabs defaultValue="poll" className="flex h-full flex-col">
+				<div className="flex shrink-0 items-center justify-between px-4 pt-3">
+					<TabsList className="h-auto gap-2 rounded-none border-border bg-transparent px-0 pb-0 text-foreground">
+						<TabsTrigger
+							value="poll"
+							className="text-muted-foreground hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+							What&apos;s your fav stack?
+						</TabsTrigger>
+					</TabsList>
 				</div>
-				<span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs text-green-700">
-					Active
-				</span>
-			</div>
 
-			<div className="mt-4 space-y-3">
-				{options.map((option) => (
-					<div key={option.label} className="space-y-1.5">
-						<div className="flex items-center justify-between text-sm">
-							<span className="font-medium">{option.label}</span>
-							<span className="text-zinc-500">{option.votes} votes</span>
+				<div className="min-h-0 flex-1 overflow-hidden">
+					<TabsContent value="poll" className="m-0 h-full p-0">
+						<div className="flex h-full flex-col">
+							<div className="min-h-0 flex-1 px-4 pt-2">
+								<h3 className="mb-3 px-1 text-base font-semibold"></h3>
+								<div className="grid gap-2">
+									{options.map((option) => (
+										<div
+											key={option.label}
+											className="rounded transition-all hover:bg-blue-50">
+											<div className="group flex items-center justify-between px-1 py-1">
+												<div className="relative z-10 flex h-9 w-full min-w-0 max-w-[calc(100%-5rem)] items-center">
+													<div className="z-10 flex w-full min-w-0 items-center gap-2 px-2 text-black">
+														<option.icon />
+														<span className="truncate text-[14px] text-black">
+															{
+																option.label
+															}
+														</span>
+													</div>
+													<div
+														className="absolute h-full origin-left rounded-md bg-blue-200/40"
+														style={{
+															width: `${option.percent}%`,
+														}}
+													/>
+												</div>
+												<div className="z-10 ml-2 shrink-0 text-sm tabular-nums text-black-500">
+													{option.votes}
+												</div>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
 						</div>
-						<div className="h-2 overflow-hidden rounded-full bg-zinc-100">
-							<div
-								className="h-full rounded-full bg-primary"
-								style={{ width: `${option.percent}%` }}
-							/>
-						</div>
-					</div>
-				))}
-			</div>
-
-			<div className="mt-4 flex items-center justify-between">
-				<span className="text-xs text-zinc-500">120 total votes</span>
-				<Button size="sm">Vote</Button>
-			</div>
+					</TabsContent>
+				</div>
+			</Tabs>
 		</div>
 	);
 }

@@ -62,7 +62,7 @@ export const CustomizeSettings = () => {
 
 			<div className="flex flex-col gap-3">
 				<Label className="text-muted-foreground font-medium">Brand color</Label>
-				<div className="flex items-center gap-2 border p-2 rounded-md">
+				<div className="flex items-center gap-2 border p-1 rounded-md">
 					<div
 						style={{ backgroundColor: "#6366f1" }}
 						className="w-7 h-7 rounded-md border-2 border-gray-200"
@@ -73,7 +73,7 @@ export const CustomizeSettings = () => {
 
 			<div className="flex flex-col gap-3">
 				<Label className="text-muted-foreground font-medium">Text color</Label>
-				<div className="flex items-center gap-2 border p-2 rounded-md">
+				<div className="flex items-center gap-2 border p-1 rounded-md">
 					<div
 						style={{ backgroundColor: "#FFFFF" }}
 						className="w-7 h-7 rounded-md border-2 border-gray-200"
