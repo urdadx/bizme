@@ -6,6 +6,12 @@ import { DeleteAccount } from "@/components/account/delete-account";
 import { UserBillingEmail } from "@/components/billing/user-billing-email";
 import { UserInvoices } from "@/components/billing/user-invoices";
 import { UserSubscriptions } from "@/components/billing/user-subscription";
+import { BannedWords } from "@/components/moderation/banned-words";
+import { CommentsModeration } from "@/components/moderation/comment-moderation";
+import { BlockedUsers } from "@/components/moderation/blocked-users";
+import { TeamOverview } from "@/components/team/team-overview";
+import { TeamMembersTable } from "@/components/team/team-members-table";
+import { DeleteTeam } from "@/components/team/delete-team";
 
 const settingsSchema = z.object({
 	tab: z
@@ -26,7 +32,7 @@ function RouteComponent() {
 	const handleTabChange = (value: string) => {
 		navigate({
 			search: {
-				tab: value as "account" | "billing" | "team" | "agent",
+				tab: value as "account" | "moderation" | "billing" | "team" | "agent",
 			},
 		});
 	};
@@ -71,17 +77,21 @@ function RouteComponent() {
 							<AccountOverview />
 							<DeleteAccount />
 						</TabsContent>
-						<TabsContent
-							className="py-4 space-y-8"
-							value="moderation"></TabsContent>
+						<TabsContent className="py-4 space-y-8" value="moderation">
+							<BannedWords />
+							<BlockedUsers />
+							<CommentsModeration />
+						</TabsContent>
 						<TabsContent className="py-4 space-y-6" value="billing">
 							<UserSubscriptions />
 							<UserBillingEmail />
 							<UserInvoices />
 						</TabsContent>
-						<TabsContent
-							className="py-4 space-y-6"
-							value="team"></TabsContent>
+						<TabsContent className="py-4 space-y-6" value="team">
+							<TeamOverview />
+							<TeamMembersTable />
+							<DeleteTeam />
+						</TabsContent>
 					</Tabs>
 				</div>
 			</div>
