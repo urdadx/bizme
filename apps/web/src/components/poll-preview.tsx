@@ -9,7 +9,7 @@ const options = [
 
 export function PollPreview() {
 	return (
-		<div className="h-fit pb-4 w-full max-w-lg z-0 rounded-xl border bg-white flex flex-col overflow-hidden text-sm text-zinc-900">
+		<div className="h-fit pb-4 w-full max-w-xl z-0 rounded-xl border bg-white flex flex-col overflow-hidden text-sm text-zinc-900">
 			<Tabs defaultValue="poll" className="flex h-full flex-col">
 				<div className="flex shrink-0 items-center justify-between px-4 pt-3">
 					<TabsList className="h-auto gap-2 rounded-none border-border bg-transparent px-0 pb-0 text-foreground">

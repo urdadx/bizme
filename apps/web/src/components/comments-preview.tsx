@@ -6,7 +6,7 @@ import { MoreVertical } from "lucide-react";
 
 export function CommentsPreview() {
 	return (
-		<div className="w-full max-w-3xl rounded-lg bg-white px-4 py-4 text-sm border">
+		<div className="w-full max-w-xl rounded-lg bg-white px-4 py-4 text-sm border">
 			<div className="flex gap-3">
 				<Avatar size="lg">
 					<AvatarImage

@@ -19,7 +19,7 @@ import { Route as adminPagesRouteImport } from './routes/(admin)/pages'
 import { Route as adminOverviewRouteImport } from './routes/(admin)/overview'
 import { Route as adminModerationRouteImport } from './routes/(admin)/moderation'
 import { Route as adminIntegrationsRouteImport } from './routes/(admin)/integrations'
-import { Route as adminDeployRouteImport } from './routes/(admin)/deploy'
+import { Route as adminDomainRouteImport } from './routes/(admin)/domain'
 import { Route as adminCustomizeRouteImport } from './routes/(admin)/customize'
 import { Route as adminCommentsRouteImport } from './routes/(admin)/comments'
 import { Route as adminAnalyticsRouteImport } from './routes/(admin)/analytics'
@@ -73,9 +73,9 @@ const adminIntegrationsRoute = adminIntegrationsRouteImport.update({
   path: '/integrations',
   getParentRoute: () => adminRouteRoute,
 } as any)
-const adminDeployRoute = adminDeployRouteImport.update({
-  id: '/deploy',
-  path: '/deploy',
+const adminDomainRoute = adminDomainRouteImport.update({
+  id: '/domain',
+  path: '/domain',
   getParentRoute: () => adminRouteRoute,
 } as any)
 const adminCustomizeRoute = adminCustomizeRouteImport.update({
@@ -101,7 +101,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof adminAnalyticsRoute
   '/comments': typeof adminCommentsRoute
   '/customize': typeof adminCustomizeRoute
-  '/deploy': typeof adminDeployRoute
+  '/domain': typeof adminDomainRoute
   '/integrations': typeof adminIntegrationsRoute
   '/moderation': typeof adminModerationRoute
   '/overview': typeof adminOverviewRoute
@@ -116,7 +116,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof adminAnalyticsRoute
   '/comments': typeof adminCommentsRoute
   '/customize': typeof adminCustomizeRoute
-  '/deploy': typeof adminDeployRoute
+  '/domain': typeof adminDomainRoute
   '/integrations': typeof adminIntegrationsRoute
   '/moderation': typeof adminModerationRoute
   '/overview': typeof adminOverviewRoute
@@ -133,7 +133,7 @@ export interface FileRoutesById {
   '/(admin)/analytics': typeof adminAnalyticsRoute
   '/(admin)/comments': typeof adminCommentsRoute
   '/(admin)/customize': typeof adminCustomizeRoute
-  '/(admin)/deploy': typeof adminDeployRoute
+  '/(admin)/domain': typeof adminDomainRoute
   '/(admin)/integrations': typeof adminIntegrationsRoute
   '/(admin)/moderation': typeof adminModerationRoute
   '/(admin)/overview': typeof adminOverviewRoute
@@ -150,7 +150,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/comments'
     | '/customize'
-    | '/deploy'
+    | '/domain'
     | '/integrations'
     | '/moderation'
     | '/overview'
@@ -165,7 +165,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/comments'
     | '/customize'
-    | '/deploy'
+    | '/domain'
     | '/integrations'
     | '/moderation'
     | '/overview'
@@ -181,7 +181,7 @@ export interface FileRouteTypes {
     | '/(admin)/analytics'
     | '/(admin)/comments'
     | '/(admin)/customize'
-    | '/(admin)/deploy'
+    | '/(admin)/domain'
     | '/(admin)/integrations'
     | '/(admin)/moderation'
     | '/(admin)/overview'
@@ -269,11 +269,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof adminIntegrationsRouteImport
       parentRoute: typeof adminRouteRoute
     }
-    '/(admin)/deploy': {
-      id: '/(admin)/deploy'
-      path: '/deploy'
-      fullPath: '/deploy'
-      preLoaderRoute: typeof adminDeployRouteImport
+    '/(admin)/domain': {
+      id: '/(admin)/domain'
+      path: '/domain'
+      fullPath: '/domain'
+      preLoaderRoute: typeof adminDomainRouteImport
       parentRoute: typeof adminRouteRoute
     }
     '/(admin)/customize': {
@@ -304,7 +304,7 @@ interface adminRouteRouteChildren {
   adminAnalyticsRoute: typeof adminAnalyticsRoute
   adminCommentsRoute: typeof adminCommentsRoute
   adminCustomizeRoute: typeof adminCustomizeRoute
-  adminDeployRoute: typeof adminDeployRoute
+  adminDomainRoute: typeof adminDomainRoute
   adminIntegrationsRoute: typeof adminIntegrationsRoute
   adminModerationRoute: typeof adminModerationRoute
   adminOverviewRoute: typeof adminOverviewRoute
@@ -317,7 +317,7 @@ const adminRouteRouteChildren: adminRouteRouteChildren = {
   adminAnalyticsRoute: adminAnalyticsRoute,
   adminCommentsRoute: adminCommentsRoute,
   adminCustomizeRoute: adminCustomizeRoute,
-  adminDeployRoute: adminDeployRoute,
+  adminDomainRoute: adminDomainRoute,
   adminIntegrationsRoute: adminIntegrationsRoute,
   adminModerationRoute: adminModerationRoute,
   adminOverviewRoute: adminOverviewRoute,

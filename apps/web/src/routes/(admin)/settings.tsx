@@ -9,13 +9,12 @@ import { UserSubscriptions } from "@/components/billing/user-subscription";
 import { BannedWords } from "@/components/moderation/banned-words";
 import { CommentsModeration } from "@/components/moderation/comment-moderation";
 import { BlockedUsers } from "@/components/moderation/blocked-users";
-import { TeamOverview } from "@/components/team/team-overview";
-import { TeamMembersTable } from "@/components/team/team-members-table";
-import { DeleteTeam } from "@/components/team/delete-team";
+import { WorkspaceOverview } from "@/components/team/workspace-overview";
+import { DeleteWorkspace } from "@/components/team/delete-workspace";
 
 const settingsSchema = z.object({
 	tab: z
-		.enum(["account", "moderation", "billing", "team", "agent"])
+		.enum(["account", "moderation", "billing", "workspace", "domain"])
 		.optional()
 		.default("account"),
 });
@@ -32,7 +31,7 @@ function RouteComponent() {
 	const handleTabChange = (value: string) => {
 		navigate({
 			search: {
-				tab: value as "account" | "moderation" | "billing" | "team" | "agent",
+				tab: value as "account" | "moderation" | "billing" | "workspace" | "domain",
 			},
 		});
 	};
@@ -68,8 +67,8 @@ function RouteComponent() {
 
 								<TabsTrigger
 									className="shrink-0 data-[state=active]:bg-muted data-[state=active]:shadow-none"
-									value="team">
-									Team
+									value="workspace">
+									Workspace
 								</TabsTrigger>
 							</TabsList>
 						</div>
@@ -87,10 +86,9 @@ function RouteComponent() {
 							<UserBillingEmail />
 							<UserInvoices />
 						</TabsContent>
-						<TabsContent className="py-4 space-y-6" value="team">
-							<TeamOverview />
-							<TeamMembersTable />
-							<DeleteTeam />
+						<TabsContent className="py-4 space-y-6" value="workspace">
+							<WorkspaceOverview />
+							<DeleteWorkspace />
 						</TabsContent>
 					</Tabs>
 				</div>

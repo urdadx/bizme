@@ -5,7 +5,7 @@ import { Avatar, AvatarImage } from "../ui/avatar";
 import { UploadLinear } from "@/assets/icons/upload-icon";
 import { useRef, useState } from "react";
 
-export function TeamOverview() {
+export function WorkspaceOverview() {
 	return <AccountForm />;
 }
 
@@ -28,7 +28,10 @@ function AccountForm() {
 	return (
 		<div className="rounded-2xl border bg-card text-card-foreground">
 			<div className="p-3 px-4 sm:px-6">
-				<h3 className="text-xl font-semibold text-foreground">Overview</h3>
+				<div className="flex items-center justify-between">
+					<h3 className="text-xl font-semibold text-foreground">Overview</h3>
+					{/* <Button>Create new workspace</Button> */}
+				</div>
 				<div className="space-y-0 relative">
 					<div className="flex flex-col gap-2 py-2">
 						<Label className="text-sm text-muted-foreground">Avatar</Label>
@@ -62,7 +65,7 @@ function AccountForm() {
 					</div>
 					<div className="flex flex-col gap-2 py-4">
 						<Label className="text-sm text-muted-foreground">
-							Username
+							Workspace name
 						</Label>
 						<Input
 							type="text"

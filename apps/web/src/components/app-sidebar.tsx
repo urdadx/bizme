@@ -22,7 +22,7 @@ import { NavCustomize } from "./nav-customize";
 import { NavSettings } from "./nav-settings";
 import { ChatLogsIcon } from "@/assets/icons/chatlogs-icon";
 import { NavActivity } from "./nav-activity";
-import { HugeRocket } from "@/assets/icons/rocket";
+import { GlobeLinear } from "@/assets/icons/globe-icon";
 
 const data = {
 	overview: [
@@ -64,9 +64,9 @@ const data = {
 			icon: ChartLinear,
 		},
 		{
-			title: "Deployment",
-			url: "/deploy",
-			icon: HugeRocket,
+			title: "Domain",
+			url: "/domain",
+			icon: GlobeLinear,
 		},
 	],
 };

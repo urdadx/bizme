@@ -48,7 +48,7 @@ export function ComposerPreview() {
 			onValueChange={setInput}
 			isLoading={isLoading}
 			onSubmit={handleSubmit}
-			className="w-150 shadow-none rounded-xl h-25 max-w-(--breakpoint-md)">
+			className="w-150 shadow-none rounded-xl h-25 max-w-xl">
 			{files.length > 0 && (
 				<div className="flex flex-wrap gap-2 pb-2">
 					{files.map((file, index) => (

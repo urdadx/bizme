@@ -11,20 +11,23 @@ import {
 } from "../ui/alert-dialog";
 import { useState } from "react";
 
-export function DeleteTeam() {
+export function DeleteWorkspace() {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	return (
 		<>
 			<div className="rounded-2xl border border-red-300 bg-card text-card-foreground">
 				<div className="p-3 px-4 sm:px-6">
-					<h3 className="text-xl font-semibold text-foreground">Delete Team</h3>
+					<h3 className="text-xl font-semibold text-foreground">
+						Delete Workspace
+					</h3>
 					<div className="space-y-0 relative">
 						<div className="flex flex-col gap-4 py-4">
 							<div className="text-sm flex items-center gap-2 text-muted-foreground">
 								<span>
-									Deleting your team is irreversible. This will
-									permanently delete all your data, including
-									your agents, conversations, and settings.
+									Deleting your workspace is irreversible. This
+									will permanently delete all your data,
+									including your agents, conversations, and
+									settings.
 								</span>
 							</div>
 						</div>
