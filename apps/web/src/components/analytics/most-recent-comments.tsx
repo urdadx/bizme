@@ -21,7 +21,7 @@ import {
 type RecentComment = {
 	id: string;
 	date: string;
-	page: string;
+	user: string;
 	comment: string;
 };
 
@@ -29,25 +29,25 @@ const dummyComments: RecentComment[] = [
 	{
 		id: "comment_1",
 		date: "May 17, 2026",
-		page: "/pricing",
+		user: "John Doe",
 		comment: "Would love a yearly discount option for small teams.",
 	},
 	{
 		id: "comment_2",
 		date: "May 16, 2026",
-		page: "/blog/launch-week",
+		user: "Jane Smith",
 		comment: "The onboarding video was clear, but the CTA is easy to miss.",
 	},
 	{
 		id: "comment_3",
 		date: "May 15, 2026",
-		page: "/features/comments",
+		user: "Bob Johnson",
 		comment: "Reply threads would make moderation much easier here.",
 	},
 	{
 		id: "comment_4",
 		date: "May 14, 2026",
-		page: "/docs/install",
+		user: "Alice Williams",
 		comment: "Step two fails unless Node 20 is already installed.",
 	},
 ];
@@ -64,11 +64,11 @@ function CommentsTable({ comments }: { comments: RecentComment[] }) {
 			),
 		},
 		{
-			accessorKey: "page",
-			header: "Page",
+			accessorKey: "user",
+			header: "User",
 			cell: ({ row }) => (
 				<span className="font-medium truncate max-w-24 md:max-w-52 block">
-					{row.getValue("page")}
+					{row.getValue("user")}
 				</span>
 			),
 		},
@@ -84,7 +84,7 @@ function CommentsTable({ comments }: { comments: RecentComment[] }) {
 		{
 			id: "actions",
 			header: "Action",
-			cell: ({ row }) => (
+			cell: () => (
 				<DropdownMenu>
 					<DropdownMenuTrigger>
 						<Button variant="outline" className="h-8 w-8 p-0">
