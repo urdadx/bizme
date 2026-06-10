@@ -41,7 +41,12 @@ export const CustomDomainsTable = () => {
 								</div>
 							</div>
 						</TableCell>
-						<TableCell>Active</TableCell>
+						<TableCell>
+							<div className="flex items-center gap-2">
+								<div className="flex h-2 w-2 items-center justify-center rounded-full bg-green-500" />
+								Active
+							</div>
+						</TableCell>
 						<TableCell>
 							<Popover>
 								<PopoverTrigger>

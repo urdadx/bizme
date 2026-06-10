@@ -11,6 +11,7 @@ export function WorkspaceOverview() {
 
 function AccountForm() {
 	const [username, setUsername] = useState("Abdul Wahab");
+	const [siteURL, setSiteURL] = useState("www.example.com");
 	const [updatedImage, setUpdatedImage] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,13 +29,12 @@ function AccountForm() {
 	return (
 		<div className="rounded-2xl border bg-card text-card-foreground">
 			<div className="p-3 px-4 sm:px-6">
-				<div className="flex items-center justify-between">
+				{/* <div className="flex items-center justify-between">
 					<h3 className="text-xl font-semibold text-foreground">Overview</h3>
-					{/* <Button>Create new workspace</Button> */}
-				</div>
+				</div> */}
 				<div className="space-y-0 relative">
 					<div className="flex flex-col gap-2 py-2">
-						<Label className="text-sm text-muted-foreground">Avatar</Label>
+						<Label className="text-sm text-muted-foreground">Favicon</Label>
 
 						<div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
 							<Avatar className="h-16 w-16 rounded-2xl border">
@@ -63,16 +63,29 @@ function AccountForm() {
 							</Button>
 						</div>
 					</div>
-					<div className="flex flex-col gap-2 py-4">
-						<Label className="text-sm text-muted-foreground">
-							Workspace name
-						</Label>
-						<Input
-							type="text"
-							value={username}
-							onChange={(e) => setUsername(e.target.value)}
-							className="h-8 w-full bg-white outline-2"
-						/>
+					<div className="flex gap-3">
+						<div className="flex flex-col w-full gap-2 py-2">
+							<Label className="text-sm text-muted-foreground">
+								Site name
+							</Label>
+							<Input
+								type="text"
+								value={username}
+								onChange={(e) => setUsername(e.target.value)}
+								className="h-8 w-full bg-white outline-2"
+							/>
+						</div>
+						<div className="flex flex-col w-full gap-2 py-2">
+							<Label className="text-sm text-muted-foreground">
+								Site URL
+							</Label>
+							<Input
+								type="text"
+								value={siteURL}
+								onChange={(e) => setSiteURL(e.target.value)}
+								className="h-8 w-full bg-white outline-2"
+							/>
+						</div>
 					</div>
 				</div>
 			</div>

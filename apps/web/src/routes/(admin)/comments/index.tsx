@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { CommentsTable } from "@/components/comments/comments-table";
 
-export const Route = createFileRoute("/(admin)/comments")({
+export const Route = createFileRoute("/(admin)/comments/")({
 	component: RouteComponent,
 });
 

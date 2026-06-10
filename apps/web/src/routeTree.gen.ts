@@ -21,8 +21,9 @@ import { Route as adminModerationRouteImport } from './routes/(admin)/moderation
 import { Route as adminIntegrationsRouteImport } from './routes/(admin)/integrations'
 import { Route as adminDomainRouteImport } from './routes/(admin)/domain'
 import { Route as adminCustomizeRouteImport } from './routes/(admin)/customize'
-import { Route as adminCommentsRouteImport } from './routes/(admin)/comments'
 import { Route as adminAnalyticsRouteImport } from './routes/(admin)/analytics'
+import { Route as adminCommentsIndexRouteImport } from './routes/(admin)/comments/index'
+import { Route as adminCommentsCommentIdRouteImport } from './routes/(admin)/comments/$commentId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -83,14 +84,19 @@ const adminCustomizeRoute = adminCustomizeRouteImport.update({
   path: '/customize',
   getParentRoute: () => adminRouteRoute,
 } as any)
-const adminCommentsRoute = adminCommentsRouteImport.update({
-  id: '/comments',
-  path: '/comments',
-  getParentRoute: () => adminRouteRoute,
-} as any)
 const adminAnalyticsRoute = adminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => adminRouteRoute,
+} as any)
+const adminCommentsIndexRoute = adminCommentsIndexRouteImport.update({
+  id: '/comments/',
+  path: '/comments/',
+  getParentRoute: () => adminRouteRoute,
+} as any)
+const adminCommentsCommentIdRoute = adminCommentsCommentIdRouteImport.update({
+  id: '/comments/$commentId',
+  path: '/comments/$commentId',
   getParentRoute: () => adminRouteRoute,
 } as any)
 
@@ -99,7 +105,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/analytics': typeof adminAnalyticsRoute
-  '/comments': typeof adminCommentsRoute
   '/customize': typeof adminCustomizeRoute
   '/domain': typeof adminDomainRoute
   '/integrations': typeof adminIntegrationsRoute
@@ -108,13 +113,14 @@ export interface FileRoutesByFullPath {
   '/pages': typeof adminPagesRoute
   '/polls': typeof adminPollsRoute
   '/settings': typeof adminSettingsRoute
+  '/comments/$commentId': typeof adminCommentsCommentIdRoute
+  '/comments/': typeof adminCommentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/analytics': typeof adminAnalyticsRoute
-  '/comments': typeof adminCommentsRoute
   '/customize': typeof adminCustomizeRoute
   '/domain': typeof adminDomainRoute
   '/integrations': typeof adminIntegrationsRoute
@@ -123,6 +129,8 @@ export interface FileRoutesByTo {
   '/pages': typeof adminPagesRoute
   '/polls': typeof adminPollsRoute
   '/settings': typeof adminSettingsRoute
+  '/comments/$commentId': typeof adminCommentsCommentIdRoute
+  '/comments': typeof adminCommentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,7 +139,6 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/(admin)/analytics': typeof adminAnalyticsRoute
-  '/(admin)/comments': typeof adminCommentsRoute
   '/(admin)/customize': typeof adminCustomizeRoute
   '/(admin)/domain': typeof adminDomainRoute
   '/(admin)/integrations': typeof adminIntegrationsRoute
@@ -140,6 +147,8 @@ export interface FileRoutesById {
   '/(admin)/pages': typeof adminPagesRoute
   '/(admin)/polls': typeof adminPollsRoute
   '/(admin)/settings': typeof adminSettingsRoute
+  '/(admin)/comments/$commentId': typeof adminCommentsCommentIdRoute
+  '/(admin)/comments/': typeof adminCommentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,7 +157,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/analytics'
-    | '/comments'
     | '/customize'
     | '/domain'
     | '/integrations'
@@ -157,13 +165,14 @@ export interface FileRouteTypes {
     | '/pages'
     | '/polls'
     | '/settings'
+    | '/comments/$commentId'
+    | '/comments/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/login'
     | '/analytics'
-    | '/comments'
     | '/customize'
     | '/domain'
     | '/integrations'
@@ -172,6 +181,8 @@ export interface FileRouteTypes {
     | '/pages'
     | '/polls'
     | '/settings'
+    | '/comments/$commentId'
+    | '/comments'
   id:
     | '__root__'
     | '/'
@@ -179,7 +190,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/(admin)/analytics'
-    | '/(admin)/comments'
     | '/(admin)/customize'
     | '/(admin)/domain'
     | '/(admin)/integrations'
@@ -188,6 +198,8 @@ export interface FileRouteTypes {
     | '/(admin)/pages'
     | '/(admin)/polls'
     | '/(admin)/settings'
+    | '/(admin)/comments/$commentId'
+    | '/(admin)/comments/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -283,13 +295,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof adminCustomizeRouteImport
       parentRoute: typeof adminRouteRoute
     }
-    '/(admin)/comments': {
-      id: '/(admin)/comments'
-      path: '/comments'
-      fullPath: '/comments'
-      preLoaderRoute: typeof adminCommentsRouteImport
-      parentRoute: typeof adminRouteRoute
-    }
     '/(admin)/analytics': {
       id: '/(admin)/analytics'
       path: '/analytics'
@@ -297,12 +302,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof adminAnalyticsRouteImport
       parentRoute: typeof adminRouteRoute
     }
+    '/(admin)/comments/': {
+      id: '/(admin)/comments/'
+      path: '/comments'
+      fullPath: '/comments/'
+      preLoaderRoute: typeof adminCommentsIndexRouteImport
+      parentRoute: typeof adminRouteRoute
+    }
+    '/(admin)/comments/$commentId': {
+      id: '/(admin)/comments/$commentId'
+      path: '/comments/$commentId'
+      fullPath: '/comments/$commentId'
+      preLoaderRoute: typeof adminCommentsCommentIdRouteImport
+      parentRoute: typeof adminRouteRoute
+    }
   }
 }
 
 interface adminRouteRouteChildren {
   adminAnalyticsRoute: typeof adminAnalyticsRoute
-  adminCommentsRoute: typeof adminCommentsRoute
   adminCustomizeRoute: typeof adminCustomizeRoute
   adminDomainRoute: typeof adminDomainRoute
   adminIntegrationsRoute: typeof adminIntegrationsRoute
@@ -311,11 +329,12 @@ interface adminRouteRouteChildren {
   adminPagesRoute: typeof adminPagesRoute
   adminPollsRoute: typeof adminPollsRoute
   adminSettingsRoute: typeof adminSettingsRoute
+  adminCommentsCommentIdRoute: typeof adminCommentsCommentIdRoute
+  adminCommentsIndexRoute: typeof adminCommentsIndexRoute
 }
 
 const adminRouteRouteChildren: adminRouteRouteChildren = {
   adminAnalyticsRoute: adminAnalyticsRoute,
-  adminCommentsRoute: adminCommentsRoute,
   adminCustomizeRoute: adminCustomizeRoute,
   adminDomainRoute: adminDomainRoute,
   adminIntegrationsRoute: adminIntegrationsRoute,
@@ -324,6 +343,8 @@ const adminRouteRouteChildren: adminRouteRouteChildren = {
   adminPagesRoute: adminPagesRoute,
   adminPollsRoute: adminPollsRoute,
   adminSettingsRoute: adminSettingsRoute,
+  adminCommentsCommentIdRoute: adminCommentsCommentIdRoute,
+  adminCommentsIndexRoute: adminCommentsIndexRoute,
 }
 
 const adminRouteRouteWithChildren = adminRouteRoute._addFileChildren(

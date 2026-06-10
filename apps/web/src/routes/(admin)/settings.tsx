@@ -11,6 +11,7 @@ import { CommentsModeration } from "@/components/moderation/comment-moderation";
 import { BlockedUsers } from "@/components/moderation/blocked-users";
 import { WorkspaceOverview } from "@/components/team/workspace-overview";
 import { DeleteWorkspace } from "@/components/team/delete-workspace";
+import { TeamMembersTable } from "@/components/team/team-members-table";
 
 const settingsSchema = z.object({
 	tab: z
@@ -54,6 +55,7 @@ function RouteComponent() {
 									value="account">
 									Account
 								</TabsTrigger>
+
 								<TabsTrigger
 									className="shrink-0 data-[state=active]:bg-muted data-[state=active]:shadow-none"
 									value="moderation">
@@ -61,14 +63,13 @@ function RouteComponent() {
 								</TabsTrigger>
 								<TabsTrigger
 									className="shrink-0 data-[state=active]:bg-muted data-[state=active]:shadow-none"
-									value="billing">
-									Billing
+									value="workspace">
+									Site settings
 								</TabsTrigger>
-
 								<TabsTrigger
 									className="shrink-0 data-[state=active]:bg-muted data-[state=active]:shadow-none"
-									value="workspace">
-									Workspace
+									value="billing">
+									Billing
 								</TabsTrigger>
 							</TabsList>
 						</div>
@@ -88,6 +89,7 @@ function RouteComponent() {
 						</TabsContent>
 						<TabsContent className="py-4 space-y-6" value="workspace">
 							<WorkspaceOverview />
+							<TeamMembersTable />
 							<DeleteWorkspace />
 						</TabsContent>
 					</Tabs>

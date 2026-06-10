@@ -17,17 +17,14 @@ export function DeleteWorkspace() {
 		<>
 			<div className="rounded-2xl border border-red-300 bg-card text-card-foreground">
 				<div className="p-3 px-4 sm:px-6">
-					<h3 className="text-xl font-semibold text-foreground">
-						Delete Workspace
-					</h3>
+					<h3 className="text-xl font-semibold text-foreground">Delete site</h3>
 					<div className="space-y-0 relative">
 						<div className="flex flex-col gap-4 py-4">
 							<div className="text-sm flex items-center gap-2 text-muted-foreground">
 								<span>
-									Deleting your workspace is irreversible. This
-									will permanently delete all your data,
-									including your agents, conversations, and
-									settings.
+									Deleting your site is irreversible. This will
+									permanently delete all your data, including
+									your agents, conversations, and settings.
 								</span>
 							</div>
 						</div>
@@ -50,7 +47,7 @@ export function DeleteWorkspace() {
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							This action cannot be undone. This will permanently delete
-							your team and remove all associated data from our servers.
+							your site and remove all associated data from our servers.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

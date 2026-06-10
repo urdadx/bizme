@@ -56,7 +56,7 @@ type CommentRow = {
 const dummyComments: CommentRow[] = [
 	{
 		id: "comment_1",
-		commenter: "John (GitHub)",
+		commenter: "John Doe",
 		preview: '"This is a great..."',
 		likes: 10,
 		replies: 2,
@@ -74,7 +74,7 @@ const dummyComments: CommentRow[] = [
 	},
 	{
 		id: "comment_3",
-		commenter: "Jane (Google)",
+		commenter: "Jane Smith",
 		preview: '"Love this post!"',
 		likes: 8,
 		replies: 0,
@@ -329,15 +329,15 @@ export function CommentsTable() {
 												className={cn(
 													"flex h-full select-none items-center justify-between gap-2",
 													header.column.getCanSort() &&
-													"cursor-pointer",
+														"cursor-pointer",
 												)}
 												onClick={header.column.getToggleSortingHandler()}
 												onKeyDown={(event) => {
 													if (
 														event.key ===
-														"Enter" ||
+															"Enter" ||
 														event.key ===
-														" "
+															" "
 													) {
 														event.preventDefault();
 														header.column.getToggleSortingHandler()?.(

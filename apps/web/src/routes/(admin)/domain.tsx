@@ -1,5 +1,4 @@
-import { CustomDomainsTable } from "@/components/domain/custom-domains=table";
-import { NewDomain } from "@/components/domain/new-domain";
+import { CustomDomainsTable } from "@/components/domain/custom-domains-table";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/(admin)/domain")({
