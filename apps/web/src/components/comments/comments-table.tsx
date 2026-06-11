@@ -42,6 +42,8 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { EyeLinear } from "@/assets/icons/eye-icon";
+import { TrashLines } from "@/assets/icons/trash-icon";
 
 type CommentRow = {
 	id: string;
@@ -181,9 +183,13 @@ const columns: ColumnDef<CommentRow>[] = [
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-40 min-w-40">
 					<DropdownMenuItem render={<a href={row.original.page} />}>
-						Open page
+						<EyeLinear />
+						View details
 					</DropdownMenuItem>
-					<DropdownMenuItem>Moderate comment</DropdownMenuItem>
+					<DropdownMenuItem className="text-red-500">
+						<TrashLines color="red" />
+						Delete comment
+					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
 		),

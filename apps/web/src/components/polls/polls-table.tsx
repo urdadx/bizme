@@ -11,7 +11,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { useState } from "react";
-import { MoreHorizontal, PlusIcon } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 
 import { ChartLinear } from "@/assets/icons/chart-icon";
 import { SearchLinear } from "@/assets/icons/search-icon";
@@ -42,6 +42,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { CreatePollDialog } from "./create-poll-dialog";
 
 type PollRow = {
 	id: string;
@@ -91,7 +92,7 @@ const pollStatusFilterItems = [
 const columns: ColumnDef<PollRow>[] = [
 	{
 		accessorKey: "question",
-		header: "Poll Question",
+		header: "Question",
 		cell: ({ row }) => (
 			<div className="flex items-center gap-2">
 				<CuteIconWrapper icon={ChartLinear} color="#22c55e" />
@@ -133,7 +134,7 @@ const columns: ColumnDef<PollRow>[] = [
 	},
 	{
 		accessorKey: "created",
-		header: "Last Activity",
+		header: "Last activity",
 		cell: ({ row }) => (
 			<span className="text-muted-foreground">{row.getValue("created")}</span>
 		),
@@ -256,10 +257,7 @@ export function PollsTable() {
 						</SelectContent>
 					</Select>
 				</div>
-				<Button>
-					<PlusIcon className=" h-4 w-4" />
-					Create a new poll
-				</Button>
+				<CreatePollDialog />
 			</div>
 			<div className="max-w-sm overflow-hidden rounded-xl border md:max-w-full">
 				<Table>

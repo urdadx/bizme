@@ -23,6 +23,7 @@ import { NavSettings } from "./nav-settings";
 import { ChatLogsIcon } from "@/assets/icons/chatlogs-icon";
 import { NavActivity } from "./nav-activity";
 import { GlobeLinear } from "@/assets/icons/globe-icon";
+import { WindowIcon } from "@/assets/icons/window-icon";
 
 const data = {
 	overview: [
@@ -34,6 +35,11 @@ const data = {
 	],
 
 	activity: [
+		{
+			title: "Pages",
+			url: "/pages",
+			icon: WindowIcon,
+		},
 		{
 			title: "Comments",
 			url: "/comments",
