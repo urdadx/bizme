@@ -1,135 +1,120 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useForm } from "@tanstack/react-form";
-import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
-import z from "zod";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import {
+	Field,
+	FieldDescription,
+	FieldError,
+	FieldGroup,
+	FieldLabel,
+	FieldSeparator,
+} from "./ui/field";
+import { GoogleSVG } from "@/assets/icons/google-svg";
 
-import Loader from "./loader";
+type FormSubmitEvent = Parameters<NonNullable<React.ComponentProps<"form">["onSubmit"]>>[0];
 
-export default function SignInForm({ onSwitchToSignUp }: { onSwitchToSignUp: () => void }) {
-  const navigate = useNavigate({
-    from: "/",
-  });
-  const { isPending } = authClient.useSession();
+export default function LoginForm({ className, onSubmit, ...props }: React.ComponentProps<"form">) {
+	const navigate = useNavigate();
+	const [error, setError] = useState<string | null>(null);
+	const [isPending, setIsPending] = useState(false);
 
-  const form = useForm({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-    onSubmit: async ({ value }) => {
-      await authClient.signIn.email(
-        {
-          email: value.email,
-          password: value.password,
-        },
-        {
-          onSuccess: () => {
-            navigate({
-              to: "/dashboard",
-            });
-            toast.success("Sign in successful");
-          },
-          onError: (error) => {
-            toast.error(error.error.message || error.error.statusText);
-          },
-        },
-      );
-    },
-    validators: {
-      onSubmit: z.object({
-        email: z.email("Invalid email address"),
-        password: z.string().min(8, "Password must be at least 8 characters"),
-      }),
-    },
-  });
+	async function handleSubmit(event: FormSubmitEvent) {
+		onSubmit?.(event);
 
-  if (isPending) {
-    return <Loader />;
-  }
+		if (event.defaultPrevented) {
+			return;
+		}
 
-  return (
-    <div className="mx-auto w-full mt-10 max-w-md p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">Welcome Back</h1>
+		event.preventDefault();
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-        className="space-y-4"
-      >
-        <div>
-          <form.Field name="email">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Email</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="email"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
-                    {error?.message}
-                  </p>
-                ))}
-              </div>
-            )}
-          </form.Field>
-        </div>
+		const formData = new FormData(event.currentTarget);
+		const email = String(formData.get("email") ?? "");
+		const password = String(formData.get("password") ?? "");
 
-        <div>
-          <form.Field name="password">
-            {(field) => (
-              <div className="space-y-2">
-                <Label htmlFor={field.name}>Password</Label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="password"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                />
-                {field.state.meta.errors.map((error) => (
-                  <p key={error?.message} className="text-red-500">
-                    {error?.message}
-                  </p>
-                ))}
-              </div>
-            )}
-          </form.Field>
-        </div>
+		setError(null);
+		setIsPending(true);
 
-        <form.Subscribe
-          selector={(state) => ({ canSubmit: state.canSubmit, isSubmitting: state.isSubmitting })}
-        >
-          {({ canSubmit, isSubmitting }) => (
-            <Button type="submit" className="w-full" disabled={!canSubmit || isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Sign In"}
-            </Button>
-          )}
-        </form.Subscribe>
-      </form>
+		try {
+			const { error } = await authClient.signIn.email({
+				email,
+				password,
+			});
 
-      <div className="mt-4 text-center">
-        <Button
-          variant="link"
-          onClick={onSwitchToSignUp}
-          className="text-indigo-600 hover:text-indigo-800"
-        >
-          Need an account? Sign Up
-        </Button>
-      </div>
-    </div>
-  );
+			if (error) {
+				setError(error.message ?? "Unable to sign in. Please try again.");
+				return;
+			}
+
+			await navigate({ to: "/overview" });
+		} catch (error) {
+			setError(
+				error instanceof Error
+					? error.message
+					: "Unable to sign in. Please try again.",
+			);
+		} finally {
+			setIsPending(false);
+		}
+	}
+
+	return (
+		<form
+			className={cn("flex flex-col gap-4", className)}
+			onSubmit={handleSubmit}
+			{...props}>
+			<FieldGroup className="gap-4">
+				<div className="flex flex-col items-center gap-1 text-center">
+					<h1 className="text-3xl font-semibold">Sign in to your account</h1>
+					<p className="text-sm text-balance text-muted-foreground">
+						Fill in the form below to sign in to your account
+					</p>
+				</div>
+
+				<Field>
+					<FieldLabel htmlFor="email">Email</FieldLabel>
+					<Input
+						id="email"
+						name="email"
+						type="email"
+						placeholder="yaak@bizme.com"
+						aria-invalid={Boolean(error)}
+						required
+					/>
+				</Field>
+				<Field>
+					<FieldLabel htmlFor="password">Password</FieldLabel>
+					<Input
+						placeholder="********"
+						id="password"
+						name="password"
+						type="password"
+						aria-invalid={Boolean(error)}
+						required
+					/>
+				</Field>
+				<FieldError>{error}</FieldError>
+
+				<Field>
+					<Button type="submit" disabled={isPending}>
+						{isPending ? "Signing in..." : "Sign in"}
+					</Button>
+				</Field>
+				<FieldSeparator>Or continue with</FieldSeparator>
+				<Field>
+					<Button variant="outline" type="button" disabled>
+						<GoogleSVG />
+						Sign in with Google
+					</Button>
+					<FieldDescription className="px-6 text-center">
+						Don't have an account?{" "}
+						<Link to="/register">Create an account</Link>
+					</FieldDescription>
+				</Field>
+			</FieldGroup>
+		</form>
+	);
 }

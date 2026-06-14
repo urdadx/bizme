@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as adminRouteRouteImport } from './routes/(admin)/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
 import { Route as adminSettingsRouteImport } from './routes/(admin)/settings'
 import { Route as adminPollsRouteImport } from './routes/(admin)/polls'
 import { Route as adminPagesRouteImport } from './routes/(admin)/pages'
@@ -25,6 +27,11 @@ import { Route as adminAnalyticsRouteImport } from './routes/(admin)/analytics'
 import { Route as adminCommentsIndexRouteImport } from './routes/(admin)/comments/index'
 import { Route as adminCommentsCommentIdRouteImport } from './routes/(admin)/comments/$commentId'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -42,6 +49,11 @@ const adminRouteRoute = adminRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const adminSettingsRoute = adminSettingsRouteImport.update({
@@ -104,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/analytics': typeof adminAnalyticsRoute
   '/customize': typeof adminCustomizeRoute
   '/domain': typeof adminDomainRoute
@@ -113,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/pages': typeof adminPagesRoute
   '/polls': typeof adminPollsRoute
   '/settings': typeof adminSettingsRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/comments/$commentId': typeof adminCommentsCommentIdRoute
   '/comments/': typeof adminCommentsIndexRoute
 }
@@ -120,6 +134,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/analytics': typeof adminAnalyticsRoute
   '/customize': typeof adminCustomizeRoute
   '/domain': typeof adminDomainRoute
@@ -129,6 +144,7 @@ export interface FileRoutesByTo {
   '/pages': typeof adminPagesRoute
   '/polls': typeof adminPollsRoute
   '/settings': typeof adminSettingsRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/comments/$commentId': typeof adminCommentsCommentIdRoute
   '/comments': typeof adminCommentsIndexRoute
 }
@@ -138,6 +154,7 @@ export interface FileRoutesById {
   '/(admin)': typeof adminRouteRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/(admin)/analytics': typeof adminAnalyticsRoute
   '/(admin)/customize': typeof adminCustomizeRoute
   '/(admin)/domain': typeof adminDomainRoute
@@ -147,6 +164,7 @@ export interface FileRoutesById {
   '/(admin)/pages': typeof adminPagesRoute
   '/(admin)/polls': typeof adminPollsRoute
   '/(admin)/settings': typeof adminSettingsRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/(admin)/comments/$commentId': typeof adminCommentsCommentIdRoute
   '/(admin)/comments/': typeof adminCommentsIndexRoute
 }
@@ -156,6 +174,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/register'
     | '/analytics'
     | '/customize'
     | '/domain'
@@ -165,6 +184,7 @@ export interface FileRouteTypes {
     | '/pages'
     | '/polls'
     | '/settings'
+    | '/onboarding/'
     | '/comments/$commentId'
     | '/comments/'
   fileRoutesByTo: FileRoutesByTo
@@ -172,6 +192,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/register'
     | '/analytics'
     | '/customize'
     | '/domain'
@@ -181,6 +202,7 @@ export interface FileRouteTypes {
     | '/pages'
     | '/polls'
     | '/settings'
+    | '/onboarding'
     | '/comments/$commentId'
     | '/comments'
   id:
@@ -189,6 +211,7 @@ export interface FileRouteTypes {
     | '/(admin)'
     | '/dashboard'
     | '/login'
+    | '/register'
     | '/(admin)/analytics'
     | '/(admin)/customize'
     | '/(admin)/domain'
@@ -198,6 +221,7 @@ export interface FileRouteTypes {
     | '/(admin)/pages'
     | '/(admin)/polls'
     | '/(admin)/settings'
+    | '/onboarding/'
     | '/(admin)/comments/$commentId'
     | '/(admin)/comments/'
   fileRoutesById: FileRoutesById
@@ -207,10 +231,19 @@ export interface RootRouteChildren {
   adminRouteRoute: typeof adminRouteRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -237,6 +270,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding/'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(admin)/settings': {
@@ -356,6 +396,8 @@ const rootRouteChildren: RootRouteChildren = {
   adminRouteRoute: adminRouteRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  OnboardingIndexRoute: OnboardingIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -261,33 +261,6 @@ export function CommentsTable() {
 						<SearchLinear className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					</div>
 					<Select
-						items={commenterFilterItems}
-						defaultValue="all"
-						modal={false}
-						onValueChange={(value) => {
-							if (typeof value === "string") {
-								table.getColumn("commenter")?.setFilterValue(
-									value === "all" ? undefined : value,
-								);
-							}
-						}}>
-						<SelectTrigger className="w-full sm:w-44">
-							<SelectValue placeholder="All commenters" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectGroup>
-								<SelectLabel>Commenter</SelectLabel>
-								{commenterFilterItems.map((item) => (
-									<SelectItem
-										key={item.value}
-										value={item.value}>
-										{item.label}
-									</SelectItem>
-								))}
-							</SelectGroup>
-						</SelectContent>
-					</Select>
-					<Select
 						items={commentPageFilterItems}
 						defaultValue="all"
 						modal={false}
@@ -305,6 +278,33 @@ export function CommentsTable() {
 							<SelectGroup>
 								<SelectLabel>Page</SelectLabel>
 								{commentPageFilterItems.map((item) => (
+									<SelectItem
+										key={item.value}
+										value={item.value}>
+										{item.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
+					<Select
+						items={commenterFilterItems}
+						defaultValue="all"
+						modal={false}
+						onValueChange={(value) => {
+							if (typeof value === "string") {
+								table.getColumn("commenter")?.setFilterValue(
+									value === "all" ? undefined : value,
+								);
+							}
+						}}>
+						<SelectTrigger className="w-full sm:w-44">
+							<SelectValue placeholder="All commenters" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectGroup>
+								<SelectLabel>Commenter</SelectLabel>
+								{commenterFilterItems.map((item) => (
 									<SelectItem
 										key={item.value}
 										value={item.value}>

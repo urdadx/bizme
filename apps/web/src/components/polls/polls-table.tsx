@@ -117,18 +117,16 @@ const columns: ColumnDef<PollRow>[] = [
 			const status = row.getValue("status") as PollRow["status"];
 
 			return (
-				<span
-					className={cn(
-						"inline-flex rounded-sm border px-2 py-0.5 text-xs",
-						status === "Active" &&
-							"border-green-500/20 bg-green-50 text-green-600",
-						status === "Closed" &&
-							"border-stone-500/20 bg-stone-100 text-stone-600",
-						status === "Draft" &&
-							"border-amber-500/20 bg-amber-50 text-amber-600",
-					)}>
+				<div className="flex items-center gap-2">
+					<div
+						className={cn(
+							"w-2 h-2 rounded-full",
+							status === "Active" && "bg-green-500 ",
+							status === "Closed" && "bg-stone-500 ",
+							status === "Draft" && "bg-amber-500 ",
+						)}></div>
 					{status}
-				</span>
+				</div>
 			);
 		},
 	},

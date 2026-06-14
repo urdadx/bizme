@@ -20,13 +20,13 @@ import { Checkbox } from "../ui/checkbox";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
 const DUMMY_CHART_DATA = [
-	{ date: "2024-03-01", visitors: 450, chats: 120 },
-	{ date: "2024-03-02", visitors: 520, chats: 150 },
-	{ date: "2024-03-03", visitors: 380, chats: 90 },
-	{ date: "2024-03-04", visitors: 610, chats: 210 },
-	{ date: "2024-03-05", visitors: 590, chats: 180 },
+	{ date: "2024-03-01", visitors: 250, chats: 850 },
+	{ date: "2024-03-02", visitors: 520, chats: 450 },
+	{ date: "2024-03-03", visitors: 280, chats: 290 },
+	{ date: "2024-03-04", visitors: 610, chats: 560 },
+	{ date: "2024-03-05", visitors: 290, chats: 980 },
 	{ date: "2024-03-06", visitors: 720, chats: 250 },
-	{ date: "2024-03-07", visitors: 810, chats: 310 },
+	{ date: "2024-03-07", visitors: 210, chats: 180 },
 ];
 
 const DUMMY_REALTIME = {
