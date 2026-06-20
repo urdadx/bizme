@@ -385,6 +385,16 @@ export function CommentsTable() {
 									<Loader />
 								</TableCell>
 							</TableRow>
+						) : table.getRowModel().rows.length === 0 ? (
+							<TableRow>
+								<TableCell
+									colSpan={columns.length}
+									className="h-24 text-center text-sm text-muted-foreground">
+									{data.length === 0
+										? "No comments yet."
+										: "No comments match your filters."}
+								</TableCell>
+							</TableRow>
 						) : (
 							table.getRowModel().rows.map((row) => (
 								<TableRow key={row.id}>

@@ -2,18 +2,23 @@ import { Button } from "@/components/ui/button";
 import NumberFlow from "@number-flow/react";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
+import type { ComponentType } from "react";
 
 interface MetricCardProps {
-	icon: any;
+	icon: ComponentType<{ className?: string }>;
 	title?: string;
 	value: number;
 	href?: string;
-	gradientFrom?: string;
-	gradientVia?: string;
-	showPercentage?: boolean;
+	suffix?: string;
 }
 
-export function MetricCard({ icon: Icon, title, value, href }: MetricCardProps) {
+export function MetricCard({
+	icon: Icon,
+	title,
+	value,
+	href,
+	suffix = "",
+}: MetricCardProps) {
 	return (
 		<div
 			className={
@@ -38,7 +43,7 @@ export function MetricCard({ icon: Icon, title, value, href }: MetricCardProps) 
 						<NumberFlow
 							className="whitespace-nowrap font-extrabold text-2xl leading-none tracking-tight"
 							value={value}
-							suffix={title === "Engagement rate" ? "%" : ""}
+							suffix={suffix}
 						/>
 					</div>
 				</div>

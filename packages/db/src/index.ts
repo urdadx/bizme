@@ -47,9 +47,13 @@ export async function markCommentDeleted({
 export async function toggleCommentLike({
   commentId,
   visitorId,
+  visitorName,
+  visitorAvatar,
 }: {
   commentId: string;
   visitorId: string;
+  visitorName?: string | null;
+  visitorAvatar?: string | null;
 }) {
   const existing = await db.query.commentReaction.findFirst({
     where: (table, { and, eq }) =>
@@ -67,6 +71,8 @@ export async function toggleCommentLike({
       id: crypto.randomUUID(),
       commentId,
       visitorId,
+      visitorName,
+      visitorAvatar,
       type: "like",
     });
   }

@@ -1,5 +1,6 @@
 import { type ColumnDef, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 
 import {
 	Table,
@@ -17,6 +18,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTRPC } from "@/utils/trpc";
 
 type RecentComment = {
 	id: string;
@@ -24,6 +26,20 @@ type RecentComment = {
 	user: string;
 	comment: string;
 };
+
+function formatCommentDate(value: string) {
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) {
+		return undefined;
+	}
+
+	return date.toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+}
 
 function CommentsTable({ comments }: { comments: RecentComment[] }) {
 	const columns: ColumnDef<RecentComment>[] = [
@@ -57,7 +73,7 @@ function CommentsTable({ comments }: { comments: RecentComment[] }) {
 		{
 			id: "actions",
 			header: "Action",
-			cell: () => (
+			cell: ({ row }) => (
 				<DropdownMenu>
 					<DropdownMenuTrigger>
 						<Button variant="outline" className="h-8 w-8 p-0">
@@ -66,7 +82,10 @@ function CommentsTable({ comments }: { comments: RecentComment[] }) {
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuItem>
-							<Link to="/comments" className="w-full">
+							<Link
+								to="/comments/$commentId"
+								params={{ commentId: row.original.id }}
+								className="w-full">
 								View details
 							</Link>
 						</DropdownMenuItem>
@@ -133,14 +152,26 @@ function CommentsTable({ comments }: { comments: RecentComment[] }) {
 }
 
 interface MostRecentCommentsProps {
-	comments?: unknown[];
+	comments?: RecentComment[];
 	onCommentsId?: () => void;
 }
 
 export function MostRecentComments({
-	comments: _comments,
+	comments,
 	onCommentsId: _onCommentsId,
 }: MostRecentCommentsProps) {
+	const trpc = useTRPC();
+	const commentsQuery = useQuery({
+		...trpc.comments.list.queryOptions(),
+		enabled: !comments,
+	});
+	const recentComments = comments ?? (commentsQuery.data ?? []).slice(0, 5).map((comment) => ({
+		id: comment.id,
+		date: comment.date ?? formatCommentDate(comment.createdAt) ?? comment.lastActivity,
+		user: comment.commenter,
+		comment: comment.preview,
+	}));
+
 	return (
 		<div className="space-y-4 w-full">
 			<div className="flex items-center justify-between">
@@ -156,7 +187,7 @@ export function MostRecentComments({
 				</Link>
 			</div>
 
-			<CommentsTable comments={[]} />
+			<CommentsTable comments={recentComments} />
 		</div>
 	);
 }

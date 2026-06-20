@@ -5,39 +5,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import BarList from "./bar-list";
 import { GlobeLinear } from "@/assets/icons/globe-icon";
-
-const EMPTY_PAGES = [
-	{
-		icon: <GlobeLinear color="black" className="w-4 h-4" />,
-		title: "docs.padyna.com",
-		value: 48,
-		href: "",
-	},
-	{
-		icon: <GlobeLinear color="black" className="w-4 h-4" />,
-		title: "docs.padyna.com",
-		value: 48,
-		href: "",
-	},
-	{
-		icon: <GlobeLinear color="black" className="w-4 h-4" />,
-		title: "docs.padyna.com",
-		value: 48,
-		href: "",
-	},
-	{
-		icon: <GlobeLinear color="black" className="w-4 h-4" />,
-		title: "docs.padyna.com",
-		value: 48,
-		href: "",
-	},
-	{
-		icon: <GlobeLinear color="black" className="w-4 h-4" />,
-		title: "docs.padyna.com",
-		value: 48,
-		href: "",
-	},
-];
+import { useTRPC } from "@/utils/trpc";
+import { useQuery } from "@tanstack/react-query";
 
 interface PagesOverviewProps {
 	pagesData?: {
@@ -50,28 +19,54 @@ interface PagesOverviewProps {
 
 export function PagesOverview({ pagesData }: PagesOverviewProps) {
 	const navigate = useNavigate();
+	const trpc = useTRPC();
+	const commentsQuery = useQuery({
+		...trpc.comments.list.queryOptions(),
+		enabled: !pagesData,
+	});
+
+	const commentPages = useMemo(() => {
+		if (pagesData) return pagesData;
+
+		const pages = new Map<
+			string,
+			{ id: string; pageName: string; url: string | null; comments: number }
+		>();
+
+		for (const comment of commentsQuery.data ?? []) {
+			const pageKey = comment.pageUrl ?? comment.page;
+			const page = pages.get(pageKey) ?? {
+				id: pageKey,
+				pageName: comment.page,
+				url: comment.pageUrl,
+				comments: 0,
+			};
+			page.comments += 1;
+			pages.set(pageKey, page);
+		}
+
+		return Array.from(pages.values()).sort(
+			(a, b) => b.comments - a.comments || a.pageName.localeCompare(b.pageName),
+		);
+	}, [commentsQuery.data, pagesData]);
 
 	const mapPages = useMemo(() => {
-		return (pagesData ?? []).map((page) => {
-			let icon = <GlobeLinear color="black" className="w-4 h-4" />;
-
+		return commentPages.map((page) => {
 			return {
-				icon,
+				icon: <GlobeLinear color="black" className="w-4 h-4" />,
 				title: page.pageName || page.url || "Unknown page",
 				value: page.comments,
 				href: page.url || "",
 				linkId: page.id,
 			};
 		});
-	}, [pagesData]);
+	}, [commentPages]);
 
 	const topPages = mapPages.slice(0, 5);
 	const maxPageCount = Math.max(...mapPages.map((s) => s.value), 0);
 	const hasData = mapPages.length > 0;
-	const displayedPages = hasData ? topPages : EMPTY_PAGES;
-	const displayedMaxPageCount = hasData
-		? maxPageCount
-		: Math.max(...EMPTY_PAGES.map((page) => page.value), 0);
+	const displayedPages = hasData ? topPages : [];
+	const displayedMaxPageCount = hasData ? maxPageCount : 0;
 
 	return (
 		<div className="h-87.5 w-full z-0 rounded-xl border bg-white flex flex-col overflow-hidden">
@@ -81,7 +76,7 @@ export function PagesOverview({ pagesData }: PagesOverviewProps) {
 						<TabsTrigger
 							value="pages"
 							className="text-muted-foreground hover:bg-accent hover:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">
-							Top data pages
+							Top comment pages
 						</TabsTrigger>
 					</TabsList>
 				</div>
@@ -92,22 +87,16 @@ export function PagesOverview({ pagesData }: PagesOverviewProps) {
 							<div className="flex-1 min-h-0 px-4 overflow-hidden">
 								<div className="relative h-full">
 									<div
-										className={
-											hasData
-												? undefined
-												: "pointer-events-none select-none blur-[3px] opacity-60"
-										}>
-									<BarList
-										tab="Data Pages"
-										unit="usages"
-										data={displayedPages}
-										barBackground="bg-blue-200/40"
-										hoverBackground="hover:bg-blue-50"
-										maxValue={
-											displayedMaxPageCount
-										}
-										limit={5}
-									/>
+									className={hasData ? undefined : "hidden"}>
+										<BarList
+											tab="Pages"
+											unit="comments"
+											data={displayedPages}
+											barBackground="bg-blue-200/40"
+											hoverBackground="hover:bg-blue-50"
+											maxValue={displayedMaxPageCount}
+											limit={5}
+										/>
 									</div>
 									{!hasData && (
 										<div className="pointer-events-none absolute inset-0 flex items-center justify-center">

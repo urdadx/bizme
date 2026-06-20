@@ -1,11 +1,14 @@
 import { AppSidebar } from "@/components/app-sidebar";
-import { getUser } from "@/functions/get-user";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/(admin)")({
+	ssr: false,
 	component: RouteComponent,
-	beforeLoad: async ({ location }) => {
-		const session = await getUser();
+	beforeLoad: async ({ context, location }) => {
+		const session = await context.queryClient.fetchQuery(
+			context.trpc.getSession.queryOptions(),
+		);
+
 		if (!session) {
 			throw redirect({
 				to: "/login",

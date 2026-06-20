@@ -19,57 +19,51 @@ export function Metrics({
 	uniqueUsers,
 	totalReactions,
 }: MetricsProps) {
+	const metrics = [
+		{
+			icon: ChatFeedback,
+			title: "Total comments",
+			value: totalComments,
+			href: "/comments",
+		},
+		{
+			icon: OctagonAlertIcon,
+			title: "Spam comments",
+			value: spamComments,
+			href: "/moderation",
+		},
+		{
+			icon: ThumbsUpIcon,
+			title: "Total votes",
+			value: totalVotes,
+			href: "/comments",
+		},
+		{
+			icon: HeartIcon,
+			title: "Engagement rate",
+			value: engagementRate,
+			suffix: "%",
+			href: "/analytics",
+		},
+		{
+			icon: StarIcon,
+			title: "Unique users",
+			value: uniqueUsers,
+			href: "/analytics",
+		},
+		{
+			icon: SmileIcon,
+			title: "Total reactions",
+			value: totalReactions,
+			href: "/analytics",
+		},
+	];
+
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-			<MetricCard
-				icon={ChatFeedback}
-				title="Total comments"
-				value={totalComments}
-				gradientFrom="slate-50"
-				gradientVia="slate-25"
-				href="/chat-logs"
-			/>
-			<MetricCard
-				icon={OctagonAlertIcon}
-				title="Spam comments"
-				value={spamComments}
-				gradientFrom="red-50"
-				gradientVia="red-25"
-			/>
-			<MetricCard
-				icon={ThumbsUpIcon}
-				title="Total votes"
-				value={totalVotes}
-				gradientFrom="purple-50"
-				gradientVia="purple-25"
-				href="/data-sources"
-			/>
-
-			<MetricCard
-				icon={HeartIcon}
-				title="Engagement rate"
-				value={engagementRate}
-				gradientFrom="orange-50"
-				gradientVia="orange-25"
-				href="/settings?tab=billing"
-			/>
-
-			<MetricCard
-				icon={StarIcon}
-				title="Unique users"
-				value={uniqueUsers}
-				gradientFrom="blue-50"
-				gradientVia="blue-25"
-				href="/analytics"
-			/>
-
-			<MetricCard
-				icon={SmileIcon}
-				title="Total reactions"
-				value={totalReactions}
-				gradientFrom="green-50"
-				gradientVia="green-25"
-			/>
+			{metrics.map((metric) => (
+				<MetricCard key={metric.title} {...metric} />
+			))}
 		</div>
 	);
 }

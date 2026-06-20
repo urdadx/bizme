@@ -1,6 +1,6 @@
 import { MainAnalytics } from "@/components/analytics/main-analytics";
 import { TopCountries } from "@/components/analytics/top-countries";
-import { EMPTY_PAGES, TopPages } from "@/components/analytics/top-pages";
+import { TopPages } from "@/components/analytics/top-pages";
 import { createFileRoute } from "@tanstack/react-router";
 import z from "zod";
 
@@ -21,7 +21,7 @@ function RouteComponent() {
 					<MainAnalytics />
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 py-6">
 						<TopCountries />
-						<TopPages pagesData={EMPTY_PAGES} />
+						<TopPages />
 					</div>
 				</div>
 			</div>

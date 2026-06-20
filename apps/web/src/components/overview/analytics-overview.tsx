@@ -36,16 +36,17 @@ export function AnalyticsOverview({ overviewQuery, chartQuery }: AnalyticsOvervi
 	const hasData =
 		(overview?.totalComments ?? 0) > 0 ||
 		(overview?.totalVotes ?? 0) > 0 ||
-		chartData.length > 0;
+		chartData.some((item) => item.comments > 0 || item.votes > 0);
 
-	const today = new Date();
-	const weekAgo = new Date(today);
-	weekAgo.setDate(today.getDate() - 7);
+	const firstDate = chartData[0]?.date;
+	const lastDate = chartData[chartData.length - 1]?.date;
+	const rangeStart = firstDate ? new Date(firstDate) : new Date();
+	const rangeEnd = lastDate ? new Date(lastDate) : new Date();
 
-	const dateRangeText = `${weekAgo.toLocaleDateString("en-US", {
+	const dateRangeText = `${rangeStart.toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
-	})} - ${today.toLocaleDateString("en-US", {
+	})} - ${rangeEnd.toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 	})}`;

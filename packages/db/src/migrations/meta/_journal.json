@@ -43,6 +43,27 @@
       "when": 1781913600000,
       "tag": "0005_comment_analytics_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1782000000000,
+      "tag": "0006_comment_reaction_visitor_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1782086400000,
+      "tag": "0007_comment_classification",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782172800000,
+      "tag": "0008_comment_attachment",
+      "breakpoints": true
     }
   ]
 }

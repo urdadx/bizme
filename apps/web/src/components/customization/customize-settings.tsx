@@ -1,6 +1,6 @@
 import type { Dispatch, FocusEvent, SetStateAction } from "react";
 import { HexColorPicker } from "react-colorful";
-import { PlusIcon, TriangleAlertIcon } from "lucide-react";
+import { CircleAlertIcon, PlusIcon } from "lucide-react";
 
 import { TrashBinLinear } from "@/assets/icons/trash-icon";
 import { COLOR_THEMES, getColorTheme } from "@/lib/customization-themes";
@@ -179,7 +179,7 @@ export const CustomizeSettings = ({ form, setForm, save, isLoading }: CustomizeS
 					Allowed domains
 					<Tooltip>
 						<TooltipTrigger>
-							<TriangleAlertIcon className="size-4" />
+							<CircleAlertIcon className="size-4" />
 						</TooltipTrigger>
 						<TooltipContent>
 							If set, the comment widget only loads on these domains.
@@ -199,30 +199,39 @@ export const CustomizeSettings = ({ form, setForm, save, isLoading }: CustomizeS
 										const allowedDomains = [
 											...form.allowedDomains,
 										];
-										allowedDomains[index] = event.target.value;
+										allowedDomains[index] =
+											event.target.value;
 										setForm((previous) => ({
 											...previous,
 											allowedDomains,
 										}));
 									}}
 									onBlur={() =>
-										save({ allowedDomains: form.allowedDomains })
+										save({
+											allowedDomains:
+												form.allowedDomains,
+										})
 									}
 								/>
 								<Button
 									variant="ghost"
 									size="icon"
 									onClick={() => {
-										const allowedDomains = form.allowedDomains.filter(
-											(_, domainIndex) => domainIndex !== index,
-										);
+										const allowedDomains =
+											form.allowedDomains.filter(
+												(_, domainIndex) =>
+													domainIndex !== index,
+											);
 										setForm((previous) => ({
 											...previous,
 											allowedDomains,
 										}));
 										save({ allowedDomains });
 									}}>
-									<TrashBinLinear color="red" className="size-4" />
+									<TrashBinLinear
+										color="red"
+										className="size-4"
+									/>
 								</Button>
 							</div>
 						))}
@@ -231,7 +240,10 @@ export const CustomizeSettings = ({ form, setForm, save, isLoading }: CustomizeS
 							onClick={() =>
 								setForm((previous) => ({
 									...previous,
-									allowedDomains: [...previous.allowedDomains, ""],
+									allowedDomains: [
+										...previous.allowedDomains,
+										"",
+									],
 								}))
 							}>
 							<PlusIcon className="size-4" /> Add allowed domain

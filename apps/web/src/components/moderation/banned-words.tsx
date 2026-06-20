@@ -1,18 +1,65 @@
 import { Button } from "@/components/ui/button";
 import { InputTags } from "@/components/input-tags";
+import { useTRPC } from "@/utils/trpc";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Tag } from "emblor";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const bannedWordTags = [
 	{
-		id: "spam",
-		text: "spam",
+		id: "fuck",
+		text: "fuck",
 	},
 	{
-		id: "scam",
-		text: "scam",
+		id: "nude",
+		text: "nude",
+	},
+	{
+		id: "crap",
+		text: "crap",
 	},
 ];
 
+function wordsToTags(words: string[]) {
+	return words.map((word) => ({ id: word, text: word }));
+}
+
+function normalizeTags(tags: Tag[]) {
+	return Array.from(new Set(tags.map((tag) => tag.text.trim().toLowerCase()).filter(Boolean)));
+}
+
 export function BannedWords() {
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const settingsQuery = useQuery(trpc.workspaceSettings.get.queryOptions());
+	const updateSettings = useMutation(trpc.workspaceSettings.update.mutationOptions());
+	const [tags, setTags] = useState<Tag[]>(bannedWordTags);
+
+	useEffect(() => {
+		if (settingsQuery.data) {
+			setTags(wordsToTags(settingsQuery.data.bannedWords));
+		}
+	}, [settingsQuery.data]);
+
+	async function handleSave() {
+		const settings = settingsQuery.data;
+
+		if (!settings) {
+			return;
+		}
+
+		await updateSettings.mutateAsync({
+			allowAnonymousComments: settings.allowAnonymousComments,
+			allowImageUploads: settings.allowImageUploads,
+			bannedWords: normalizeTags(tags),
+		});
+		await queryClient.invalidateQueries({
+			queryKey: trpc.workspaceSettings.get.queryOptions().queryKey,
+		});
+		toast.success("Banned words saved");
+	}
+
 	return (
 		<div className="rounded-2xl border bg-card text-card-foreground">
 			<div className="p-3 px-4 sm:px-6">
@@ -26,15 +73,21 @@ export function BannedWords() {
 							</span>
 						</div>
 						<InputTags
-							defaultTags={bannedWordTags}
 							label="Words"
+							tags={tags}
+							onTagsChange={setTags}
 							showAttribution={false}
 						/>
 					</div>
 				</div>
 			</div>
 			<div className="border-t border-border bg-gray-50 p-3 px-4 sm:px-6 rounded-b-2xl">
-				<Button size="sm">Save changes</Button>
+				<Button
+					size="sm"
+					disabled={settingsQuery.isPending || updateSettings.isPending}
+					onClick={() => void handleSave()}>
+					{updateSettings.isPending ? "Saving..." : "Save changes"}
+				</Button>
 			</div>
 		</div>
 	);

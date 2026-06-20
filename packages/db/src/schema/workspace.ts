@@ -12,6 +12,7 @@ import { organization } from "./auth";
 
 export const workspaceDomainStatuses = ["pending", "active", "failed"] as const;
 export const commentStatuses = ["visible", "pending", "hidden", "deleted"] as const;
+export const commentClassifications = ["legitimate", "spam"] as const;
 export const commentAuthorProviders = ["anonymous", "google", "github", "email"] as const;
 export const pollStatuses = ["draft", "active", "closed"] as const;
 
@@ -154,6 +155,9 @@ export const comment = sqliteTable(
     browser: text("browser"),
     body: text("body").notNull(),
     status: text("status", { enum: commentStatuses }).default("visible").notNull(),
+    classification: text("classification", { enum: commentClassifications })
+      .default("legitimate")
+      .notNull(),
     isPinned: integer("is_pinned", { mode: "boolean" }).default(false).notNull(),
     likesCount: integer("likes_count").default(0).notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
@@ -181,6 +185,8 @@ export const commentReaction = sqliteTable(
       .references(() => comment.id, { onDelete: "cascade" }),
     type: text("type").default("like").notNull(),
     visitorId: text("visitor_id").notNull(),
+    visitorName: text("visitor_name"),
+    visitorAvatar: text("visitor_avatar"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
@@ -193,6 +199,24 @@ export const commentReaction = sqliteTable(
     ),
     index("comment_reaction_commentId_idx").on(table.commentId),
   ],
+);
+
+export const commentAttachment = sqliteTable(
+  "comment_attachment",
+  {
+    id: text("id").primaryKey(),
+    commentId: text("comment_id")
+      .notNull()
+      .references(() => comment.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    size: integer("size").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+  },
+  (table) => [index("comment_attachment_commentId_idx").on(table.commentId)],
 );
 
 export const poll = sqliteTable(
@@ -312,11 +336,19 @@ export const commentRelations = relations(comment, ({ one, many }) => ({
   }),
   replies: many(comment, { relationName: "commentReplies" }),
   reactions: many(commentReaction),
+  attachments: many(commentAttachment),
 }));
 
 export const commentReactionRelations = relations(commentReaction, ({ one }) => ({
   comment: one(comment, {
     fields: [commentReaction.commentId],
+    references: [comment.id],
+  }),
+}));
+
+export const commentAttachmentRelations = relations(commentAttachment, ({ one }) => ({
+  comment: one(comment, {
+    fields: [commentAttachment.commentId],
     references: [comment.id],
   }),
 }));

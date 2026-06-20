@@ -1,5 +1,5 @@
 import { db } from "@better-comments/db";
-import { desc } from "drizzle-orm";
+import { desc, inArray } from "drizzle-orm";
 
 import { protectedProcedure, router } from "../index";
 import { getActiveWorkspaceId } from "./utils";
@@ -9,6 +9,21 @@ type LocationStat = {
   value: number;
   countryCode?: string;
 };
+
+function toDateKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getLastSevenDays() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (6 - index));
+    return toDateKey(date);
+  });
+}
 
 function incrementStat(map: Map<string, LocationStat>, title: string | null, countryCode?: string | null) {
   if (!title) return;
@@ -32,6 +47,156 @@ function toSortedStats(map: Map<string, LocationStat>) {
 }
 
 export const analyticsRouter = router({
+  overview: protectedProcedure.query(async ({ ctx }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+    const [comments, pages, polls] = await Promise.all([
+      db.query.comment.findMany({
+        columns: {
+          pageId: true,
+          createdAt: true,
+        },
+        where: (table, { and, eq, ne }) =>
+          and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+      }),
+      db.query.page.findMany({
+        columns: {
+          id: true,
+          path: true,
+          title: true,
+          url: true,
+        },
+        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
+      }),
+      db.query.poll.findMany({
+        columns: {
+          id: true,
+        },
+        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
+      }),
+    ]);
+
+    const pollIds = polls.map((item) => item.id);
+    const votes = pollIds.length > 0
+      ? await db.query.pollVote.findMany({
+        columns: {
+          createdAt: true,
+        },
+        where: (table) => inArray(table.pollId, pollIds),
+      })
+      : [];
+    const days = getLastSevenDays();
+    const dayStats = new Map(days.map((date) => [date, { date, comments: 0, votes: 0 }]));
+
+    for (const item of comments) {
+      const stat = dayStats.get(toDateKey(item.createdAt));
+      if (stat) stat.comments += 1;
+    }
+
+    for (const item of votes) {
+      const stat = dayStats.get(toDateKey(item.createdAt));
+      if (stat) stat.votes += 1;
+    }
+
+    const commentsByPageId = new Map<string, number>();
+    for (const item of comments) {
+      commentsByPageId.set(item.pageId, (commentsByPageId.get(item.pageId) ?? 0) + 1);
+    }
+
+    const chartData = Array.from(dayStats.values());
+
+    return {
+      overview: {
+        totalComments: chartData.reduce((total, item) => total + item.comments, 0),
+        totalVotes: chartData.reduce((total, item) => total + item.votes, 0),
+      },
+      chartData,
+      pagesData: pages
+        .map((page) => ({
+          id: page.id,
+          pageName: page.title ?? page.path,
+          url: page.url,
+          comments: commentsByPageId.get(page.id) ?? 0,
+        }))
+        .filter((page) => page.comments > 0)
+        .sort((a, b) => b.comments - a.comments || a.pageName.localeCompare(b.pageName)),
+    };
+  }),
+  metrics: protectedProcedure.query(async ({ ctx }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+    const [comments, polls] = await Promise.all([
+      db.query.comment.findMany({
+        columns: {
+          id: true,
+          authorEmail: true,
+          authorExternalId: true,
+          authorVisitorId: true,
+          classification: true,
+        },
+        where: (table, { and, eq, ne }) =>
+          and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+      }),
+      db.query.poll.findMany({
+        columns: {
+          id: true,
+        },
+        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
+      }),
+    ]);
+
+    const commentIds = comments.map((item) => item.id);
+    const pollIds = polls.map((item) => item.id);
+    const [reactions, votes] = await Promise.all([
+      commentIds.length > 0
+        ? db.query.commentReaction.findMany({
+          columns: {
+            visitorId: true,
+          },
+          where: (table) => inArray(table.commentId, commentIds),
+        })
+        : [],
+      pollIds.length > 0
+        ? db.query.pollVote.findMany({
+          columns: {
+            visitorId: true,
+          },
+          where: (table) => inArray(table.pollId, pollIds),
+        })
+        : [],
+    ]);
+
+    const users = new Set<string>();
+    const addUser = (id: string | null) => {
+      if (id) users.add(id);
+    };
+
+    for (const item of comments) {
+      addUser(item.authorVisitorId ?? item.authorEmail ?? item.authorExternalId);
+    }
+
+    for (const item of reactions) {
+      addUser(item.visitorId);
+    }
+
+    for (const item of votes) {
+      addUser(item.visitorId);
+    }
+
+    const totalComments = comments.length;
+    const totalVotes = votes.length;
+    const totalReactions = reactions.length;
+    const engagementRate = totalComments > 0
+      ? Math.round(((totalVotes + totalReactions) / totalComments) * 1000) / 10
+      : 0;
+
+    return {
+      totalComments,
+      spamComments: comments.filter((item) => item.classification === "spam").length,
+      totalVotes,
+      engagementRate,
+      uniqueUsers: users.size,
+      totalReactions,
+    };
+  }),
   locations: protectedProcedure.query(async ({ ctx }) => {
     const workspaceId = getActiveWorkspaceId(ctx.session);
     const rows = await db.query.comment.findMany({

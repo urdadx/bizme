@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -42,6 +44,13 @@ type CommentItem = {
 	likes: number;
 	replies: number;
 	avatar: string | null;
+	attachments: {
+		id: string;
+		url: string;
+		filename: string;
+		mimeType: string;
+		size: number;
+	}[];
 	children: CommentItem[];
 };
 
@@ -87,6 +96,7 @@ type WidgetSearch = {
 const DEFAULT_BRAND_COLOR = "#6170F8";
 const DEFAULT_TEXT_COLOR = "#1F2937";
 const VISITOR_STORAGE_KEY = "bizme_visitor_id";
+const BLOCKED_COMMENTER_MESSAGE = "This commenter is blocked";
 
 export const Route = createFileRoute("/widget")({
 	validateSearch: (search: Record<string, unknown>): WidgetSearch => ({
@@ -98,6 +108,16 @@ export const Route = createFileRoute("/widget")({
 	}),
 	component: WidgetRoute,
 });
+
+class FetchJsonError extends Error {
+	status: number;
+
+	constructor(message: string, status: number) {
+		super(message);
+		this.name = "FetchJsonError";
+		this.status = status;
+	}
+}
 
 function getInitials(name: string) {
 	return name
@@ -144,10 +164,18 @@ async function fetchJson<T>(apiUrl: string, path: string, init?: RequestInit) {
 	if (!response.ok) {
 		const payload = await response.json().catch(() => null);
 		const message = payload?.error?.message ?? `Request failed with ${response.status}`;
-		throw new Error(message);
+		throw new FetchJsonError(message, response.status);
 	}
 
 	return response.json() as Promise<T>;
+}
+
+function isBlockedCommenterError(error: unknown) {
+	return (
+		error instanceof FetchJsonError &&
+		error.status === 403 &&
+		error.message === BLOCKED_COMMENTER_MESSAGE
+	);
 }
 
 function getStoredVisitorId() {
@@ -229,6 +257,7 @@ function WidgetRoute() {
 	const [comments, setComments] = useState<CommentItem[]>([]);
 	const [provider, setProvider] = useState<AuthProvider | null>(null);
 	const [authOpen, setAuthOpen] = useState(false);
+	const [bannedOpen, setBannedOpen] = useState(false);
 	const [input, setInput] = useState("");
 	const [files, setFiles] = useState<File[]>([]);
 	const [visitorId, setVisitorId] = useState<string | null>(() => getStoredVisitorId());
@@ -264,6 +293,7 @@ function WidgetRoute() {
 		comments,
 		authOpen,
 		deleteTarget,
+		bannedOpen,
 		editingCommentId,
 		editingBody,
 		replyingCommentId,
@@ -479,6 +509,11 @@ function WidgetRoute() {
 				uploadInputRef.current.value = "";
 			}
 		} catch (error) {
+			if (isBlockedCommenterError(error)) {
+				setBannedOpen(true);
+				return;
+			}
+
 			setStatusMessage(
 				error instanceof Error ? error.message : "Unable to submit comment.",
 			);
@@ -514,7 +549,9 @@ function WidgetRoute() {
 			const replies = await fetchComments(commentId);
 
 			if (replies) {
-				setComments((current) => replaceCommentChildren(current, commentId, replies));
+				setComments((current) =>
+					replaceCommentChildren(current, commentId, replies),
+				);
 			}
 		} catch (error) {
 			setStatusMessage(
@@ -571,7 +608,10 @@ function WidgetRoute() {
 				body: JSON.stringify({ ...payload, body }),
 			});
 			setComments((current) =>
-				updateCommentTree(current, comment.id, (item) => ({ ...item, content: body })),
+				updateCommentTree(current, comment.id, (item) => ({
+					...item,
+					content: body,
+				})),
 			);
 			cancelEditingComment();
 		} catch (error) {
@@ -616,7 +656,10 @@ function WidgetRoute() {
 				},
 			);
 			setComments((current) =>
-				updateCommentTree(current, comment.id, (item) => ({ ...item, likes: result.likes })),
+				updateCommentTree(current, comment.id, (item) => ({
+					...item,
+					likes: result.likes,
+				})),
 			);
 		} catch (error) {
 			setStatusMessage(
@@ -663,6 +706,11 @@ function WidgetRoute() {
 			await loadReplies(comment.id);
 			cancelReply();
 		} catch (error) {
+			if (isBlockedCommenterError(error)) {
+				setBannedOpen(true);
+				return;
+			}
+
 			setStatusMessage(
 				error instanceof Error ? error.message : "Unable to submit reply.",
 			);
@@ -784,7 +832,9 @@ function WidgetRoute() {
 									replyingCommentId={replyingCommentId}
 									replyBody={replyBody}
 									isReplying={isReplying}
-									loadingRepliesCommentId={loadingRepliesCommentId}
+									loadingRepliesCommentId={
+										loadingRepliesCommentId
+									}
 									onEditingBodyChange={setEditingBody}
 									onReplyBodyChange={setReplyBody}
 									onEdit={startEditingComment}
@@ -829,6 +879,25 @@ function WidgetRoute() {
 							Comment as a guest
 						</Button>
 					</div>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={bannedOpen} onOpenChange={setBannedOpen}>
+				<DialogContent className="max-w-sm">
+					<DialogHeader>
+						<DialogTitle className="text-xl font-semibold">
+							You have been banned
+						</DialogTitle>
+						<DialogDescription>
+							You can no longer comment on this site. If you think this
+							is a mistake, contact the site owner.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button onClick={() => setBannedOpen(false)}>
+							Ok, I understand
+						</Button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 
@@ -892,7 +961,10 @@ function CommentCard({
 	const isLoadingReplies = loadingRepliesCommentId === comment.id;
 
 	return (
-		<div className={isChild ? "relative flex gap-3" : "border-b py-4 first:pt-0 last:border-b-0"}>
+		<div
+			className={
+				isChild ? "relative flex gap-3" : "border-b py-4 first:pt-0 last:border-b-0"
+			}>
 			<div className="relative w-full">
 				{comment.children.length > 0 ? (
 					<div className="absolute top-10 bottom-5 left-5 w-px bg-border" />
@@ -924,23 +996,54 @@ function CommentCard({
 									<div className="mt-2 space-y-2">
 										<textarea
 											value={editingBody}
-											onChange={(event) => onEditingBodyChange(event.target.value)}
+											onChange={(event) =>
+												onEditingBodyChange(
+													event.target.value,
+												)
+											}
 											className="min-h-20 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
 											autoFocus
 										/>
 										<div className="flex items-center gap-2">
-											<Button size="sm" onClick={() => onSaveEdit(comment)}>
+											<Button
+												size="sm"
+												onClick={() =>
+													onSaveEdit(comment)
+												}>
 												Save
 											</Button>
-											<Button variant="outline" size="sm" onClick={onCancelEdit}>
+											<Button
+												variant="outline"
+												size="sm"
+												onClick={onCancelEdit}>
 												Cancel
 											</Button>
 										</div>
 									</div>
 								) : (
-									<p className="mt-1 text-sm leading-6 text-muted-foreground">
-										{comment.content}
-									</p>
+									<>
+										<p className="mt-1 text-sm leading-6 text-muted-foreground">
+											{comment.content}
+										</p>
+										{comment.attachments.length > 0 ? (
+											<div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+												{comment.attachments.map((attachment) => (
+													<a
+														key={attachment.id}
+														href={attachment.url}
+														target="_blank"
+														rel="noreferrer"
+														className="block overflow-hidden rounded-lg border bg-muted">
+														<img
+															src={attachment.url}
+															alt={attachment.filename}
+															className="aspect-video w-full object-cover"
+														/>
+													</a>
+												))}
+											</div>
+										) : null}
+									</>
 								)}
 							</div>
 
@@ -953,31 +1056,33 @@ function CommentCard({
 						</div>
 
 						<div className="mt-2 flex items-center gap-4">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => onLike(comment)}>
-									<LikeIcon color={brandColor} />
-									<span className="ml-1 text-[#888888]">
-										{comment.likes}
-									</span>
-								</Button>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => onReply(comment)}>
-									<ChatLinear color={brandColor} />
-									<span className="ml-1 text-[#888888]">
-										{comment.replies}
-									</span>
-								</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => onLike(comment)}>
+								<LikeIcon color={brandColor} />
+								<span className="ml-1 text-[#888888]">
+									{comment.likes}
+								</span>
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => onReply(comment)}>
+								<ChatLinear color={brandColor} />
+								<span className="ml-1 text-[#888888]">
+									{comment.replies}
+								</span>
+							</Button>
 						</div>
 
 						{isReplyingToComment ? (
 							<div className="mt-3 space-y-2">
 								<textarea
 									value={replyBody}
-									onChange={(event) => onReplyBodyChange(event.target.value)}
+									onChange={(event) =>
+										onReplyBodyChange(event.target.value)
+									}
 									placeholder="Write a reply..."
 									className="min-h-20 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
 									autoFocus
@@ -985,7 +1090,10 @@ function CommentCard({
 								<div className="flex items-center gap-2">
 									<Button
 										size="sm"
-										disabled={isReplying || replyBody.trim().length === 0}
+										disabled={
+											isReplying ||
+											replyBody.trim().length === 0
+										}
 										onClick={() => onSubmitReply(comment)}>
 										{isReplying ? "Replying..." : "Reply"}
 									</Button>

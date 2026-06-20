@@ -21,6 +21,13 @@ export type CommentReply = {
   likes: number;
   replies: number;
   avatar: string;
+  attachments: {
+    id: string;
+    url: string;
+    filename: string;
+    mimeType: string;
+    size: number;
+  }[];
   isPinned?: boolean;
   children: CommentReply[];
 };
@@ -47,7 +54,7 @@ export function CommentListItem({
   onDelete?: (id: string) => Promise<void> | void;
   onPin?: (id: string, isPinned: boolean) => Promise<void> | void;
   onLike?: (id: string) => Promise<void> | void;
-  onSubmitReply?: (id: string, body: string) => Promise<void> | void;
+  onSubmitReply?: (id: string, body: string, images: File[]) => Promise<void> | void;
   isPending?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -107,7 +114,27 @@ export function CommentListItem({
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{comment.content}</p>
+                  <>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{comment.content}</p>
+                    {comment.attachments.length > 0 ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {comment.attachments.map((attachment) => (
+                          <a
+                            key={attachment.id}
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block overflow-hidden rounded-lg border bg-muted">
+                            <img
+                              src={attachment.url}
+                              alt={attachment.filename}
+                              className="aspect-video w-full object-cover"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
                 )}
               </div>
 
@@ -172,7 +199,7 @@ export function CommentListItem({
             <CommentComposer
               uploadId={`reply-file-upload-${comment.id}`}
               isSubmitting={isPending}
-              onSubmit={(body) => onSubmitReply?.(comment.id, body)}
+              onSubmit={(body, images) => onSubmitReply?.(comment.id, body, images)}
             />
           </div>
         )}

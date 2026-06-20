@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { uploadCommentImages } from "@/lib/comment-attachments";
 import { useTRPC } from "@/utils/trpc";
 import { CommentListItem, type CommentReply } from "./comment-list-item";
 
@@ -85,10 +86,11 @@ export function CommentsList({ comments, rootCommentId }: { comments: CommentRep
 		});
 	}
 
-	async function handleReply(id: string, body: string) {
+	async function handleReply(id: string, body: string, images: File[]) {
 		try {
 			setError(null);
-			await replyComment.mutateAsync({ id, body });
+			const reply = await replyComment.mutateAsync({ id, body });
+			await uploadCommentImages(reply.id, images);
 			await invalidateDetail();
 			setReplyingTo(null);
 		} catch (error) {

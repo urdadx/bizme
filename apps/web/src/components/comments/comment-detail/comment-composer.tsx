@@ -6,9 +6,20 @@ import {
 	PromptInputActions,
 	PromptInputTextarea,
 } from "@/components/ui/prompt-input";
-import { Paperclip, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { ChangeEvent } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+
+type SelectedImage = {
+	file: File;
+	previewUrl: string;
+};
+
+function formatFileSize(size: number) {
+	return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
 
 export function CommentComposer({
 	uploadId = "comment-file-upload",
@@ -16,20 +27,38 @@ export function CommentComposer({
 	isSubmitting = false,
 }: {
 	uploadId?: string;
-	onSubmit?: (body: string) => Promise<void> | void;
+	onSubmit?: (body: string, images: File[]) => Promise<void> | void;
 	isSubmitting?: boolean;
 }) {
 	const [input, setInput] = useState("");
-	const [files, setFiles] = useState<File[]>([]);
+	const [images, setImages] = useState<SelectedImage[]>([]);
+	const [fileError, setFileError] = useState<string | null>(null);
 	const uploadInputRef = useRef<HTMLInputElement>(null);
+	const imagesRef = useRef<SelectedImage[]>([]);
+
+	useEffect(() => {
+		imagesRef.current = images;
+	}, [images]);
+
+	useEffect(() => {
+		return () => {
+			for (const image of imagesRef.current) {
+				URL.revokeObjectURL(image.previewUrl);
+			}
+		};
+	}, []);
 
 	const handleSubmit = async () => {
 		const body = input.trim();
 
 		if (body) {
-			await onSubmit?.(body);
+			await onSubmit?.(body, images.map((image) => image.file));
+			for (const image of images) {
+				URL.revokeObjectURL(image.previewUrl);
+			}
 			setInput("");
-			setFiles([]);
+			setImages([]);
+			setFileError(null);
 
 			if (uploadInputRef.current) {
 				uploadInputRef.current.value = "";
@@ -38,13 +67,45 @@ export function CommentComposer({
 	};
 
 	const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-		if (event.target.files) {
-			setFiles((prev) => [...prev, ...Array.from(event.target.files ?? [])]);
+		const selectedFiles = Array.from(event.target.files ?? []);
+		const validImages: SelectedImage[] = [];
+		const rejectedFiles: string[] = [];
+
+		for (const file of selectedFiles) {
+			if (!file.type.startsWith("image/")) {
+				rejectedFiles.push(`${file.name} is not an image.`);
+				continue;
+			}
+
+			if (file.size > MAX_IMAGE_SIZE) {
+				rejectedFiles.push(`${file.name} is larger than 2 MB.`);
+				continue;
+			}
+
+			validImages.push({
+				file,
+				previewUrl: URL.createObjectURL(file),
+			});
+		}
+
+		setFileError(rejectedFiles[0] ?? null);
+		setImages((prev) => [...prev, ...validImages]);
+
+		if (uploadInputRef.current) {
+			uploadInputRef.current.value = "";
 		}
 	};
 
 	const handleRemoveFile = (index: number) => {
-		setFiles((prev) => prev.filter((_, i) => i !== index));
+		setImages((prev) => {
+			const removed = prev[index];
+
+			if (removed) {
+				URL.revokeObjectURL(removed.previewUrl);
+			}
+
+			return prev.filter((_, i) => i !== index);
+		});
 		if (uploadInputRef.current) {
 			uploadInputRef.current.value = "";
 		}
@@ -57,25 +118,33 @@ export function CommentComposer({
 			isLoading={isSubmitting}
 			onSubmit={handleSubmit}
 			className="flex min-h-25 w-full flex-col rounded-xl shadow-none">
-			{files.length > 0 && (
-				<div className="flex w-full flex-wrap gap-2 pb-2">
-					{files.map((file, index) => (
+			{images.length > 0 && (
+				<div className="grid w-full grid-cols-2 gap-2 pb-2 sm:grid-cols-3">
+					{images.map((image, index) => (
 						<div
-							key={`${file.name}-${index}`}
-							className="flex max-w-full items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm"
+							key={`${image.file.name}-${image.previewUrl}`}
+							className="group relative overflow-hidden rounded-lg border bg-secondary"
 							onClick={(event) => event.stopPropagation()}>
-							<Paperclip className="size-4 shrink-0" />
-							<span className="max-w-30 truncate">{file.name}</span>
+							<img
+								src={image.previewUrl}
+								alt={image.file.name}
+								className="aspect-video w-full object-cover"
+							/>
+							<div className="absolute inset-x-0 bottom-0 bg-black/55 px-2 py-1 text-[11px] text-white">
+								<div className="truncate">{image.file.name}</div>
+								<div>{formatFileSize(image.file.size)}</div>
+							</div>
 							<button
 								type="button"
 								onClick={() => handleRemoveFile(index)}
-								className="shrink-0 rounded-full p-1 hover:bg-secondary/50">
+								className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80">
 								<X className="size-4" />
 							</button>
 						</div>
 					))}
 				</div>
 			)}
+			{fileError ? <p className="pb-2 text-xs text-destructive">{fileError}</p> : null}
 
 			<PromptInputTextarea placeholder="Write a reply..." className="min-h-0 flex-1" />
 
@@ -87,6 +156,7 @@ export function CommentComposer({
 						<input
 							ref={uploadInputRef}
 							type="file"
+							accept="image/*"
 							multiple
 							onChange={handleFileChange}
 							className="hidden"

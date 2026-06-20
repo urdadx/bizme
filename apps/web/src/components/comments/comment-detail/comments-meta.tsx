@@ -6,17 +6,45 @@ import { LocationLinear } from "@/assets/icons/location-icon";
 import { TrashLines } from "@/assets/icons/trash-icon";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
-	SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { CopyIcon } from "lucide-react";
 import { useState } from "react";
+
+type CommentClassification = "legitimate" | "spam";
+
+const classificationConfig = {
+	legitimate: {
+		label: "Legitimate",
+		dotClassName: "bg-green-700",
+		className: "border-0 bg-green-100 text-green-700 hover:bg-green-100",
+	},
+	spam: {
+		label: "Spam",
+		dotClassName: "bg-amber-700",
+		className: "border-0 bg-amber-100 text-amber-700 hover:bg-amber-100",
+	},
+} satisfies Record<
+	CommentClassification,
+	{ label: string; dotClassName: string; className: string }
+>;
+
+function ClassificationBadge({ classification }: { classification: CommentClassification }) {
+	const config = classificationConfig[classification];
+
+	return (
+		<span className="flex items-center gap-1.5">
+			<span className={cn("size-1.5 rounded-full", config.dotClassName)} />
+			{config.label}
+		</span>
+	);
+}
 
 type CommentsMetaProps = {
 	comment: {
@@ -26,6 +54,8 @@ type CommentsMetaProps = {
 		avatar: string;
 		date: string;
 		status: string;
+		classification: CommentClassification;
+		isBlocked: boolean;
 		locationCity: string | null;
 		locationCountry: string | null;
 		locationCountryCode: string | null;
@@ -39,6 +69,10 @@ type CommentsMetaProps = {
 	};
 	onDelete?: () => void;
 	isDeleting?: boolean;
+	onClassificationChange?: (classification: CommentClassification) => void;
+	isClassifying?: boolean;
+	onBlockedChange?: (blocked: boolean) => void;
+	isBlocking?: boolean;
 };
 
 export const CommentsMeta = ({
@@ -46,6 +80,10 @@ export const CommentsMeta = ({
 	page,
 	onDelete,
 	isDeleting = false,
+	onClassificationChange,
+	isClassifying = false,
+	onBlockedChange,
+	isBlocking = false,
 }: CommentsMetaProps) => {
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const commentMetaDetails = [
@@ -138,24 +176,50 @@ export const CommentsMeta = ({
 					</div>
 				</div>
 				<div className="flex flex-col space-y-4 py-6 border-b">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-4">
 						<p className="w-full text-sm leading-6 text-muted-foreground">
-							Comment status
+							Moderation status
 						</p>
-						<Badge
-							className="bg-amber-100 text-amber-700 rounded-sm shadow-none border-0"
-							variant="outline">
-							<div className="w-1.5 h-1.5 rounded-full bg-amber-700" />
-							{comment.status}
-						</Badge>
+						<Select
+							value={comment.classification}
+							onValueChange={(value) => {
+								if (value === "legitimate" || value === "spam") {
+									onClassificationChange?.(value);
+								}
+							}}
+							disabled={isClassifying || !onClassificationChange}>
+							<SelectTrigger
+								size="sm"
+								className={cn(
+									"w-34 rounded-sm shadow-none",
+									classificationConfig[comment.classification].className,
+								)}>
+								<ClassificationBadge classification={comment.classification} />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="legitimate">
+									<ClassificationBadge classification="legitimate" />
+								</SelectItem>
+								<SelectItem value="spam">
+									<ClassificationBadge classification="spam" />
+								</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-4">
 						<p className="w-full text-sm leading-6 text-muted-foreground">
-							Block user{" "}
+							Blocked
 						</p>
-						<Select>
+						<Select
+							value={comment.isBlocked ? "yes" : "no"}
+							disabled={isBlocking || !comment.authorEmail || !onBlockedChange}
+							onValueChange={(value) => {
+								if (value === "yes" || value === "no") {
+									onBlockedChange?.(value === "yes");
+								}
+							}}>
 							<SelectTrigger size="sm" className="w-45">
-								<SelectValue placeholder="No" />
+								<span>{comment.isBlocked ? "Yes" : "No"}</span>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="yes">Yes</SelectItem>

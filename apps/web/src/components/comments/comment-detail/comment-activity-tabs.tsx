@@ -16,7 +16,7 @@ export function CommentActivityTabs({
   comments: CommentReply[];
   reactions: CommentReaction[];
   rootCommentId: string;
-  onSubmitReply: (body: string) => Promise<void> | void;
+  onSubmitReply: (body: string, images: File[]) => Promise<void> | void;
   isSubmittingReply?: boolean;
 }) {
   return (

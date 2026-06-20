@@ -1,7 +1,7 @@
 import { db, toggleCommentLike } from "@better-comments/db";
-import { comment, commentReaction, page } from "@better-comments/db/schema/index";
+import { comment, commentAttachment, commentReaction, page } from "@better-comments/db/schema/index";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 import type { Context } from "../context";
@@ -20,13 +20,26 @@ const commentPinInput = commentIdInput.extend({
   isPinned: z.boolean(),
 });
 
+const commentClassifyInput = commentIdInput.extend({
+  classification: z.enum(["legitimate", "spam"]),
+});
+
 const commentReplyInput = commentIdInput.extend({
   body: z.string().trim().min(1).max(5000),
 });
 
 type CommentRow = typeof comment.$inferSelect;
+type CommentAttachmentRow = typeof commentAttachment.$inferSelect;
 type PageRow = typeof page.$inferSelect;
 type CommentReactionRow = typeof commentReaction.$inferSelect;
+
+export type CommentAttachmentItem = {
+  id: string;
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+};
 
 export type CommentTreeItem = {
   id: string;
@@ -40,12 +53,15 @@ export type CommentTreeItem = {
   avatar: string;
   isPinned: boolean;
   status: CommentRow["status"];
+  classification: CommentRow["classification"];
+  isBlocked: boolean;
   locationCity: string | null;
   locationCountry: string | null;
   locationCountryCode: string | null;
   locationContinent: string | null;
   deviceType: string | null;
   browser: string | null;
+  attachments: CommentAttachmentItem[];
   children: CommentTreeItem[];
 };
 
@@ -71,6 +87,8 @@ export type CommentReactionItem = {
   id: string;
   type: CommentReactionRow["type"];
   visitorId: string;
+  name: string;
+  avatar: string | null;
   date: string;
 };
 
@@ -89,7 +107,15 @@ function formatRelativeDate(date: Date) {
   }
 
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+	return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
+function formatCommentDate(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function getAuthorName(row: CommentRow) {
@@ -153,7 +179,21 @@ function getCommentMetadata(request: RequestWithCloudflare) {
   };
 }
 
-function toTreeItem(row: CommentRow): CommentTreeItem {
+function toAttachmentItem(row: CommentAttachmentRow): CommentAttachmentItem {
+  return {
+    id: row.id,
+    url: row.url,
+    filename: row.filename,
+    mimeType: row.mimeType,
+    size: row.size,
+  };
+}
+
+function toTreeItem(
+  row: CommentRow,
+  isBlocked = false,
+  attachmentsByCommentId: Map<string, CommentAttachmentItem[]> = new Map(),
+): CommentTreeItem {
   return {
     id: row.id,
     author: getAuthorName(row),
@@ -166,31 +206,66 @@ function toTreeItem(row: CommentRow): CommentTreeItem {
     avatar: getAvatar(row),
     isPinned: row.isPinned,
     status: row.status,
+    classification: row.classification,
+    isBlocked,
     locationCity: row.locationCity,
     locationCountry: row.locationCountry,
     locationCountryCode: row.locationCountryCode,
     locationContinent: row.locationContinent,
     deviceType: row.deviceType,
     browser: row.browser,
+    attachments: attachmentsByCommentId.get(row.id) ?? [],
     children: [],
   };
 }
 
-function toReactionItem(row: CommentReactionRow): CommentReactionItem {
+function getReactionFallbackName(visitorId: string) {
+  if (visitorId.startsWith("anonymous:")) return "Anonymous";
+  if (visitorId.startsWith("github:")) return "GitHub user";
+  if (visitorId.startsWith("google:")) return "Google user";
+  return "User";
+}
+
+function getReactionFallbackAvatar(visitorId: string) {
+  if (visitorId.startsWith("github:")) {
+    return `https://avatars.githubusercontent.com/u/${encodeURIComponent(visitorId.slice("github:".length))}?v=4`;
+  }
+
+  return null;
+}
+
+function toReactionItem(
+  row: CommentReactionRow,
+  userById: Map<string, { name: string; image: string | null }> = new Map(),
+): CommentReactionItem {
+  const userId = row.visitorId.startsWith("user:") ? row.visitorId.slice("user:".length) : null;
+  const matchedUser = userId ? userById.get(userId) : undefined;
+  const name = row.visitorName ?? matchedUser?.name ?? getReactionFallbackName(row.visitorId);
+
   return {
     id: row.id,
     type: row.type,
     visitorId: row.visitorId,
+    name,
+    avatar:
+      row.visitorAvatar ??
+      matchedUser?.image ??
+      getReactionFallbackAvatar(row.visitorId) ??
+      `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(name)}`,
     date: formatRelativeDate(row.createdAt),
   };
 }
 
-function nestComments(rows: CommentRow[], rootParentId: string | null) {
+function nestComments(
+  rows: CommentRow[],
+  rootParentId: string | null,
+  attachmentsByCommentId: Map<string, CommentAttachmentItem[]> = new Map(),
+) {
   const byId = new Map<string, CommentTreeItem>();
   const roots: CommentTreeItem[] = [];
 
   for (const row of rows) {
-    byId.set(row.id, toTreeItem(row));
+    byId.set(row.id, toTreeItem(row, false, attachmentsByCommentId));
   }
 
   for (const row of rows) {
@@ -289,7 +364,10 @@ export const commentsRouter = router({
           likes: item.likesCount,
           replies: repliesByParentId.get(item.id) ?? 0,
           status: item.status,
+          classification: item.classification,
           isPinned: item.isPinned,
+          createdAt: item.createdAt.toISOString(),
+          date: formatCommentDate(item.createdAt),
           lastActivity: formatRelativeDate(item.updatedAt),
         };
       });
@@ -324,10 +402,42 @@ export const commentsRouter = router({
       });
     }
 
-    const replies = nestComments(pageComments, selectedComment.id);
+    const reactionUserIds = reactions
+      .map((reaction) => reaction.visitorId.startsWith("user:") ? reaction.visitorId.slice("user:".length) : null)
+      .filter((id): id is string => Boolean(id));
+    const reactionUsers = reactionUserIds.length > 0
+      ? await db.query.user.findMany({
+        where: (table, { inArray }) => inArray(table.id, reactionUserIds),
+      })
+      : [];
+    const userById = new Map(reactionUsers.map((item) => [item.id, item]));
+    const selectedCommentEmail = selectedComment.authorEmail?.toLowerCase() ?? null;
+    const attachments = pageComments.length > 0
+      ? await db.query.commentAttachment.findMany({
+        where: (table) => inArray(table.commentId, pageComments.map((item) => item.id)),
+      })
+      : [];
+    const attachmentsByCommentId = new Map<string, CommentAttachmentItem[]>();
+
+    for (const attachment of attachments) {
+      const items = attachmentsByCommentId.get(attachment.commentId) ?? [];
+      items.push(toAttachmentItem(attachment));
+      attachmentsByCommentId.set(attachment.commentId, items);
+    }
+
+    const blocked = selectedCommentEmail
+      ? await db.query.blockedUser.findFirst({
+        where: (table, { and, eq }) =>
+          and(
+            eq(table.workspaceId, workspaceId),
+            eq(table.email, selectedCommentEmail),
+          ),
+      })
+      : null;
+    const replies = nestComments(pageComments, selectedComment.id, attachmentsByCommentId);
 
     return {
-      comment: toTreeItem(selectedComment),
+      comment: toTreeItem(selectedComment, Boolean(blocked), attachmentsByCommentId),
       page: {
         id: commentPage.id,
         title: commentPage.title,
@@ -335,7 +445,7 @@ export const commentsRouter = router({
         url: commentPage.url,
       } satisfies Pick<PageRow, "id" | "title" | "path" | "url">,
       replies,
-      reactions: reactions.map(toReactionItem),
+      reactions: reactions.map((reaction) => toReactionItem(reaction, userById)),
     };
   }),
   update: protectedProcedure.input(commentUpdateInput).mutation(async ({ ctx, input }) => {
@@ -385,6 +495,22 @@ export const commentsRouter = router({
 
     return getWorkspaceComment(workspaceId, input.id);
   }),
+  classify: protectedProcedure.input(commentClassifyInput).mutation(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+
+    await requireWorkspaceAdmin(ctx.session, workspaceId);
+    await getWorkspaceComment(workspaceId, input.id);
+
+    await db
+      .update(comment)
+      .set({
+        classification: input.classification,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(comment.id, input.id), eq(comment.workspaceId, workspaceId)));
+
+    return getWorkspaceComment(workspaceId, input.id);
+  }),
   reply: protectedProcedure.input(commentReplyInput).mutation(async ({ ctx, input }) => {
     const workspaceId = getActiveWorkspaceId(ctx.session);
     const parent = await getWorkspaceComment(workspaceId, input.id);
@@ -420,6 +546,8 @@ export const commentsRouter = router({
     return toggleCommentLike({
       commentId: input.id,
       visitorId: `user:${ctx.session.user.id}`,
+      visitorName: ctx.session.user.name,
+      visitorAvatar: ctx.session.user.image,
     });
   }),
 });

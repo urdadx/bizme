@@ -22,13 +22,16 @@ type InputTagsProps = {
 	label?: string;
 	placeholder?: string;
 	defaultTags?: Tag[];
+	tags?: Tag[];
+	onTagsChange?: (tags: Tag[]) => void;
 	showAttribution?: boolean;
 };
 
-export function InputTags({ defaultTags = tags }: InputTagsProps) {
+export function InputTags({ defaultTags = tags, tags: controlledTags, onTagsChange }: InputTagsProps) {
 	const id = useId();
 	const [exampleTags, setExampleTags] = useState<Tag[]>(defaultTags);
 	const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+	const currentTags = controlledTags ?? exampleTags;
 
 	return (
 		<div className="*:not-first:mt-2">
@@ -38,7 +41,10 @@ export function InputTags({ defaultTags = tags }: InputTagsProps) {
 				id={id}
 				setActiveTagIndex={setActiveTagIndex}
 				setTags={(newTags) => {
-					setExampleTags(newTags);
+					if (!controlledTags) {
+						setExampleTags(newTags);
+					}
+					onTagsChange?.(newTags);
 				}}
 				styleClasses={{
 					inlineTagsContainer:
@@ -50,7 +56,7 @@ export function InputTags({ defaultTags = tags }: InputTagsProps) {
 							"absolute -inset-y-px -end-px p-0 rounded-e-md flex size-7 transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] text-muted-foreground/80 hover:text-foreground",
 					},
 				}}
-				tags={exampleTags}
+				tags={currentTags}
 			/>
 		</div>
 	);

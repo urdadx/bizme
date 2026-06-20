@@ -2,6 +2,7 @@ import { LikeIcon } from "@/assets/icons/like-icon";
 import { CommentActivityTabs } from "@/components/comments/comment-detail/comment-activity-tabs";
 import { CommentsMeta } from "@/components/comments/comment-detail/comments-meta";
 import { Button } from "@/components/ui/button";
+import { uploadCommentImages } from "@/lib/comment-attachments";
 import { useTRPC } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -20,6 +21,9 @@ function RouteComponent() {
 	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
 	const replyComment = useMutation(trpc.comments.reply.mutationOptions());
 	const likeComment = useMutation(trpc.comments.like.mutationOptions());
+	const classifyComment = useMutation(trpc.comments.classify.mutationOptions());
+	const blockUser = useMutation(trpc.blockedUsers.block.mutationOptions());
+	const unblockUser = useMutation(trpc.blockedUsers.unblock.mutationOptions());
 
 	async function handleDelete() {
 		await deleteComment.mutateAsync({ id: commentId });
@@ -29,8 +33,9 @@ function RouteComponent() {
 		await navigate({ to: "/comments" });
 	}
 
-	async function handleReply(body: string) {
-		await replyComment.mutateAsync({ id: commentId, body });
+	async function handleReply(body: string, _images: File[]) {
+		const reply = await replyComment.mutateAsync({ id: commentId, body });
+		await uploadCommentImages(reply.id, _images);
 		await queryClient.invalidateQueries({
 			queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
 		});
@@ -41,6 +46,46 @@ function RouteComponent() {
 		await queryClient.invalidateQueries({
 			queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
 		});
+	}
+
+	async function handleClassificationChange(classification: "legitimate" | "spam") {
+		await classifyComment.mutateAsync({ id: commentId, classification });
+		await Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+			}),
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.list.queryOptions().queryKey,
+			}),
+		]);
+	}
+
+	async function handleBlockedChange(blocked: boolean) {
+		if (!commentQuery.data?.comment.authorEmail) return;
+
+		if (blocked) {
+			await blockUser.mutateAsync({
+				name: commentQuery.data.comment.author,
+				email: commentQuery.data.comment.authorEmail,
+				reason: "Blocked from comment detail",
+			});
+		} else {
+			await unblockUser.mutateAsync({
+				email: commentQuery.data.comment.authorEmail,
+			});
+		}
+
+		await Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+			}),
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.list.queryOptions().queryKey,
+			}),
+			queryClient.invalidateQueries({
+				queryKey: trpc.blockedUsers.list.queryOptions().queryKey,
+			}),
+		]);
 	}
 
 	if (commentQuery.isLoading) {
@@ -95,7 +140,25 @@ function RouteComponent() {
 							</div>
 							<p className="w-full text-sm leading-6 text-muted-foreground">
 								{comment.content}
-							</p>{" "}
+							</p>
+							{comment.attachments.length > 0 ? (
+								<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+									{comment.attachments.map((attachment) => (
+										<a
+											key={attachment.id}
+											href={attachment.url}
+											target="_blank"
+											rel="noreferrer"
+											className="block overflow-hidden rounded-lg border bg-muted">
+											<img
+												src={attachment.url}
+												alt={attachment.filename}
+												className="aspect-video w-full object-cover"
+											/>
+										</a>
+									))}
+								</div>
+							) : null}
 							<CommentActivityTabs
 								comments={replies}
 								reactions={reactions}
@@ -114,6 +177,12 @@ function RouteComponent() {
 						page={page}
 						onDelete={() => void handleDelete()}
 						isDeleting={deleteComment.isPending}
+						onClassificationChange={(classification) =>
+							void handleClassificationChange(classification)
+						}
+						isClassifying={classifyComment.isPending}
+						onBlockedChange={(blocked) => void handleBlockedChange(blocked)}
+						isBlocking={blockUser.isPending || unblockUser.isPending}
 					/>
 				</div>
 			</div>

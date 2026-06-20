@@ -1,6 +1,7 @@
 import { db, markCommentDeleted, toggleCommentLike, updateCommentBody } from "@better-comments/db";
-import { comment, page } from "@better-comments/db/schema/index";
+import { comment, commentAttachment, page } from "@better-comments/db/schema/index";
 import { env } from "@better-comments/env/server";
+import { inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { setCookie } from "hono/cookie";
@@ -18,7 +19,7 @@ const DEFAULT_CUSTOMIZATION = {
 const DEFAULT_SETTINGS = {
   allowAnonymousComments: false,
   allowImageUploads: true,
-  bannedWords: [] as string[],
+  bannedWords: ["fuck", "nude", "crap"] as string[],
 };
 
 const EMBED_SESSION_COOKIE = "bizme_embed_session";
@@ -66,6 +67,15 @@ const likeCommentSchema = z.object({
 });
 
 type CommentRow = typeof comment.$inferSelect;
+type CommentAttachmentRow = typeof commentAttachment.$inferSelect;
+
+type EmbedCommentAttachment = {
+  id: string;
+  url: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+};
 
 type EmbedComment = {
   id: string;
@@ -76,6 +86,7 @@ type EmbedComment = {
   likes: number;
   replies: number;
   avatar: string | null;
+  attachments: EmbedCommentAttachment[];
   children: EmbedComment[];
 };
 
@@ -122,6 +133,25 @@ function getBrowser(userAgent: string) {
   if (/Safari\//.test(userAgent) && !/Chrome\//.test(userAgent)) return "Safari";
   if (/Chromium\//.test(userAgent)) return "Chromium";
   return userAgent ? "Unknown" : undefined;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsBannedWord(body: string, bannedWords: string[]) {
+  const normalizedBody = body.toLowerCase();
+
+  return bannedWords.some((word) => {
+    const normalizedWord = word.trim().toLowerCase();
+
+    if (!normalizedWord) {
+      return false;
+    }
+
+    const pattern = new RegExp(`(^|[^a-z0-9_])${escapeRegExp(normalizedWord)}(?=$|[^a-z0-9_])`, "i");
+    return pattern.test(normalizedBody);
+  });
 }
 
 function getDeviceType(userAgent: string) {
@@ -386,7 +416,20 @@ function formatRelativeDate(date: Date) {
   return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 }
 
-function toEmbedComment(row: CommentRow): EmbedComment {
+function toEmbedAttachment(row: CommentAttachmentRow): EmbedCommentAttachment {
+  return {
+    id: row.id,
+    url: row.url,
+    filename: row.filename,
+    mimeType: row.mimeType,
+    size: row.size,
+  };
+}
+
+function toEmbedComment(
+  row: CommentRow,
+  attachmentsByCommentId: Map<string, EmbedCommentAttachment[]> = new Map(),
+): EmbedComment {
   return {
     id: row.id,
     author: row.authorName ?? "Anonymous",
@@ -396,6 +439,7 @@ function toEmbedComment(row: CommentRow): EmbedComment {
     likes: row.likesCount,
     replies: 0,
     avatar: getCommentAvatar(row),
+    attachments: attachmentsByCommentId.get(row.id) ?? [],
     children: [],
   };
 }
@@ -572,7 +616,7 @@ async function getEmbedVisitorKey({
       return { error: jsonError("Missing anonymous visitorId", 401), status: 401 as const };
     }
 
-    return { visitorKey: `anonymous:${visitorId}` };
+    return { visitorKey: `anonymous:${visitorId}`, visitorName: "Anonymous", visitorAvatar: null };
   }
 
   const embedSession = await getEmbedSession(headers);
@@ -587,7 +631,11 @@ async function getEmbedVisitorKey({
     return { error: jsonError("Unable to identify commenter", 401), status: 401 as const };
   }
 
-  return { visitorKey: `${authorProvider}:${subject}` };
+  return {
+    visitorKey: `${authorProvider}:${subject}`,
+    visitorName: embedSession.name,
+    visitorAvatar: embedSession.avatar,
+  };
 }
 
 function buildOAuthStartUrl(provider: EmbedAuthProvider, state: string) {
@@ -800,7 +848,30 @@ async function handleOAuthCallback(c: Context, provider: EmbedAuthProvider) {
   }
 }
 
-function getCommentLevel(rows: CommentRow[], parentId?: string) {
+async function getAttachmentsByCommentId(commentIds: string[]) {
+  if (commentIds.length === 0) {
+    return new Map<string, EmbedCommentAttachment[]>();
+  }
+
+  const rows = await db.query.commentAttachment.findMany({
+    where: (table) => inArray(table.commentId, commentIds),
+  });
+  const attachmentsByCommentId = new Map<string, EmbedCommentAttachment[]>();
+
+  for (const row of rows) {
+    const items = attachmentsByCommentId.get(row.commentId) ?? [];
+    items.push(toEmbedAttachment(row));
+    attachmentsByCommentId.set(row.commentId, items);
+  }
+
+  return attachmentsByCommentId;
+}
+
+function getCommentLevel(
+  rows: CommentRow[],
+  parentId?: string,
+  attachmentsByCommentId: Map<string, EmbedCommentAttachment[]> = new Map(),
+) {
   const replyCounts = new Map<string, number>();
 
   for (const row of rows) {
@@ -812,7 +883,7 @@ function getCommentLevel(rows: CommentRow[], parentId?: string) {
   return rows
     .filter((row) => (parentId ? row.parentId === parentId : !row.parentId))
     .map((row) => ({
-      ...toEmbedComment(row),
+      ...toEmbedComment(row, attachmentsByCommentId),
       replies: replyCounts.get(row.id) ?? 0,
       children: [],
     }));
@@ -882,12 +953,13 @@ export const embedRoutes = new Hono()
         and(eq(table.pageId, existingPage.id), eq(table.status, "visible")),
       orderBy: (table, { asc }) => asc(table.createdAt),
     });
+    const attachmentsByCommentId = await getAttachmentsByCommentId(rows.map((row) => row.id));
 
     if (result.data.parentId && !rows.some((row) => row.id === result.data.parentId)) {
       return c.json(jsonError("Parent comment not found", 404), 404);
     }
 
-    return c.json({ comments: getCommentLevel(rows, result.data.parentId) });
+    return c.json({ comments: getCommentLevel(rows, result.data.parentId, attachmentsByCommentId) });
   })
   .post("/comments", async (c) => {
     const body = await c.req.json().catch(() => null);
@@ -923,6 +995,17 @@ export const embedRoutes = new Hono()
       return c.json(jsonError("Login is required to comment", 401), 401);
     }
 
+    if (embedSession?.email) {
+      const blocked = await db.query.blockedUser.findFirst({
+        where: (table, { and, eq }) =>
+          and(eq(table.workspaceId, workspace.id), eq(table.email, embedSession.email!.toLowerCase())),
+      });
+
+      if (blocked) {
+        return c.json(jsonError("This commenter is blocked", 403), 403);
+      }
+    }
+
     const commentPage = await getOrCreatePage(
       workspace.id,
       result.data.pageUrl,
@@ -947,6 +1030,9 @@ export const embedRoutes = new Hono()
 
     const id = crypto.randomUUID();
     const metadata = getCommentMetadata(c);
+    const status = containsBannedWord(result.data.body, config.settings.bannedWords)
+      ? "pending"
+      : "visible";
 
     await db.insert(comment).values({
       id,
@@ -962,7 +1048,7 @@ export const embedRoutes = new Hono()
       authorProvider: result.data.authorProvider,
       ...metadata,
       body: result.data.body,
-      status: "visible",
+      status,
     });
 
     const created = await db.query.comment.findFirst({
@@ -1005,7 +1091,12 @@ export const embedRoutes = new Hono()
     }
 
     return c.json(
-      await toggleCommentLike({ commentId: target.row.id, visitorId: visitor.visitorKey }),
+      await toggleCommentLike({
+        commentId: target.row.id,
+        visitorId: visitor.visitorKey,
+        visitorName: visitor.visitorName,
+        visitorAvatar: visitor.visitorAvatar,
+      }),
     );
   })
   .patch("/comments/:id", async (c) => {
@@ -1042,7 +1133,9 @@ export const embedRoutes = new Hono()
       return c.json(jsonError("Unable to update comment", 400), 400);
     }
 
-    return c.json({ comment: toEmbedComment(updated) });
+    const attachmentsByCommentId = await getAttachmentsByCommentId([updated.id]);
+
+    return c.json({ comment: toEmbedComment(updated, attachmentsByCommentId) });
   })
   .delete("/comments/:id", async (c) => {
     const body = await c.req.json().catch(() => null);
