@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "2ccd53ca-bdb9-4ff1-962b-bc1e9cdbdc58",
+  "id": "532811ca-20bd-4d95-9e4b-3eab3bc69239",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -486,6 +486,14 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "is_onboarded": {
+          "name": "is_onboarded",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
         }
       },
       "indexes": {
@@ -1394,7 +1402,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'one-dark'"
+          "default": "'light'"
         },
         "brand_color": {
           "name": "brand_color",
@@ -1402,7 +1410,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'#6366f1'"
+          "default": "'#6170F8'"
         },
         "text_color": {
           "name": "text_color",
@@ -1410,7 +1418,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'#ffffff'"
+          "default": "'#1F2937'"
         },
         "hide_powered_by": {
           "name": "hide_powered_by",

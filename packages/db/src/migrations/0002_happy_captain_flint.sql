@@ -1,0 +1,1 @@
+ALTER TABLE `comment` ADD `is_pinned` integer DEFAULT false NOT NULL;

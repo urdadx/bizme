@@ -67,6 +67,7 @@ CREATE TABLE `session` (
 	`user_agent` text,
 	`user_id` text NOT NULL,
 	`active_organization_id` text,
+	`is_onboarded` integer DEFAULT false NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`active_organization_id`) REFERENCES `organization`(`id`) ON UPDATE no action ON DELETE set null
 );
@@ -194,9 +195,9 @@ CREATE INDEX `poll_vote_optionId_idx` ON `poll_vote` (`option_id`);--> statement
 CREATE TABLE `workspace_customization` (
 	`workspace_id` text PRIMARY KEY NOT NULL,
 	`font_family` text DEFAULT 'inter' NOT NULL,
-	`theme` text DEFAULT 'one-dark' NOT NULL,
-	`brand_color` text DEFAULT '#6366f1' NOT NULL,
-	`text_color` text DEFAULT '#ffffff' NOT NULL,
+	`theme` text DEFAULT 'light' NOT NULL,
+	`brand_color` text DEFAULT '#6170F8' NOT NULL,
+	`text_color` text DEFAULT '#1F2937' NOT NULL,
 	`hide_powered_by` integer DEFAULT false NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`updated_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,

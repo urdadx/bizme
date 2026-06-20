@@ -14,6 +14,8 @@ import {
 	FieldSeparator,
 } from "./ui/field";
 import { GoogleSVG } from "@/assets/icons/google-svg";
+import LoadingDots from "./loading-dots";
+import { env } from "@better-comments/env/web";
 
 type FormSubmitEvent = Parameters<NonNullable<React.ComponentProps<"form">["onSubmit"]>>[0];
 
@@ -21,6 +23,7 @@ export default function LoginForm({ className, onSubmit, ...props }: React.Compo
 	const navigate = useNavigate();
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, setIsPending] = useState(false);
+	const [isGooglePending, setIsGooglePending] = useState(false);
 
 	async function handleSubmit(event: FormSubmitEvent) {
 		onSubmit?.(event);
@@ -58,6 +61,32 @@ export default function LoginForm({ className, onSubmit, ...props }: React.Compo
 			);
 		} finally {
 			setIsPending(false);
+		}
+	}
+
+	async function handleGoogleSignIn() {
+		setError(null);
+		setIsGooglePending(true);
+
+		try {
+			const { error } = await authClient.signIn.social({
+				provider: "google",
+				callbackURL: `${env.VITE_FRONTEND_ORIGIN}/overview`,
+			});
+
+			if (error) {
+				setError(
+					error.message ?? "Unable to sign in with Google. Please try again.",
+				);
+			}
+		} catch (error) {
+			setError(
+				error instanceof Error
+					? error.message
+					: "Unable to sign in with Google. Please try again.",
+			);
+		} finally {
+			setIsGooglePending(false);
 		}
 	}
 
@@ -99,14 +128,26 @@ export default function LoginForm({ className, onSubmit, ...props }: React.Compo
 				<FieldError>{error}</FieldError>
 
 				<Field>
-					<Button type="submit" disabled={isPending}>
-						{isPending ? "Signing in..." : "Sign in"}
+					<Button type="submit" disabled={isPending || isGooglePending}>
+						{isPending ? (
+							<LoadingDots color="currentColor" />
+						) : (
+							"Sign in to your account"
+						)}
 					</Button>
 				</Field>
 				<FieldSeparator>Or continue with</FieldSeparator>
 				<Field>
-					<Button variant="outline" type="button" disabled>
-						<GoogleSVG />
+					<Button
+						variant="outline"
+						type="button"
+						disabled={isPending || isGooglePending}
+						onClick={handleGoogleSignIn}>
+						{isGooglePending ? (
+							<LoadingDots color="currentColor" />
+						) : (
+							<GoogleSVG />
+						)}
 						Sign in with Google
 					</Button>
 					<FieldDescription className="px-6 text-center">

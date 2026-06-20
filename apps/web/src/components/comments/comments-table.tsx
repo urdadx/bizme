@@ -10,12 +10,14 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 
 import { SearchLinear } from "@/assets/icons/search-icon";
 import { UserLinear } from "@/assets/icons/user-icon";
 import { CuteIconWrapper } from "@/components/cute-icon-wrapper";
+import Loader from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -44,46 +46,22 @@ import {
 import { cn } from "@/lib/utils";
 import { EyeLinear } from "@/assets/icons/eye-icon";
 import { TrashLines } from "@/assets/icons/trash-icon";
+import { useTRPC } from "@/utils/trpc";
+import { Link } from "@tanstack/react-router";
 
 type CommentRow = {
 	id: string;
 	commenter: string;
+	authorProvider: "anonymous" | "google" | "github" | "email";
 	preview: string;
 	page: string;
+	pageUrl: string | null;
 	likes: number;
 	replies: number;
+	status: "visible" | "pending" | "hidden" | "deleted";
+	isPinned: boolean;
 	lastActivity: string;
 };
-
-const dummyComments: CommentRow[] = [
-	{
-		id: "comment_1",
-		commenter: "John Doe",
-		preview: '"This is a great..."',
-		likes: 10,
-		replies: 2,
-		page: "/posts/hello",
-		lastActivity: "2 hrs ago",
-	},
-	{
-		id: "comment_2",
-		commenter: "Anonymous",
-		preview: '"I disagree because..."',
-		likes: 5,
-		replies: 1,
-		page: "/posts/my-story",
-		lastActivity: "3 days ago",
-	},
-	{
-		id: "comment_3",
-		commenter: "Jane Smith",
-		preview: '"Love this post!"',
-		likes: 8,
-		replies: 0,
-		page: "/posts/review",
-		lastActivity: "1 week ago",
-	},
-];
 
 type CommenterFilter = "all" | "github" | "google" | "anonymous";
 type CommentPageFilter = "all" | CommentRow["page"];
@@ -95,110 +73,107 @@ const commenterFilterItems = [
 	{ label: "Anonymous", value: "anonymous" },
 ] satisfies { label: string; value: CommenterFilter }[];
 
-const commentPageFilterItems = [
-	{ label: "All pages", value: "all" },
-	{ label: "/posts/hello", value: "/posts/hello" },
-	{ label: "/posts/my-story", value: "/posts/my-story" },
-	{ label: "/posts/review", value: "/posts/review" },
-] satisfies { label: string; value: CommentPageFilter }[];
-
-function getCommenterType(commenter: string): Exclude<CommenterFilter, "all"> {
-	const normalized = commenter.toLowerCase();
-
-	if (normalized.includes("github")) {
-		return "github";
-	}
-
-	if (normalized.includes("google")) {
-		return "google";
-	}
-
-	return "anonymous";
+function getColumns({
+	onDelete,
+	isDeleting,
+}: {
+	onDelete: (id: string) => void;
+	isDeleting: boolean;
+}): ColumnDef<CommentRow>[] {
+	return [
+		{
+			accessorKey: "commenter",
+			header: "Commenter",
+			filterFn: (row, filterValue) => row.original.authorProvider === filterValue,
+			cell: ({ row }) => (
+				<div className="flex items-center gap-2">
+					<CuteIconWrapper icon={UserLinear} color="#0ea5e9" />
+					<span className="block max-w-44 truncate font-medium md:max-w-56">
+						{row.getValue("commenter")}
+					</span>
+				</div>
+			),
+			minSize: 220,
+		},
+		{
+			accessorKey: "preview",
+			header: "Preview",
+			cell: ({ row }) => (
+				<span className="block max-w-56 truncate text-muted-foreground md:max-w-80">
+					{row.getValue("preview")}
+				</span>
+			),
+			minSize: 280,
+		},
+		{
+			accessorKey: "likes",
+			header: "Likes",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">{row.getValue("likes")}</span>
+			),
+			minSize: 100,
+		},
+		{
+			accessorKey: "replies",
+			header: "Replies",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">{row.getValue("replies")}</span>
+			),
+			minSize: 100,
+		},
+		{
+			accessorKey: "lastActivity",
+			header: "Last activity",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">
+					{row.getValue("lastActivity")}
+				</span>
+			),
+			minSize: 140,
+		},
+		{
+			id: "actions",
+			header: "Actions",
+			cell: ({ row }) => (
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								size="icon-sm"
+								aria-label="Open actions"
+							/>
+						}>
+						<MoreHorizontal className="h-4 w-4" />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-40 min-w-40">
+						<DropdownMenuItem
+							render={<Link to="/comments/$commentId" params={{ commentId: row.original.id }} />}>
+							<EyeLinear />
+							View details
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							disabled={isDeleting}
+							className="text-red-500"
+							onClick={() => onDelete(row.original.id)}>
+							<TrashLines color="red" />
+							Delete comment
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			),
+			enableSorting: false,
+			size: 88,
+		},
+	];
 }
 
-const columns: ColumnDef<CommentRow>[] = [
-	{
-		accessorKey: "commenter",
-		header: "Commenter",
-		filterFn: (row, columnId, filterValue) =>
-			getCommenterType(row.getValue(columnId) as string) === filterValue,
-		cell: ({ row }) => (
-			<div className="flex items-center gap-2">
-				<CuteIconWrapper icon={UserLinear} color="#0ea5e9" />
-				<span className="block max-w-44 truncate font-medium md:max-w-56">
-					{row.getValue("commenter")}
-				</span>
-			</div>
-		),
-		minSize: 220,
-	},
-	{
-		accessorKey: "preview",
-		header: "Preview",
-		cell: ({ row }) => (
-			<span className="block max-w-56 truncate text-muted-foreground md:max-w-80">
-				{row.getValue("preview")}
-			</span>
-		),
-		minSize: 280,
-	},
-	{
-		accessorKey: "likes",
-		header: "Likes",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("likes")}</span>
-		),
-		minSize: 100,
-	},
-	{
-		accessorKey: "replies",
-		header: "Replies",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("replies")}</span>
-		),
-		minSize: 100,
-	},
-	{
-		accessorKey: "lastActivity",
-		header: "Last activity",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("lastActivity")}</span>
-		),
-		minSize: 140,
-	},
-	{
-		id: "actions",
-		header: "Actions",
-		cell: ({ row }) => (
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<Button
-							variant="outline"
-							size="icon-sm"
-							aria-label="Open actions"
-						/>
-					}>
-					<MoreHorizontal className="h-4 w-4" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-40 min-w-40">
-					<DropdownMenuItem render={<a href={row.original.page} />}>
-						<EyeLinear />
-						View details
-					</DropdownMenuItem>
-					<DropdownMenuItem className="text-red-500">
-						<TrashLines color="red" />
-						Delete comment
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		),
-		enableSorting: false,
-		size: 88,
-	},
-];
-
 export function CommentsTable() {
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const commentsQuery = useQuery(trpc.comments.list.queryOptions());
+	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
+	const [error, setError] = useState<string | null>(null);
 	const [pagination, setPagination] = useState<PaginationState>({
 		pageIndex: 0,
 		pageSize: 10,
@@ -212,8 +187,34 @@ export function CommentsTable() {
 		},
 	]);
 
+	async function handleDelete(id: string) {
+		try {
+			setError(null);
+			await deleteComment.mutateAsync({ id });
+			await queryClient.invalidateQueries({
+				queryKey: trpc.comments.list.queryOptions().queryKey,
+			});
+		} catch (error) {
+			setError(error instanceof Error ? error.message : "Unable to delete comment.");
+		}
+	}
+
+	const data = commentsQuery.data ?? [];
+	const commentPageFilterItems = [
+		{ label: "All pages", value: "all" },
+		...Array.from(new Set(data.map((comment) => comment.page))).map((page) => ({
+			label: page,
+			value: page,
+		})),
+	] satisfies { label: string; value: CommentPageFilter }[];
+
+	const columns = getColumns({
+		onDelete: (id) => void handleDelete(id),
+		isDeleting: deleteComment.isPending,
+	});
+
 	const table = useReactTable({
-		data: dummyComments,
+		data,
 		columns,
 		enableSortingRemoval: false,
 		getCoreRowModel: getCoreRowModel(),
@@ -247,6 +248,10 @@ export function CommentsTable() {
 
 	return (
 		<div className="space-y-4">
+			{error ? <p className="text-sm text-destructive">{error}</p> : null}
+			{commentsQuery.error ? (
+				<p className="text-sm text-destructive">{commentsQuery.error.message}</p>
+			) : null}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
 					<div className="relative w-full sm:max-w-sm">
@@ -372,18 +377,30 @@ export function CommentsTable() {
 						))}
 					</TableHeader>
 					<TableBody>
-						{table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id} className="h-14">
-										{flexRender(
-											cell.column.columnDef.cell,
-											cell.getContext(),
-										)}
-									</TableCell>
-								))}
+						{commentsQuery.isPending ? (
+							<TableRow>
+								<TableCell
+									colSpan={columns.length}
+									className="h-14 text-center">
+									<Loader />
+								</TableCell>
 							</TableRow>
-						))}
+						) : (
+							table.getRowModel().rows.map((row) => (
+								<TableRow key={row.id}>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell
+											key={cell.id}
+											className="h-14">
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
+										</TableCell>
+									))}
+								</TableRow>
+							))
+						)}
 					</TableBody>
 				</Table>
 			</div>

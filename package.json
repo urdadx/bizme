@@ -1,24 +1,20 @@
 {
-  "name": "better-comments",
-  "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "type": "module",
-  "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "check-types": "turbo check-types",
-    "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F @better-comments/db db:push",
-    "db:studio": "turbo -F @better-comments/db db:studio",
-    "db:generate": "turbo -F @better-comments/db db:generate",
-    "db:migrate": "turbo -F @better-comments/db db:migrate",
-    "db:local": "turbo -F @better-comments/db db:local",
-    "check": "oxlint && oxfmt --write"
-  },
+	"name": "better-comments",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "pnpm -r --parallel --filter web --filter server dev",
+		"build": "pnpm -r --if-present build",
+		"check-types": "pnpm -r --if-present check-types",
+		"dev:web": "pnpm --filter web dev",
+		"dev:server": "pnpm --filter server dev",
+		"db:push": "pnpm --filter @better-comments/db db:push",
+		"db:studio": "pnpm --filter @better-comments/db db:studio",
+		"db:generate": "pnpm --filter @better-comments/db db:generate",
+		"db:migrate": "pnpm --filter @better-comments/db db:migrate",
+		"db:local": "pnpm --filter @better-comments/db db:local",
+		"check": "oxlint && oxfmt --write"
+	},
   "dependencies": {
     "@better-comments/env": "workspace:*",
     "dotenv": "catalog:",
@@ -26,11 +22,10 @@
   },
   "devDependencies": {
     "@better-comments/config": "workspace:*",
-    "@types/bun": "catalog:",
-    "oxfmt": "^0.46.0",
-    "oxlint": "^1.61.0",
-    "turbo": "^2.8.12",
-    "typescript": "catalog:"
-  },
+		"@types/bun": "catalog:",
+		"oxfmt": "^0.46.0",
+		"oxlint": "^1.61.0",
+		"typescript": "catalog:"
+	},
   "packageManager": "pnpm@10.10.0"
 }

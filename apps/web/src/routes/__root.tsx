@@ -46,7 +46,7 @@ function RootDocument() {
 				<div className="grid h-svh grid-rows-[auto_1fr]">
 					<Outlet />
 				</div>
-				<Toaster richColors />
+				<Toaster theme="light" />
 				{/* <TanStackRouterDevtools position="bottom-left" /> */}
 				<ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
 				<Scripts />

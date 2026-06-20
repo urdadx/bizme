@@ -4,6 +4,7 @@ import { env } from "@better-comments/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 
 export function createAuth() {
   const db = createDb();
@@ -18,12 +19,29 @@ export function createAuth() {
     emailAndPassword: {
       enabled: true,
     },
+    socialProviders: {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      },
+    },
+    user: {
+      deleteUser: {
+        enabled: true,
+      },
+    },
     session: {
       additionalFields: {
         activeOrganizationId: {
           type: "string",
           required: false,
           defaultValue: null,
+          input: false,
+        },
+        isOnboarded: {
+          type: "boolean",
+          required: false,
+          defaultValue: false,
           input: false,
         },
       },
@@ -43,6 +61,7 @@ export function createAuth() {
               data: {
                 ...sessionData,
                 activeOrganizationId: activeMembership?.organizationId ?? null,
+                isOnboarded: Boolean(activeMembership),
               },
             };
           },
@@ -60,6 +79,18 @@ export function createAuth() {
     },
     plugins: [
       organization({
+        organizationHooks: {
+          afterCreateOrganization: async ({ organization, user }) => {
+            await db
+              .update(schema.session)
+              .set({
+                activeOrganizationId: organization.id,
+                isOnboarded: true,
+                updatedAt: new Date(),
+              })
+              .where(eq(schema.session.userId, user.id));
+          },
+        },
         schema: {
           organization: {
             additionalFields: {

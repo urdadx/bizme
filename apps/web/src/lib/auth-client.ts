@@ -1,10 +1,22 @@
 import { env } from "@better-comments/env/web";
 import { createAuthClient } from "better-auth/react";
-import { organizationClient } from "better-auth/client/plugins";
+import { inferAdditionalFields, organizationClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
   baseURL: env.VITE_SERVER_URL,
   plugins: [
+    inferAdditionalFields({
+      session: {
+        activeOrganizationId: {
+          type: "string",
+          required: false,
+        },
+        isOnboarded: {
+          type: "boolean",
+          required: false,
+        },
+      },
+    }),
     organizationClient({
       schema: {
         organization: {
@@ -19,3 +31,5 @@ export const authClient = createAuthClient({
     }),
   ],
 });
+
+export const { useSession, signIn, signUp, signOut, resetPassword } = authClient;

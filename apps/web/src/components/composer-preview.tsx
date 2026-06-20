@@ -10,8 +10,9 @@ import {
 	PromptInputAction,
 } from "./ui/prompt-input";
 import { GalleryLinear } from "@/assets/icons/gallery-icon";
+import type { CustomizationSettingsValue } from "./customization/customize-settings";
 
-export function ComposerPreview() {
+export function ComposerPreview({ customization }: { customization?: CustomizationSettingsValue }) {
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [files, setFiles] = useState<File[]>([]);
@@ -48,6 +49,7 @@ export function ComposerPreview() {
 			onValueChange={setInput}
 			isLoading={isLoading}
 			onSubmit={handleSubmit}
+			style={{ color: customization?.textColor }}
 			className="w-150 shadow-none rounded-xl h-25 max-w-xl">
 			{files.length > 0 && (
 				<div className="flex flex-wrap gap-2 pb-2">
@@ -83,7 +85,7 @@ export function ComposerPreview() {
 							id="file-upload"
 						/>
 						<GalleryLinear
-							color="currentColor"
+							color={customization?.brandColor ?? "currentColor"}
 							className="text-primary size-5"
 						/>
 					</label>
@@ -93,6 +95,7 @@ export function ComposerPreview() {
 					<Button
 						variant="default"
 						size="sm"
+						style={{ backgroundColor: customization?.brandColor }}
 						className=""
 						onClick={handleSubmit}>
 						Comment

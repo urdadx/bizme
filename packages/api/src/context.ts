@@ -12,6 +12,7 @@ export async function createContext({ context }: CreateContextOptions) {
   return {
     auth: null,
     session,
+    request: context.req.raw,
   };
 }
 

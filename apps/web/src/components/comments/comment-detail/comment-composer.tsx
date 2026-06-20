@@ -12,22 +12,28 @@ import { useRef, useState } from "react";
 
 export function CommentComposer({
 	uploadId = "comment-file-upload",
+	onSubmit,
+	isSubmitting = false,
 }: {
 	uploadId?: string;
+	onSubmit?: (body: string) => Promise<void> | void;
+	isSubmitting?: boolean;
 }) {
 	const [input, setInput] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
 	const [files, setFiles] = useState<File[]>([]);
 	const uploadInputRef = useRef<HTMLInputElement>(null);
 
-	const handleSubmit = () => {
-		if (input.trim() || files.length > 0) {
-			setIsLoading(true);
-			setTimeout(() => {
-				setIsLoading(false);
-				setInput("");
-				setFiles([]);
-			}, 2000);
+	const handleSubmit = async () => {
+		const body = input.trim();
+
+		if (body) {
+			await onSubmit?.(body);
+			setInput("");
+			setFiles([]);
+
+			if (uploadInputRef.current) {
+				uploadInputRef.current.value = "";
+			}
 		}
 	};
 
@@ -48,22 +54,22 @@ export function CommentComposer({
 		<PromptInput
 			value={input}
 			onValueChange={setInput}
-			isLoading={isLoading}
+			isLoading={isSubmitting}
 			onSubmit={handleSubmit}
-			className="min-h-25 w-full rounded-xl shadow-none">
+			className="flex min-h-25 w-full flex-col rounded-xl shadow-none">
 			{files.length > 0 && (
-				<div className="flex flex-wrap gap-2 pb-2">
+				<div className="flex w-full flex-wrap gap-2 pb-2">
 					{files.map((file, index) => (
 						<div
 							key={`${file.name}-${index}`}
-							className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm"
+							className="flex max-w-full items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm"
 							onClick={(event) => event.stopPropagation()}>
-							<Paperclip className="size-4" />
+							<Paperclip className="size-4 shrink-0" />
 							<span className="max-w-30 truncate">{file.name}</span>
 							<button
 								type="button"
 								onClick={() => handleRemoveFile(index)}
-								className="rounded-full p-1 hover:bg-secondary/50">
+								className="shrink-0 rounded-full p-1 hover:bg-secondary/50">
 								<X className="size-4" />
 							</button>
 						</div>
@@ -71,9 +77,9 @@ export function CommentComposer({
 				</div>
 			)}
 
-			<PromptInputTextarea placeholder="Write a reply..." />
+			<PromptInputTextarea placeholder="Write a reply..." className="min-h-0 flex-1" />
 
-			<PromptInputActions className="flex items-center justify-between gap-2 pt-2">
+			<PromptInputActions className="mt-auto flex w-full items-center justify-between gap-2 pt-2">
 				<PromptInputAction tooltip="Attach files">
 					<label
 						htmlFor={uploadId}
@@ -91,8 +97,12 @@ export function CommentComposer({
 				</PromptInputAction>
 
 				<PromptInputAction tooltip="Submit reply">
-					<Button variant="default" size="sm" onClick={handleSubmit}>
-						Reply
+					<Button
+						variant="default"
+						size="sm"
+						disabled={isSubmitting || input.trim().length === 0}
+						onClick={handleSubmit}>
+						{isSubmitting ? "Replying..." : "Reply"}
 					</Button>
 				</PromptInputAction>
 			</PromptInputActions>

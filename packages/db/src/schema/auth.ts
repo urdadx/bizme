@@ -56,6 +56,7 @@ export const session = sqliteTable(
     activeOrganizationId: text("active_organization_id").references(() => organization.id, {
       onDelete: "set null",
     }),
+    isOnboarded: integer("is_onboarded", { mode: "boolean" }).default(false).notNull(),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
 );

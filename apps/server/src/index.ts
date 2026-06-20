@@ -7,20 +7,30 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
+import { embedRoutes } from "./embed";
+
 const app = new Hono();
 
 app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    origin: (origin, c) => {
+      if (c.req.path.startsWith("/embed/")) {
+        return origin;
+      }
+
+      return env.CORS_ORIGIN;
+    },
+    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization", "X-Bizme-Visitor-Id"],
     credentials: true,
   }),
 );
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+app.route("/embed", embedRoutes);
 
 app.use(
   "/trpc/*",

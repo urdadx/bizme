@@ -25,33 +25,6 @@ type RecentComment = {
 	comment: string;
 };
 
-const dummyComments: RecentComment[] = [
-	{
-		id: "comment_1",
-		date: "May 17, 2026",
-		user: "John Doe",
-		comment: "Would love a yearly discount option for small teams.",
-	},
-	{
-		id: "comment_2",
-		date: "May 16, 2026",
-		user: "Jane Smith",
-		comment: "The onboarding video was clear, but the CTA is easy to miss.",
-	},
-	{
-		id: "comment_3",
-		date: "May 15, 2026",
-		user: "Bob Johnson",
-		comment: "Reply threads would make moderation much easier here.",
-	},
-	{
-		id: "comment_4",
-		date: "May 14, 2026",
-		user: "Alice Williams",
-		comment: "Step two fails unless Node 20 is already installed.",
-	},
-];
-
 function CommentsTable({ comments }: { comments: RecentComment[] }) {
 	const columns: ColumnDef<RecentComment>[] = [
 		{
@@ -183,7 +156,7 @@ export function MostRecentComments({
 				</Link>
 			</div>
 
-			<CommentsTable comments={dummyComments} />
+			<CommentsTable comments={[]} />
 		</div>
 	);
 }

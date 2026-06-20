@@ -1,0 +1,1 @@
+ALTER TABLE `workspace_customization` ADD `allowed_domains` text DEFAULT '[]' NOT NULL;

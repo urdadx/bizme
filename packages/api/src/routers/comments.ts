@@ -1,0 +1,425 @@
+import { db, toggleCommentLike } from "@better-comments/db";
+import { comment, commentReaction, page } from "@better-comments/db/schema/index";
+import { TRPCError } from "@trpc/server";
+import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
+
+import type { Context } from "../context";
+import { protectedProcedure, router } from "../index";
+import { getActiveWorkspaceId } from "./utils";
+
+const commentIdInput = z.object({
+  id: z.string().min(1),
+});
+
+const commentUpdateInput = commentIdInput.extend({
+  body: z.string().trim().min(1).max(5000),
+});
+
+const commentPinInput = commentIdInput.extend({
+  isPinned: z.boolean(),
+});
+
+const commentReplyInput = commentIdInput.extend({
+  body: z.string().trim().min(1).max(5000),
+});
+
+type CommentRow = typeof comment.$inferSelect;
+type PageRow = typeof page.$inferSelect;
+type CommentReactionRow = typeof commentReaction.$inferSelect;
+
+export type CommentTreeItem = {
+  id: string;
+  author: string;
+  authorEmail: string | null;
+  authorProvider: CommentRow["authorProvider"];
+  date: string;
+  content: string;
+  likes: number;
+  replies: number;
+  avatar: string;
+  isPinned: boolean;
+  status: CommentRow["status"];
+  locationCity: string | null;
+  locationCountry: string | null;
+  locationCountryCode: string | null;
+  locationContinent: string | null;
+  deviceType: string | null;
+  browser: string | null;
+  children: CommentTreeItem[];
+};
+
+type RequestWithCloudflare = Request & {
+  cf?: {
+    city?: unknown;
+    country?: unknown;
+    continent?: unknown;
+  };
+};
+
+const CONTINENT_NAMES: Record<string, string> = {
+  AF: "Africa",
+  AN: "Antarctica",
+  AS: "Asia",
+  EU: "Europe",
+  NA: "North America",
+  OC: "Oceania",
+  SA: "South America",
+};
+
+export type CommentReactionItem = {
+  id: string;
+  type: CommentReactionRow["type"];
+  visitorId: string;
+  date: string;
+};
+
+function formatRelativeDate(date: Date) {
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+}
+
+function getAuthorName(row: CommentRow) {
+  return row.authorName ?? row.authorEmail ?? "Anonymous";
+}
+
+function getAvatar(row: CommentRow) {
+  if (row.authorImage) {
+    return row.authorImage;
+  }
+
+  if (row.authorProvider === "github" && row.authorExternalId) {
+    return `https://avatars.githubusercontent.com/u/${encodeURIComponent(row.authorExternalId)}?v=4`;
+  }
+
+  return `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(getAuthorName(row))}`;
+}
+
+function getCountryName(country: string | undefined) {
+  if (!country) return undefined;
+
+  if (country.length !== 2) return country;
+
+  return new Intl.DisplayNames(["en"], { type: "region" }).of(country.toUpperCase()) ?? country;
+}
+
+function getBrowser(userAgent: string) {
+  if (/Edg\//.test(userAgent)) return "Edge";
+  if (/OPR\//.test(userAgent)) return "Opera";
+  if (/Chrome\//.test(userAgent) && !/Chromium\//.test(userAgent)) return "Chrome";
+  if (/Firefox\//.test(userAgent)) return "Firefox";
+  if (/Safari\//.test(userAgent) && !/Chrome\//.test(userAgent)) return "Safari";
+  if (/Chromium\//.test(userAgent)) return "Chromium";
+  return userAgent ? "Unknown" : undefined;
+}
+
+function getDeviceType(userAgent: string) {
+  if (/tablet|ipad|playbook|silk/i.test(userAgent)) return "Tablet";
+  if (/mobi|android|iphone|ipod|blackberry|phone/i.test(userAgent)) return "Mobile";
+  return userAgent ? "Desktop" : undefined;
+}
+
+function getCommentMetadata(request: RequestWithCloudflare) {
+  const requestUrl = new URL(request.url);
+  const host = request.headers.get("host") ?? requestUrl.host;
+  const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(requestUrl.hostname) ||
+    host.startsWith("localhost:") ||
+    host.startsWith("127.0.0.1:");
+  const userAgent = request.headers.get("user-agent") ?? "";
+  const cfCountry = typeof request.cf?.country === "string" ? request.cf.country : undefined;
+  const countryCode = (cfCountry ?? (isLocalhost ? "GH" : undefined))?.toUpperCase();
+  const continentCode = typeof request.cf?.continent === "string" ? request.cf.continent : undefined;
+
+  return {
+    locationCity: typeof request.cf?.city === "string" ? request.cf.city : isLocalhost ? "Accra" : undefined,
+    locationCountry: getCountryName(countryCode),
+    locationCountryCode: countryCode,
+    locationContinent: continentCode ? CONTINENT_NAMES[continentCode] ?? continentCode : isLocalhost ? "Africa" : undefined,
+    deviceType: getDeviceType(userAgent),
+    browser: getBrowser(userAgent),
+  };
+}
+
+function toTreeItem(row: CommentRow): CommentTreeItem {
+  return {
+    id: row.id,
+    author: getAuthorName(row),
+    authorEmail: row.authorEmail,
+    authorProvider: row.authorProvider,
+    date: formatRelativeDate(row.createdAt),
+    content: row.body,
+    likes: row.likesCount,
+    replies: 0,
+    avatar: getAvatar(row),
+    isPinned: row.isPinned,
+    status: row.status,
+    locationCity: row.locationCity,
+    locationCountry: row.locationCountry,
+    locationCountryCode: row.locationCountryCode,
+    locationContinent: row.locationContinent,
+    deviceType: row.deviceType,
+    browser: row.browser,
+    children: [],
+  };
+}
+
+function toReactionItem(row: CommentReactionRow): CommentReactionItem {
+  return {
+    id: row.id,
+    type: row.type,
+    visitorId: row.visitorId,
+    date: formatRelativeDate(row.createdAt),
+  };
+}
+
+function nestComments(rows: CommentRow[], rootParentId: string | null) {
+  const byId = new Map<string, CommentTreeItem>();
+  const roots: CommentTreeItem[] = [];
+
+  for (const row of rows) {
+    byId.set(row.id, toTreeItem(row));
+  }
+
+  for (const row of rows) {
+    const item = byId.get(row.id);
+
+    if (!item) continue;
+
+    if (row.parentId && row.parentId !== rootParentId) {
+      const parent = byId.get(row.parentId);
+
+      if (parent) {
+        parent.children.push(item);
+        parent.replies = parent.children.length;
+        continue;
+      }
+    }
+
+    if (row.parentId === rootParentId) {
+      roots.push(item);
+    }
+  }
+
+  return roots;
+}
+
+function getPreview(body: string) {
+  return body.length > 80 ? `${body.slice(0, 77)}...` : body;
+}
+
+async function getWorkspaceComment(workspaceId: string, id: string) {
+  const existing = await db.query.comment.findFirst({
+    where: (table, { and, eq }) => and(eq(table.id, id), eq(table.workspaceId, workspaceId)),
+  });
+
+  if (!existing) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Comment not found",
+    });
+  }
+
+  return existing;
+}
+
+async function requireWorkspaceAdmin(
+  session: NonNullable<Context["session"]>,
+  workspaceId: string,
+) {
+  const membership = await db.query.member.findFirst({
+    where: (table, { and, eq }) =>
+      and(eq(table.organizationId, workspaceId), eq(table.userId, session.user.id)),
+  });
+
+  if (!membership || !["admin", "owner"].includes(membership.role)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin permission required",
+    });
+  }
+}
+
+export const commentsRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+    const [comments, pages] = await Promise.all([
+      db.query.comment.findMany({
+        where: (table, { and, eq, ne }) =>
+          and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+        orderBy: (table) => [desc(table.isPinned), desc(table.updatedAt)],
+      }),
+      db.query.page.findMany({
+        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
+      }),
+    ]);
+    const pageById = new Map(pages.map((item) => [item.id, item]));
+    const repliesByParentId = new Map<string, number>();
+
+    for (const item of comments) {
+      if (item.parentId) {
+        repliesByParentId.set(item.parentId, (repliesByParentId.get(item.parentId) ?? 0) + 1);
+      }
+    }
+
+    return comments
+      .filter((item) => !item.parentId)
+      .map((item) => {
+        const commentPage = pageById.get(item.pageId);
+
+        return {
+          id: item.id,
+          commenter: getAuthorName(item),
+          authorProvider: item.authorProvider,
+          preview: getPreview(item.body),
+          page: commentPage?.path ?? "Unknown page",
+          pageUrl: commentPage?.url ?? null,
+          likes: item.likesCount,
+          replies: repliesByParentId.get(item.id) ?? 0,
+          status: item.status,
+          isPinned: item.isPinned,
+          lastActivity: formatRelativeDate(item.updatedAt),
+        };
+      });
+  }),
+  detail: protectedProcedure.input(commentIdInput).query(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+    const selectedComment = await getWorkspaceComment(workspaceId, input.id);
+    const [commentPage, pageComments, reactions] = await Promise.all([
+      db.query.page.findFirst({
+        where: (table, { and, eq }) =>
+          and(eq(table.id, selectedComment.pageId), eq(table.workspaceId, workspaceId)),
+      }),
+      db.query.comment.findMany({
+        where: (table, { and, eq, ne }) =>
+          and(
+            eq(table.pageId, selectedComment.pageId),
+            eq(table.workspaceId, workspaceId),
+            ne(table.status, "deleted"),
+          ),
+        orderBy: (table) => [desc(table.isPinned), desc(table.createdAt)],
+      }),
+      db.query.commentReaction.findMany({
+        where: (table, { eq }) => eq(table.commentId, selectedComment.id),
+        orderBy: (table) => [desc(table.createdAt)],
+      }),
+    ]);
+
+    if (!commentPage) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Comment page not found",
+      });
+    }
+
+    const replies = nestComments(pageComments, selectedComment.id);
+
+    return {
+      comment: toTreeItem(selectedComment),
+      page: {
+        id: commentPage.id,
+        title: commentPage.title,
+        path: commentPage.path,
+        url: commentPage.url,
+      } satisfies Pick<PageRow, "id" | "title" | "path" | "url">,
+      replies,
+      reactions: reactions.map(toReactionItem),
+    };
+  }),
+  update: protectedProcedure.input(commentUpdateInput).mutation(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+
+    await getWorkspaceComment(workspaceId, input.id);
+
+    await db
+      .update(comment)
+      .set({
+        body: input.body,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(comment.id, input.id), eq(comment.workspaceId, workspaceId)));
+
+    return getWorkspaceComment(workspaceId, input.id);
+  }),
+  delete: protectedProcedure.input(commentIdInput).mutation(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+
+    await requireWorkspaceAdmin(ctx.session, workspaceId);
+    await getWorkspaceComment(workspaceId, input.id);
+
+    await db
+      .update(comment)
+      .set({
+        status: "deleted",
+        updatedAt: new Date(),
+      })
+      .where(and(eq(comment.id, input.id), eq(comment.workspaceId, workspaceId)));
+
+    return { id: input.id };
+  }),
+  pin: protectedProcedure.input(commentPinInput).mutation(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+
+    await requireWorkspaceAdmin(ctx.session, workspaceId);
+    await getWorkspaceComment(workspaceId, input.id);
+
+    await db
+      .update(comment)
+      .set({
+        isPinned: input.isPinned,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(comment.id, input.id), eq(comment.workspaceId, workspaceId)));
+
+    return getWorkspaceComment(workspaceId, input.id);
+  }),
+  reply: protectedProcedure.input(commentReplyInput).mutation(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+    const parent = await getWorkspaceComment(workspaceId, input.id);
+    const id = crypto.randomUUID();
+
+    await db.insert(comment).values({
+      id,
+      workspaceId,
+      pageId: parent.pageId,
+      parentId: parent.id,
+      authorName: ctx.session.user.name,
+      authorEmail: ctx.session.user.email,
+      authorImage: ctx.session.user.image,
+      authorExternalId: ctx.session.user.id,
+      authorProvider: "email",
+      ...getCommentMetadata(ctx.request as RequestWithCloudflare),
+      body: input.body,
+      status: "visible",
+    });
+
+    await db
+      .update(comment)
+      .set({ updatedAt: new Date() })
+      .where(and(eq(comment.id, parent.id), eq(comment.workspaceId, workspaceId)));
+
+    return getWorkspaceComment(workspaceId, id);
+  }),
+  like: protectedProcedure.input(commentIdInput).mutation(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+
+    await getWorkspaceComment(workspaceId, input.id);
+
+    return toggleCommentLike({
+      commentId: input.id,
+      visitorId: `user:${ctx.session.user.id}`,
+    });
+  }),
+});

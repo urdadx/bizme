@@ -1,0 +1,12 @@
+{
+  "extends": "@better-comments/config/tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "lib": ["ESNext", "DOM"],
+    "types": ["bun"]
+  },
+  "include": ["rolldown.config.ts", "scripts/**/*.ts", "src/**/*.ts", "src/**/*.d.ts"]
+}

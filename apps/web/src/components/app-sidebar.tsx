@@ -85,8 +85,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarHeader>
 				<SidebarContent className="bg-[#FCFCFC]">
 					<NavMain items={data.overview} />
-					<NavCustomize items={data.customize} />
 					<NavActivity items={data.activity} />
+					<NavCustomize items={data.customize} />
 					<NavSettings items={data.settings} />
 				</SidebarContent>
 				<SidebarFooter>

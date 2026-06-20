@@ -41,10 +41,14 @@ export const workspaceCustomization = sqliteTable("workspace_customization", {
     .primaryKey()
     .references(() => organization.id, { onDelete: "cascade" }),
   fontFamily: text("font_family").default("inter").notNull(),
-  theme: text("theme").default("one-dark").notNull(),
-  brandColor: text("brand_color").default("#6366f1").notNull(),
-  textColor: text("text_color").default("#ffffff").notNull(),
+  theme: text("theme").default("light").notNull(),
+  brandColor: text("brand_color").default("#6170F8").notNull(),
+  textColor: text("text_color").default("#1F2937").notNull(),
   hidePoweredBy: integer("hide_powered_by", { mode: "boolean" }).default(false).notNull(),
+  allowedDomains: text("allowed_domains", { mode: "json" })
+    .$type<string[]>()
+    .default(sql`'[]'`)
+    .notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .notNull(),
@@ -136,11 +140,21 @@ export const comment = sqliteTable(
     }),
     authorName: text("author_name"),
     authorEmail: text("author_email"),
+    authorImage: text("author_image"),
+    authorExternalId: text("author_external_id"),
+    authorVisitorId: text("author_visitor_id"),
     authorProvider: text("author_provider", { enum: commentAuthorProviders })
       .default("anonymous")
       .notNull(),
+    locationCity: text("location_city"),
+    locationCountry: text("location_country"),
+    locationCountryCode: text("location_country_code"),
+    locationContinent: text("location_continent"),
+    deviceType: text("device_type"),
+    browser: text("browser"),
     body: text("body").notNull(),
     status: text("status", { enum: commentStatuses }).default("visible").notNull(),
+    isPinned: integer("is_pinned", { mode: "boolean" }).default(false).notNull(),
     likesCount: integer("likes_count").default(0).notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

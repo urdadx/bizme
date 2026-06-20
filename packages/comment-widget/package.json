@@ -1,0 +1,18 @@
+{
+  "name": "@better-comments/comment-widget",
+  "private": true,
+  "type": "module",
+  "main": "dist/sdk.js",
+  "types": "src/types/global.d.ts",
+  "files": ["dist", "src/types/global.d.ts"],
+  "scripts": {
+    "build": "bun run scripts/build.ts",
+    "check-types": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@better-comments/config": "workspace:*",
+    "@types/bun": "catalog:",
+    "rolldown": "^1.0.0-beta.54",
+    "typescript": "catalog:"
+  }
+}

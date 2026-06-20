@@ -9,9 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WidgetRouteImport } from './routes/widget'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as adminRouteRouteImport } from './routes/(admin)/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
@@ -27,6 +27,11 @@ import { Route as adminAnalyticsRouteImport } from './routes/(admin)/analytics'
 import { Route as adminCommentsIndexRouteImport } from './routes/(admin)/comments/index'
 import { Route as adminCommentsCommentIdRouteImport } from './routes/(admin)/comments/$commentId'
 
+const WidgetRoute = WidgetRouteImport.update({
+  id: '/widget',
+  path: '/widget',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -35,11 +40,6 @@ const RegisterRoute = RegisterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const adminRouteRoute = adminRouteRouteImport.update({
@@ -114,9 +114,9 @@ const adminCommentsCommentIdRoute = adminCommentsCommentIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/widget': typeof WidgetRoute
   '/analytics': typeof adminAnalyticsRoute
   '/customize': typeof adminCustomizeRoute
   '/domain': typeof adminDomainRoute
@@ -132,9 +132,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/widget': typeof WidgetRoute
   '/analytics': typeof adminAnalyticsRoute
   '/customize': typeof adminCustomizeRoute
   '/domain': typeof adminDomainRoute
@@ -152,9 +152,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/(admin)': typeof adminRouteRouteWithChildren
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/widget': typeof WidgetRoute
   '/(admin)/analytics': typeof adminAnalyticsRoute
   '/(admin)/customize': typeof adminCustomizeRoute
   '/(admin)/domain': typeof adminDomainRoute
@@ -172,9 +172,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
     | '/login'
     | '/register'
+    | '/widget'
     | '/analytics'
     | '/customize'
     | '/domain'
@@ -190,9 +190,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
     | '/login'
     | '/register'
+    | '/widget'
     | '/analytics'
     | '/customize'
     | '/domain'
@@ -209,9 +209,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/(admin)'
-    | '/dashboard'
     | '/login'
     | '/register'
+    | '/widget'
     | '/(admin)/analytics'
     | '/(admin)/customize'
     | '/(admin)/domain'
@@ -229,14 +229,21 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   adminRouteRoute: typeof adminRouteRouteWithChildren
-  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  WidgetRoute: typeof WidgetRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/widget': {
+      id: '/widget'
+      path: '/widget'
+      fullPath: '/widget'
+      preLoaderRoute: typeof WidgetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -249,13 +256,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(admin)': {
@@ -394,9 +394,9 @@ const adminRouteRouteWithChildren = adminRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   adminRouteRoute: adminRouteRouteWithChildren,
-  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  WidgetRoute: WidgetRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
 }
 export const routeTree = rootRouteImport

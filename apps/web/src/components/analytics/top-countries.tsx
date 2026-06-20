@@ -1,127 +1,69 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTRPC } from "@/utils/trpc";
+import { useQuery } from "@tanstack/react-query";
 import { ExpandIcon } from "lucide-react";
 import { useState } from "react";
 import BarList from "./bar-list";
 import { Africa, Asia, Europe, NorthAmerica, Oceania, SouthAmerica } from "../continents";
 import { ViewAllStats } from "./view-stats";
 
+const continentIcons = {
+	Africa,
+	Asia,
+	Europe,
+	"North America": NorthAmerica,
+	Oceania,
+	"South America": SouthAmerica,
+} as const;
+
+function getFlagIcon(countryCode: string | undefined, title: string) {
+	if (!countryCode) return null;
+
+	return <img src={`https://flag.vercel.app/m/${countryCode}.svg`} className="w-4" alt={title} />;
+}
+
 export function TopCountries() {
 	const [countriesDialogOpen, setCountriesDialogOpen] = useState(false);
 	const [citiesDialogOpen, setCitiesDialogOpen] = useState(false);
 	const [continentsDialogOpen, setContinentsDialogOpen] = useState(false);
+	const trpc = useTRPC();
+	const locationsQuery = useQuery(trpc.analytics.locations.queryOptions());
+	const locations = locationsQuery.data ?? { countries: [], cities: [], continents: [] };
 
-	const mapCountries = [
-		{
-			icon: <img src="https://flag.vercel.app/m/US.svg" className="w-4" alt="US" />,
-			title: "United States",
-			value: 450,
-			href: "",
-			linkId: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/GB.svg" className="w-4" alt="GB" />,
-			title: "United Kingdom",
-			value: 320,
-			href: "",
-			linkId: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/DE.svg" className="w-4" alt="DE" />,
-			title: "Germany",
-			value: 210,
-			href: "",
-			linkId: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/FR.svg" className="w-4" alt="FR" />,
-			title: "France",
-			value: 180,
-			href: "",
-			linkId: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/IN.svg" className="w-4" alt="IN" />,
-			title: "India",
-			value: 150,
-			href: "",
-			linkId: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/CA.svg" className="w-4" alt="CA" />,
-			title: "Canada",
-			value: 120,
-			href: "",
-			linkId: "",
-		},
-	];
+	const mapCountries = locations.countries.map((country) => ({
+		icon: getFlagIcon(country.countryCode, country.title),
+		title: country.title,
+		value: country.value,
+		href: "",
+		linkId: country.countryCode ?? country.title,
+	}));
+	const mapCities = locations.cities.map((city) => ({
+		icon: getFlagIcon(city.countryCode, city.title),
+		title: city.title,
+		value: city.value,
+		href: "",
+		linkId: `${city.countryCode ?? "city"}-${city.title}`,
+	}));
+	const mapContinents = locations.continents.map((continent) => {
+		const Icon = continentIcons[continent.title as keyof typeof continentIcons];
 
-	const mapCities = [
-		{
-			icon: (
-				<img
-					src="https://flag.vercel.app/m/US.svg"
-					className="w-4"
-					alt="New York"
-				/>
-			),
-			title: "New York",
-			value: 240,
+		return {
+			icon: Icon ? <Icon className="w-4" /> : null,
+			title: continent.title,
+			value: continent.value,
 			href: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/GB.svg" className="w-4" alt="London" />,
-			title: "London",
-			value: 190,
-			href: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/DE.svg" className="w-4" alt="Berlin" />,
-			title: "Berlin",
-			value: 130,
-			href: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/FR.svg" className="w-4" alt="Paris" />,
-			title: "Paris",
-			value: 110,
-			href: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/JP.svg" className="w-4" alt="Tokyo" />,
-			title: "Tokyo",
-			value: 95,
-			href: "",
-		},
-		{
-			icon: <img src="https://flag.vercel.app/m/AE.svg" className="w-4" alt="Dubai" />,
-			title: "Dubai",
-			value: 80,
-			href: "",
-		},
-	];
-
-	const mapContinents = [
-		{
-			icon: <NorthAmerica className="w-4" />,
-			title: "North America",
-			value: 650,
-			href: "",
-		},
-		{ icon: <Europe className="w-4" />, title: "Europe", value: 580, href: "" },
-		{ icon: <Asia className="w-4" />, title: "Asia", value: 420, href: "" },
-		{ icon: <Africa className="w-4" />, title: "Africa", value: 150, href: "" },
-		{ icon: <SouthAmerica className="w-4" />, title: "South America", value: 90, href: "" },
-		{ icon: <Oceania className="w-4" />, title: "Oceania", value: 45, href: "" },
-	];
+			linkId: continent.title,
+		};
+	});
 
 	const topCountries = mapCountries.slice(0, 5);
 	const topCities = mapCities.slice(0, 5);
 	const topContinents = mapContinents.slice(0, 5);
 
-	const maxCountryCount = Math.max(...mapCountries.map((c) => c.value));
-	const maxCityCount = Math.max(...mapCities.map((c) => c.value));
-	const maxContinentCount = Math.max(...mapContinents.map((c) => c.value));
+	const maxCountryCount = Math.max(0, ...mapCountries.map((c) => c.value));
+	const maxCityCount = Math.max(0, ...mapCities.map((c) => c.value));
+	const maxContinentCount = Math.max(0, ...mapContinents.map((c) => c.value));
 
 	return (
 		<div className="h-87.5 w-full z-0 rounded-xl border bg-white flex flex-col overflow-hidden">

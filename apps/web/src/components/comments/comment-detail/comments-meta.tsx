@@ -4,6 +4,7 @@ import { GlobeLinear } from "@/assets/icons/globe-icon";
 import { InProgressIcon } from "@/assets/icons/in-progress-icon";
 import { LocationLinear } from "@/assets/icons/location-icon";
 import { TrashLines } from "@/assets/icons/trash-icon";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,63 +16,125 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { CopyIcon } from "lucide-react";
+import { useState } from "react";
 
-const commentMetaDetails = [
-	{
-		label: "Device",
-		value: "MacBook Pro",
-		icon: DesktopIconLinear,
-	},
-	{
-		label: "Location",
-		value: "USA, San Francisco",
-		icon: LocationLinear,
-	},
+type CommentsMetaProps = {
+	comment: {
+		author: string;
+		authorEmail: string | null;
+		authorProvider: string;
+		avatar: string;
+		date: string;
+		status: string;
+		locationCity: string | null;
+		locationCountry: string | null;
+		locationCountryCode: string | null;
+		locationContinent: string | null;
+		deviceType: string | null;
+		browser: string | null;
+	};
+	page: {
+		path: string;
+		url: string;
+	};
+	onDelete?: () => void;
+	isDeleting?: boolean;
+};
 
-	{
-		label: "Browser",
-		value: "Chrome 124",
-		icon: GlobeLinear,
-	},
-	{
-		label: "Last activity",
-		value: "3 weeks ago",
-		icon: InProgressIcon,
-	},
-];
+export const CommentsMeta = ({
+	comment,
+	page,
+	onDelete,
+	isDeleting = false,
+}: CommentsMetaProps) => {
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const commentMetaDetails = [
+		{
+			label: "Page",
+			value: page.path,
+			icon: DesktopIconLinear,
+		},
+		{
+			label: "Provider",
+			value: comment.authorProvider,
+			icon: GlobeLinear,
+		},
+		{
+			label: "Location",
+			value:
+				[comment.locationCity, comment.locationCountry]
+					.filter(Boolean)
+					.join(", ") || "Unknown",
+			icon: LocationLinear,
+		},
+		{
+			label: "Device",
+			value: comment.deviceType ?? "Unknown",
+			icon: DesktopIconLinear,
+		},
+		{
+			label: "Browser",
+			value: comment.browser ?? "Unknown",
+			icon: GlobeLinear,
+		},
 
-export const CommentsMeta = () => {
+		{
+			label: "Last activity",
+			value: comment.date,
+			icon: InProgressIcon,
+		},
+	];
+
 	return (
 		<>
+			<DeleteConfirmationDialog
+				open={deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+				onConfirm={() => onDelete?.()}
+				isDeleting={isDeleting}
+				disabled={!onDelete}
+			/>
 			<div className="flex-1 overflow-y-auto smooth-div p-5">
 				<div className="flex justify-between items-center">
 					<div className="flex items-center gap-2">
-						<Button variant="outline" size="sm">
-							<ExternalLink color="black" />
-						</Button>
+						<a href={page.url} target="_blank" rel="noreferrer">
+							<Button variant="outline" size="sm">
+								<ExternalLink color="black" />
+							</Button>
+						</a>
 
-						<Button variant="outline" size="sm">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() =>
+								void navigator.clipboard.writeText(page.url)
+							}>
 							<CopyIcon />
 						</Button>
 					</div>
-					<Button variant="outline" size="sm">
+					<Button
+						variant="outline"
+						size="sm"
+						disabled={isDeleting}
+						onClick={() => setDeleteDialogOpen(true)}>
 						<TrashLines color="red" />
 						<span className="text-red-500">Delete </span>
 					</Button>
 				</div>
 				<div className="flex items-center gap-3 py-6 first:pt-0  border-b">
 					<Avatar size="lg">
-						<AvatarImage
-							src={
-								"https://avatars.githubusercontent.com/u/70736338?v=4"
-							}
-							alt={"Jane Smith"}
-						/>
-						<AvatarFallback>JS</AvatarFallback>
+						<AvatarImage src={comment.avatar} alt={comment.author} />
+						<AvatarFallback>
+							{comment.author.slice(0, 2).toUpperCase()}
+						</AvatarFallback>
 					</Avatar>
 					<div className="min-w-0">
-						<h3 className="truncate text-sm font-semibold">Jane Smith</h3>
-						<p className="text-xs text-muted-foreground">3 weeks ago</p>
+						<h3 className="truncate text-sm font-semibold">
+							{comment.author}
+						</h3>
+						<p className="text-xs text-muted-foreground">
+							{comment.authorEmail ?? comment.date}
+						</p>
 					</div>
 				</div>
 				<div className="flex flex-col space-y-4 py-6 border-b">
@@ -83,7 +146,7 @@ export const CommentsMeta = () => {
 							className="bg-amber-100 text-amber-700 rounded-sm shadow-none border-0"
 							variant="outline">
 							<div className="w-1.5 h-1.5 rounded-full bg-amber-700" />
-							Pending
+							{comment.status}
 						</Badge>
 					</div>
 					<div className="flex items-center justify-between">
