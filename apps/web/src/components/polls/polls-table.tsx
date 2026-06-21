@@ -10,12 +10,14 @@ import {
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 
 import { ChartLinear } from "@/assets/icons/chart-icon";
 import { SearchLinear } from "@/assets/icons/search-icon";
 import { CuteIconWrapper } from "@/components/cute-icon-wrapper";
+import Loader from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -42,131 +44,208 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { useTRPC } from "@/utils/trpc";
+import { env } from "@better-comments/env/web";
+import { Link } from "@tanstack/react-router";
 import { CreatePollDialog } from "./create-poll-dialog";
 
 type PollRow = {
 	id: string;
+	workspaceId: string;
 	question: string;
-	page: string;
 	votes: number;
-	status: "Active" | "Closed" | "Draft";
-	created: string;
+	options: number;
+	status: "active" | "closed" | "draft";
+	closesAtLabel: string | null;
+	lastActivity: string;
 };
-
-const dummyPolls: PollRow[] = [
-	{
-		id: "poll_1",
-		question: '"What\'s your fav stack?"',
-		page: "/posts/hello",
-		votes: 120,
-		status: "Active",
-		created: "2 days ago",
-	},
-	{
-		id: "poll_2",
-		question: '"Did you enjoy this?"',
-		page: "/posts/my-story",
-		votes: 45,
-		status: "Closed",
-		created: "1 week ago",
-	},
-	{
-		id: "poll_3",
-		question: '"Rate this tutorial"',
-		page: "/posts/review",
-		votes: 8,
-		status: "Draft",
-		created: "3 days ago",
-	},
-];
 
 type PollStatusFilter = "all" | PollRow["status"];
 
 const pollStatusFilterItems = [
 	{ label: "All statuses", value: "all" },
-	{ label: "Active", value: "Active" },
-	{ label: "Closed", value: "Closed" },
-	{ label: "Draft", value: "Draft" },
+	{ label: "Active", value: "active" },
+	{ label: "Closed", value: "closed" },
+	{ label: "Draft", value: "draft" },
 ] satisfies { label: string; value: PollStatusFilter }[];
 
-const columns: ColumnDef<PollRow>[] = [
-	{
-		accessorKey: "question",
-		header: "Question",
-		cell: ({ row }) => (
-			<div className="flex items-center gap-2">
-				<CuteIconWrapper icon={ChartLinear} color="#22c55e" />
-				<span className="block max-w-48 truncate font-medium md:max-w-72">
-					{row.getValue("question")}
-				</span>
-			</div>
-		),
-		minSize: 300,
-	},
+function getStatusLabel(status: PollRow["status"]) {
+	return status.charAt(0).toUpperCase() + status.slice(1);
+}
 
-	{
-		accessorKey: "votes",
-		header: "Votes",
-		cell: ({ row }) => <span>{row.getValue("votes")}</span>,
-	},
-	{
-		accessorKey: "status",
-		header: "Status",
-		filterFn: "equalsString",
-		cell: ({ row }) => {
-			const status = row.getValue("status") as PollRow["status"];
+function getPollShareLink(row: PollRow) {
+	const url = new URL("/poll-widget", window.location.origin);
+	url.searchParams.set("installKey", row.workspaceId);
+	url.searchParams.set("apiUrl", env.VITE_SERVER_URL);
+	url.searchParams.set("pollId", row.id);
+	return url.toString();
+}
 
-			return (
+function getPollEmbedScript(row: PollRow) {
+	const sdkUrl = `${env.VITE_FRONTEND_ORIGIN}/poll-sdk.js`;
+
+	return `<div id="bizme-poll-${row.id}"></div>
+<script>
+(function(w,d){if(w.self!==w.top) return;
+if(w.location.pathname==="/poll-widget") return;
+if(typeof w.BizmePoll!=="function"){
+  var q=[];
+  var stub=function(){q.push(arguments)};
+  stub.q=q;
+  w.BizmePoll=stub;
+}
+var s=d.createElement("script");
+s.src="${sdkUrl}";
+s.async=true;
+d.head.appendChild(s);
+})(window,document);
+</script>
+<script>
+if(window.self===window.top&&window.location.pathname!=="/poll-widget"){
+  window.BizmePoll("init",{
+    installKey:"${row.workspaceId}",
+    apiUrl:"${env.VITE_SERVER_URL}",
+    pollId:"${row.id}",
+    selector:"#bizme-poll-${row.id}"
+  });
+}
+</script>`;
+}
+
+function getColumns({
+	onStatusChange,
+	onDelete,
+	onCopyShareLink,
+	onCopyEmbedScript,
+	isMutating,
+}: {
+	onStatusChange: (id: string, status: PollRow["status"]) => void;
+	onDelete: (id: string) => void;
+	onCopyShareLink: (row: PollRow) => void;
+	onCopyEmbedScript: (row: PollRow) => void;
+	isMutating: boolean;
+}): ColumnDef<PollRow>[] {
+	return [
+		{
+			accessorKey: "question",
+			header: "Question",
+			cell: ({ row }) => (
 				<div className="flex items-center gap-2">
-					<div
-						className={cn(
-							"w-2 h-2 rounded-full",
-							status === "Active" && "bg-green-500 ",
-							status === "Closed" && "bg-stone-500 ",
-							status === "Draft" && "bg-amber-500 ",
-						)}></div>
-					{status}
+					<CuteIconWrapper icon={ChartLinear} color="#22c55e" />
+					<span className="block max-w-48 truncate font-medium md:max-w-72">
+						{row.getValue("question")}
+					</span>
 				</div>
-			);
+			),
+			minSize: 300,
 		},
-	},
-	{
-		accessorKey: "created",
-		header: "Last activity",
-		cell: ({ row }) => (
-			<span className="text-muted-foreground">{row.getValue("created")}</span>
-		),
-		minSize: 140,
-	},
-	{
-		id: "actions",
-		header: "Actions",
-		cell: ({ row }) => (
-			<DropdownMenu>
-				<DropdownMenuTrigger
-					render={
-						<Button
-							variant="outline"
-							size="icon-sm"
-							aria-label="Open actions"
-						/>
-					}>
-					<MoreHorizontal className="h-4 w-4" />
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-40 min-w-40">
-					<DropdownMenuItem render={<a href={row.original.page} />}>
-						Open page
-					</DropdownMenuItem>
-					<DropdownMenuItem>View poll</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		),
-		enableSorting: false,
-		size: 88,
-	},
-];
+		{
+			accessorKey: "votes",
+			header: "Votes",
+			cell: ({ row }) => <span>{row.getValue("votes")}</span>,
+			minSize: 90,
+		},
+		{
+			accessorKey: "status",
+			header: "Status",
+			filterFn: "equalsString",
+			cell: ({ row }) => {
+				const status = row.getValue("status") as PollRow["status"];
+
+				return (
+					<div className="flex items-center gap-2">
+						<div
+							className={cn(
+								"h-2 w-2 rounded-full",
+								status === "active" && "bg-green-500",
+								status === "closed" && "bg-stone-500",
+								status === "draft" && "bg-amber-500",
+							)}></div>
+						{getStatusLabel(status)}
+					</div>
+				);
+			},
+		},
+		{
+			accessorKey: "closesAtLabel",
+			header: "Closes",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">
+					{row.original.closesAtLabel ?? "Manual"}
+				</span>
+			),
+			minSize: 120,
+		},
+		{
+			accessorKey: "lastActivity",
+			header: "Last activity",
+			cell: ({ row }) => (
+				<span className="text-muted-foreground">{row.getValue("lastActivity")}</span>
+			),
+			minSize: 140,
+		},
+		{
+			id: "actions",
+			header: "Actions",
+			cell: ({ row }) => (
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="outline"
+								size="icon-sm"
+								aria-label="Open actions"
+							/>
+						}>
+						<MoreHorizontal className="h-4 w-4" />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-44 min-w-44">
+						<DropdownMenuItem
+							render={<Link to="/polls/$pollId" params={{ pollId: row.original.id }} />}>
+							View details
+						</DropdownMenuItem>
+						{row.original.status !== "active" ? (
+							<DropdownMenuItem
+								disabled={isMutating}
+								onClick={() => onStatusChange(row.original.id, "active")}>
+								Publish
+							</DropdownMenuItem>
+						) : null}
+						{row.original.status === "active" ? (
+							<DropdownMenuItem
+								disabled={isMutating}
+								onClick={() => onStatusChange(row.original.id, "closed")}>
+								Close
+							</DropdownMenuItem>
+						) : null}
+						<DropdownMenuItem onClick={() => onCopyShareLink(row.original)}>
+							Copy share link
+						</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onCopyEmbedScript(row.original)}>
+							Copy embed script
+						</DropdownMenuItem>
+						<DropdownMenuItem
+							disabled={isMutating}
+							className="text-red-500"
+							onClick={() => onDelete(row.original.id)}>
+							Delete
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			),
+			enableSorting: false,
+			size: 88,
+		},
+	];
+}
 
 export function PollsTable() {
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const pollsQuery = useQuery(trpc.polls.list.queryOptions());
+	const updateStatus = useMutation(trpc.polls.updateStatus.mutationOptions());
+	const deletePoll = useMutation(trpc.polls.delete.mutationOptions());
+	const [error, setError] = useState<string | null>(null);
 	const [pagination, setPagination] = useState<PaginationState>({
 		pageIndex: 0,
 		pageSize: 10,
@@ -180,8 +259,47 @@ export function PollsTable() {
 		},
 	]);
 
+	async function invalidatePolls() {
+		await queryClient.invalidateQueries({
+			queryKey: trpc.polls.list.queryOptions().queryKey,
+		});
+	}
+
+	async function handleStatusChange(id: string, status: PollRow["status"]) {
+		try {
+			setError(null);
+			await updateStatus.mutateAsync({ id, status });
+			await invalidatePolls();
+		} catch (error) {
+			setError(error instanceof Error ? error.message : "Unable to update poll.");
+		}
+	}
+
+	async function handleDelete(id: string) {
+		try {
+			setError(null);
+			await deletePoll.mutateAsync({ id });
+			await invalidatePolls();
+		} catch (error) {
+			setError(error instanceof Error ? error.message : "Unable to delete poll.");
+		}
+	}
+
+	const data = pollsQuery.data ?? [];
+	const columns = getColumns({
+		onStatusChange: (id, status) => void handleStatusChange(id, status),
+		onDelete: (id) => void handleDelete(id),
+		onCopyShareLink: (row) => {
+			void navigator.clipboard.writeText(getPollShareLink(row));
+		},
+		onCopyEmbedScript: (row) => {
+			void navigator.clipboard.writeText(getPollEmbedScript(row));
+		},
+		isMutating: updateStatus.isPending || deletePoll.isPending,
+	});
+
 	const table = useReactTable({
-		data: dummyPolls,
+		data,
 		columns,
 		enableSortingRemoval: false,
 		getCoreRowModel: getCoreRowModel(),
@@ -195,10 +313,7 @@ export function PollsTable() {
 				return true;
 			}
 
-			return (
-				row.original.question.toLowerCase().includes(value) ||
-				row.original.page.toLowerCase().includes(value)
-			);
+			return row.original.question.toLowerCase().includes(value);
 		},
 		onColumnFiltersChange: setColumnFilters,
 		onGlobalFilterChange: setGlobalFilter,
@@ -214,6 +329,10 @@ export function PollsTable() {
 
 	return (
 		<div className="space-y-4">
+			{error ? <p className="text-sm text-destructive">{error}</p> : null}
+			{pollsQuery.error ? (
+				<p className="text-sm text-destructive">{pollsQuery.error.message}</p>
+			) : null}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
 					<div className="relative w-full sm:max-w-sm">
@@ -313,18 +432,34 @@ export function PollsTable() {
 						))}
 					</TableHeader>
 					<TableBody>
-						{table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id}>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id} className="h-14">
-										{flexRender(
-											cell.column.columnDef.cell,
-											cell.getContext(),
-										)}
-									</TableCell>
-								))}
+						{pollsQuery.isPending ? (
+							<TableRow>
+								<TableCell colSpan={columns.length} className="h-14 text-center">
+									<Loader />
+								</TableCell>
 							</TableRow>
-						))}
+						) : table.getRowModel().rows.length === 0 ? (
+							<TableRow>
+								<TableCell
+									colSpan={columns.length}
+									className="h-24 text-center text-sm text-muted-foreground">
+									{data.length === 0 ? "No polls yet." : "No polls match your filters."}
+								</TableCell>
+							</TableRow>
+						) : (
+							table.getRowModel().rows.map((row) => (
+								<TableRow key={row.id}>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell key={cell.id} className="h-14">
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
+										</TableCell>
+									))}
+								</TableRow>
+							))
+						)}
 					</TableBody>
 				</Table>
 			</div>

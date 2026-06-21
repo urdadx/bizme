@@ -226,9 +226,7 @@ export const poll = sqliteTable(
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    pageId: text("page_id")
-      .notNull()
-      .references(() => page.id, { onDelete: "cascade" }),
+    pageId: text("page_id").references(() => page.id, { onDelete: "set null" }),
     question: text("question").notNull(),
     status: text("status", { enum: pollStatuses }).default("draft").notNull(),
     closesAt: integer("closes_at", { mode: "timestamp_ms" }),
@@ -272,6 +270,12 @@ export const pollVote = sqliteTable(
       .notNull()
       .references(() => pollOption.id, { onDelete: "cascade" }),
     visitorId: text("visitor_id").notNull(),
+    locationCity: text("location_city"),
+    locationCountry: text("location_country"),
+    locationCountryCode: text("location_country_code"),
+    locationContinent: text("location_continent"),
+    deviceType: text("device_type"),
+    browser: text("browser"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
@@ -358,10 +362,10 @@ export const pollRelations = relations(poll, ({ one, many }) => ({
     fields: [poll.workspaceId],
     references: [organization.id],
   }),
-  page: one(page, {
-    fields: [poll.pageId],
-    references: [page.id],
-  }),
+    page: one(page, {
+      fields: [poll.pageId],
+      references: [page.id],
+    }),
   options: many(pollOption),
   votes: many(pollVote),
 }));

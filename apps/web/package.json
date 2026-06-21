@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "pnpm --filter @better-comments/comment-widget build",
+    "prebuild": "pnpm --filter @better-comments/comment-widget build && pnpm --filter @better-comments/poll-widget build",
     "build": "vite build",
     "serve": "vite preview",
     "dev": "vite dev"
@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "@better-comments/comment-widget": "workspace:*",
+    "@better-comments/poll-widget": "workspace:*",
     "@better-comments/config": "workspace:*",
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-router-devtools": "^1.166.13",

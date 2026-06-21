@@ -14,6 +14,18 @@ function toDateKey(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
+function formatCommentDate(date: Date) {
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function getPreview(body: string) {
+  return body.length > 80 ? `${body.slice(0, 77)}...` : body;
+}
+
 function getLastSevenDays() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -52,11 +64,22 @@ export const analyticsRouter = router({
     const [comments, pages, polls] = await Promise.all([
       db.query.comment.findMany({
         columns: {
+          id: true,
           pageId: true,
+          authorName: true,
+          authorEmail: true,
+          authorExternalId: true,
+          authorVisitorId: true,
+          body: true,
+          likesCount: true,
+          classification: true,
           createdAt: true,
+          updatedAt: true,
+          parentId: true,
         },
         where: (table, { and, eq, ne }) =>
           and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+        orderBy: (table) => [desc(table.updatedAt)],
       }),
       db.query.page.findMany({
         columns: {
@@ -76,18 +99,31 @@ export const analyticsRouter = router({
     ]);
 
     const pollIds = polls.map((item) => item.id);
-    const votes = pollIds.length > 0
-      ? await db.query.pollVote.findMany({
-        columns: {
-          createdAt: true,
-        },
-        where: (table) => inArray(table.pollId, pollIds),
-      })
-      : [];
+    const rootComments = comments.filter((comment) => !comment.parentId);
+    const rootCommentIds = rootComments.map((item) => item.id);
+    const [votes, reactions] = await Promise.all([
+      pollIds.length > 0
+        ? db.query.pollVote.findMany({
+          columns: {
+            createdAt: true,
+            visitorId: true,
+          },
+          where: (table) => inArray(table.pollId, pollIds),
+        })
+        : [],
+      rootCommentIds.length > 0
+        ? db.query.commentReaction.findMany({
+          columns: {
+            visitorId: true,
+          },
+          where: (table) => inArray(table.commentId, rootCommentIds),
+        })
+        : [],
+    ]);
     const days = getLastSevenDays();
     const dayStats = new Map(days.map((date) => [date, { date, comments: 0, votes: 0 }]));
 
-    for (const item of comments) {
+    for (const item of rootComments) {
       const stat = dayStats.get(toDateKey(item.createdAt));
       if (stat) stat.comments += 1;
     }
@@ -97,14 +133,52 @@ export const analyticsRouter = router({
       if (stat) stat.votes += 1;
     }
 
+    const users = new Set<string>();
+    const addUser = (id: string | null) => {
+      if (id) users.add(id);
+    };
+
+    for (const item of rootComments) {
+      addUser(item.authorVisitorId ?? item.authorEmail ?? item.authorExternalId);
+    }
+
+    for (const item of reactions) {
+      addUser(item.visitorId);
+    }
+
+    for (const item of votes) {
+      addUser(item.visitorId);
+    }
+
+    const totalComments = rootComments.length;
+    const totalVotes = votes.length;
+    const totalReactions = reactions.length;
+    const chartData = Array.from(dayStats.values());
+    const recentComments = rootComments
+      .slice(0, 5)
+      .map((comment) => ({
+        id: comment.id,
+        date: formatCommentDate(comment.createdAt),
+        user: comment.authorName ?? comment.authorEmail ?? "Anonymous",
+        comment: getPreview(comment.body),
+      }));
+
     const commentsByPageId = new Map<string, number>();
-    for (const item of comments) {
+    for (const item of rootComments) {
       commentsByPageId.set(item.pageId, (commentsByPageId.get(item.pageId) ?? 0) + 1);
     }
 
-    const chartData = Array.from(dayStats.values());
-
     return {
+      metrics: {
+        totalComments,
+        spamComments: rootComments.filter((item) => item.classification === "spam").length,
+        totalVotes,
+        engagementRate: totalComments > 0
+          ? Math.round((totalReactions / totalComments) * 1000) / 10
+          : 0,
+        uniqueUsers: users.size,
+        totalReactions,
+      },
       overview: {
         totalComments: chartData.reduce((total, item) => total + item.comments, 0),
         totalVotes: chartData.reduce((total, item) => total + item.votes, 0),
@@ -119,6 +193,7 @@ export const analyticsRouter = router({
         }))
         .filter((page) => page.comments > 0)
         .sort((a, b) => b.comments - a.comments || a.pageName.localeCompare(b.pageName)),
+      recentComments,
     };
   }),
   metrics: protectedProcedure.query(async ({ ctx }) => {
@@ -185,7 +260,7 @@ export const analyticsRouter = router({
     const totalVotes = votes.length;
     const totalReactions = reactions.length;
     const engagementRate = totalComments > 0
-      ? Math.round(((totalVotes + totalReactions) / totalComments) * 1000) / 10
+      ? Math.round((totalReactions / totalComments) * 1000) / 10
       : 0;
 
     return {

@@ -32,6 +32,7 @@ export const DeployAgentDialog = () => {
 					: "flex-col -mx-3 gap-4",
 			)}>
 			<button
+				type="button"
 				className={cn(
 					"group relative flex items-center gap-2.5 rounded-lg px-4 py-2 text-left transition-all",
 					isMobile ? "shrink-0 min-w-max border" : "w-full",

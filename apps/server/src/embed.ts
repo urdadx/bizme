@@ -1,7 +1,7 @@
 import { db, markCommentDeleted, toggleCommentLike, updateCommentBody } from "@better-comments/db";
-import { comment, commentAttachment, page } from "@better-comments/db/schema/index";
+import { comment, commentAttachment, page, poll, pollVote } from "@better-comments/db/schema/index";
 import { env } from "@better-comments/env/server";
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { setCookie } from "hono/cookie";
@@ -31,6 +31,18 @@ const commentsQuerySchema = z.object({
   installKey: z.string().min(1),
   pageUrl: z.string().url(),
   parentId: z.string().min(1).optional(),
+});
+
+const pollsQuerySchema = z.object({
+  installKey: z.string().min(1),
+  pollId: z.string().min(1).optional(),
+  visitorId: z.string().min(1).optional(),
+});
+
+const votePollSchema = z.object({
+  installKey: z.string().min(1),
+  optionId: z.string().min(1),
+  visitorId: z.string().min(1),
 });
 
 const createCommentSchema = z.object({
@@ -69,6 +81,8 @@ const likeCommentSchema = z.object({
 type CommentRow = typeof comment.$inferSelect;
 type CommentAttachmentRow = typeof commentAttachment.$inferSelect;
 
+type PollRow = typeof poll.$inferSelect;
+
 type EmbedCommentAttachment = {
   id: string;
   url: string;
@@ -88,6 +102,21 @@ type EmbedComment = {
   avatar: string | null;
   attachments: EmbedCommentAttachment[];
   children: EmbedComment[];
+};
+
+type EmbedPoll = {
+  id: string;
+  question: string;
+  status: PollRow["status"];
+  closesAt: string | null;
+  totalVotes: number;
+  selectedOptionId: string | null;
+  options: {
+    id: string;
+    label: string;
+    imageUrl: string | null;
+    votes: number;
+  }[];
 };
 
 type EmbedAuthProvider = "google" | "github";
@@ -867,6 +896,43 @@ async function getAttachmentsByCommentId(commentIds: string[]) {
   return attachmentsByCommentId;
 }
 
+async function toEmbedPoll(row: PollRow, visitorId?: string): Promise<EmbedPoll> {
+  const [options, votes] = await Promise.all([
+    db.query.pollOption.findMany({
+      where: (table, { eq }) => eq(table.pollId, row.id),
+      orderBy: (table, { asc }) => asc(table.position),
+    }),
+    db.query.pollVote.findMany({
+      where: (table, { eq }) => eq(table.pollId, row.id),
+    }),
+  ]);
+  const votesByOptionId = new Map<string, number>();
+  const selectedVote = visitorId ? votes.find((vote) => vote.visitorId === visitorId) : null;
+
+  for (const vote of votes) {
+    votesByOptionId.set(vote.optionId, (votesByOptionId.get(vote.optionId) ?? 0) + 1);
+  }
+
+  return {
+    id: row.id,
+    question: row.question,
+    status: row.status,
+    closesAt: row.closesAt?.toISOString() ?? null,
+    totalVotes: votes.length,
+    selectedOptionId: selectedVote?.optionId ?? null,
+    options: options.map((option) => ({
+      id: option.id,
+      label: option.label,
+      imageUrl: option.imageUrl,
+      votes: votesByOptionId.get(option.id) ?? 0,
+    })),
+  };
+}
+
+function isPollOpen(row: PollRow) {
+  return row.status === "active" && (!row.closesAt || row.closesAt > new Date());
+}
+
 function getCommentLevel(
   rows: CommentRow[],
   parentId?: string,
@@ -961,6 +1027,104 @@ export const embedRoutes = new Hono()
 
     return c.json({ comments: getCommentLevel(rows, result.data.parentId, attachmentsByCommentId) });
   })
+  .get("/polls", async (c) => {
+    const result = pollsQuerySchema.safeParse({
+      installKey: c.req.query("installKey"),
+      pollId: c.req.query("pollId") || undefined,
+      visitorId: c.req.query("visitorId") || undefined,
+    });
+
+    if (!result.success) {
+      return c.json(jsonError("Invalid polls query", 400), 400);
+    }
+
+    const workspace = await getWorkspace(result.data.installKey);
+
+    if (!workspace) {
+      return c.json(jsonError("Invalid installKey", 404), 404);
+    }
+
+    if (!result.data.pollId && !(await ensureAllowedOrigin(workspace.id, c.req.raw.headers))) {
+      return c.json(jsonError("Origin is not allowed for this workspace", 403), 403);
+    }
+
+    let targetPoll: PollRow | undefined;
+
+    if (result.data.pollId) {
+      targetPoll = await db.query.poll.findFirst({
+        where: (table, { and, eq }) =>
+          and(eq(table.id, result.data.pollId as string), eq(table.workspaceId, workspace.id)),
+      }) ?? undefined;
+    }
+
+    if (!targetPoll) {
+      return c.json({ poll: null });
+    }
+
+    return c.json({ poll: await toEmbedPoll(targetPoll, result.data.visitorId) });
+  })
+  .post("/polls/:id/vote", async (c) => {
+    const body = await c.req.json().catch(() => null);
+    const result = votePollSchema.safeParse(body);
+
+    if (!result.success) {
+      return c.json(jsonError("Invalid vote payload", 400), 400);
+    }
+
+    const workspace = await getWorkspace(result.data.installKey);
+
+    if (!workspace) {
+      return c.json(jsonError("Invalid installKey", 404), 404);
+    }
+
+    const targetPoll = await db.query.poll.findFirst({
+      where: (table, { and, eq }) =>
+        and(eq(table.id, c.req.param("id")), eq(table.workspaceId, workspace.id)),
+    });
+
+    if (!targetPoll) {
+      return c.json(jsonError("Poll not found", 404), 404);
+    }
+
+    if (!isPollOpen(targetPoll)) {
+      return c.json(jsonError("Poll is closed", 403), 403);
+    }
+
+    const targetOption = await db.query.pollOption.findFirst({
+      where: (table, { and, eq }) =>
+        and(eq(table.id, result.data.optionId), eq(table.pollId, targetPoll.id)),
+    });
+
+    if (!targetOption) {
+      return c.json(jsonError("Poll option not found", 404), 404);
+    }
+
+    const existingVote = await db.query.pollVote.findFirst({
+      where: (table, { and, eq }) =>
+        and(eq(table.pollId, targetPoll.id), eq(table.visitorId, result.data.visitorId)),
+    });
+    const metadata = getCommentMetadata(c);
+
+    if (existingVote) {
+      await db
+        .update(pollVote)
+        .set({
+          optionId: result.data.optionId,
+          ...metadata,
+        })
+        .where(eq(pollVote.id, existingVote.id));
+    } else {
+      await db.insert(pollVote).values({
+        id: crypto.randomUUID(),
+        pollId: targetPoll.id,
+        optionId: result.data.optionId,
+        visitorId: result.data.visitorId,
+        ...metadata,
+      });
+    }
+
+    return c.json({ poll: await toEmbedPoll(targetPoll, result.data.visitorId) });
+  })
   .post("/comments", async (c) => {
     const body = await c.req.json().catch(() => null);
     const result = createCommentSchema.safeParse(body);
@@ -1030,9 +1194,8 @@ export const embedRoutes = new Hono()
 
     const id = crypto.randomUUID();
     const metadata = getCommentMetadata(c);
-    const status = containsBannedWord(result.data.body, config.settings.bannedWords)
-      ? "pending"
-      : "visible";
+    const hasBannedWord = containsBannedWord(result.data.body, config.settings.bannedWords);
+    const status = hasBannedWord ? "pending" : "visible";
 
     await db.insert(comment).values({
       id,
@@ -1049,6 +1212,7 @@ export const embedRoutes = new Hono()
       ...metadata,
       body: result.data.body,
       status,
+      classification: hasBannedWord ? "spam" : "legitimate",
     });
 
     const created = await db.query.comment.findFirst({

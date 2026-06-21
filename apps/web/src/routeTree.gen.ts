@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WidgetRouteImport } from './routes/widget'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as PollWidgetRouteImport } from './routes/poll-widget'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as adminRouteRouteImport } from './routes/(admin)/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,7 +25,9 @@ import { Route as adminIntegrationsRouteImport } from './routes/(admin)/integrat
 import { Route as adminDomainRouteImport } from './routes/(admin)/domain'
 import { Route as adminCustomizeRouteImport } from './routes/(admin)/customize'
 import { Route as adminAnalyticsRouteImport } from './routes/(admin)/analytics'
+import { Route as adminPollsIndexRouteImport } from './routes/(admin)/polls/index'
 import { Route as adminCommentsIndexRouteImport } from './routes/(admin)/comments/index'
+import { Route as adminPollsPollIdRouteImport } from './routes/(admin)/polls/$pollId'
 import { Route as adminCommentsCommentIdRouteImport } from './routes/(admin)/comments/$commentId'
 
 const WidgetRoute = WidgetRouteImport.update({
@@ -35,6 +38,11 @@ const WidgetRoute = WidgetRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PollWidgetRoute = PollWidgetRouteImport.update({
+  id: '/poll-widget',
+  path: '/poll-widget',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -101,10 +109,20 @@ const adminAnalyticsRoute = adminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => adminRouteRoute,
 } as any)
+const adminPollsIndexRoute = adminPollsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => adminPollsRoute,
+} as any)
 const adminCommentsIndexRoute = adminCommentsIndexRouteImport.update({
   id: '/comments/',
   path: '/comments/',
   getParentRoute: () => adminRouteRoute,
+} as any)
+const adminPollsPollIdRoute = adminPollsPollIdRouteImport.update({
+  id: '/$pollId',
+  path: '/$pollId',
+  getParentRoute: () => adminPollsRoute,
 } as any)
 const adminCommentsCommentIdRoute = adminCommentsCommentIdRouteImport.update({
   id: '/comments/$commentId',
@@ -115,6 +133,7 @@ const adminCommentsCommentIdRoute = adminCommentsCommentIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/poll-widget': typeof PollWidgetRoute
   '/register': typeof RegisterRoute
   '/widget': typeof WidgetRoute
   '/analytics': typeof adminAnalyticsRoute
@@ -124,15 +143,18 @@ export interface FileRoutesByFullPath {
   '/moderation': typeof adminModerationRoute
   '/overview': typeof adminOverviewRoute
   '/pages': typeof adminPagesRoute
-  '/polls': typeof adminPollsRoute
+  '/polls': typeof adminPollsRouteWithChildren
   '/settings': typeof adminSettingsRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/comments/$commentId': typeof adminCommentsCommentIdRoute
+  '/polls/$pollId': typeof adminPollsPollIdRoute
   '/comments/': typeof adminCommentsIndexRoute
+  '/polls/': typeof adminPollsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/poll-widget': typeof PollWidgetRoute
   '/register': typeof RegisterRoute
   '/widget': typeof WidgetRoute
   '/analytics': typeof adminAnalyticsRoute
@@ -142,17 +164,19 @@ export interface FileRoutesByTo {
   '/moderation': typeof adminModerationRoute
   '/overview': typeof adminOverviewRoute
   '/pages': typeof adminPagesRoute
-  '/polls': typeof adminPollsRoute
   '/settings': typeof adminSettingsRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/comments/$commentId': typeof adminCommentsCommentIdRoute
+  '/polls/$pollId': typeof adminPollsPollIdRoute
   '/comments': typeof adminCommentsIndexRoute
+  '/polls': typeof adminPollsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/(admin)': typeof adminRouteRouteWithChildren
   '/login': typeof LoginRoute
+  '/poll-widget': typeof PollWidgetRoute
   '/register': typeof RegisterRoute
   '/widget': typeof WidgetRoute
   '/(admin)/analytics': typeof adminAnalyticsRoute
@@ -162,17 +186,20 @@ export interface FileRoutesById {
   '/(admin)/moderation': typeof adminModerationRoute
   '/(admin)/overview': typeof adminOverviewRoute
   '/(admin)/pages': typeof adminPagesRoute
-  '/(admin)/polls': typeof adminPollsRoute
+  '/(admin)/polls': typeof adminPollsRouteWithChildren
   '/(admin)/settings': typeof adminSettingsRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/(admin)/comments/$commentId': typeof adminCommentsCommentIdRoute
+  '/(admin)/polls/$pollId': typeof adminPollsPollIdRoute
   '/(admin)/comments/': typeof adminCommentsIndexRoute
+  '/(admin)/polls/': typeof adminPollsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/poll-widget'
     | '/register'
     | '/widget'
     | '/analytics'
@@ -186,11 +213,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/onboarding/'
     | '/comments/$commentId'
+    | '/polls/$pollId'
     | '/comments/'
+    | '/polls/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/poll-widget'
     | '/register'
     | '/widget'
     | '/analytics'
@@ -200,16 +230,18 @@ export interface FileRouteTypes {
     | '/moderation'
     | '/overview'
     | '/pages'
-    | '/polls'
     | '/settings'
     | '/onboarding'
     | '/comments/$commentId'
+    | '/polls/$pollId'
     | '/comments'
+    | '/polls'
   id:
     | '__root__'
     | '/'
     | '/(admin)'
     | '/login'
+    | '/poll-widget'
     | '/register'
     | '/widget'
     | '/(admin)/analytics'
@@ -223,13 +255,16 @@ export interface FileRouteTypes {
     | '/(admin)/settings'
     | '/onboarding/'
     | '/(admin)/comments/$commentId'
+    | '/(admin)/polls/$pollId'
     | '/(admin)/comments/'
+    | '/(admin)/polls/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   adminRouteRoute: typeof adminRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PollWidgetRoute: typeof PollWidgetRoute
   RegisterRoute: typeof RegisterRoute
   WidgetRoute: typeof WidgetRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
@@ -249,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/poll-widget': {
+      id: '/poll-widget'
+      path: '/poll-widget'
+      fullPath: '/poll-widget'
+      preLoaderRoute: typeof PollWidgetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -342,12 +384,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof adminAnalyticsRouteImport
       parentRoute: typeof adminRouteRoute
     }
+    '/(admin)/polls/': {
+      id: '/(admin)/polls/'
+      path: '/'
+      fullPath: '/polls/'
+      preLoaderRoute: typeof adminPollsIndexRouteImport
+      parentRoute: typeof adminPollsRoute
+    }
     '/(admin)/comments/': {
       id: '/(admin)/comments/'
       path: '/comments'
       fullPath: '/comments/'
       preLoaderRoute: typeof adminCommentsIndexRouteImport
       parentRoute: typeof adminRouteRoute
+    }
+    '/(admin)/polls/$pollId': {
+      id: '/(admin)/polls/$pollId'
+      path: '/$pollId'
+      fullPath: '/polls/$pollId'
+      preLoaderRoute: typeof adminPollsPollIdRouteImport
+      parentRoute: typeof adminPollsRoute
     }
     '/(admin)/comments/$commentId': {
       id: '/(admin)/comments/$commentId'
@@ -359,6 +415,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface adminPollsRouteChildren {
+  adminPollsPollIdRoute: typeof adminPollsPollIdRoute
+  adminPollsIndexRoute: typeof adminPollsIndexRoute
+}
+
+const adminPollsRouteChildren: adminPollsRouteChildren = {
+  adminPollsPollIdRoute: adminPollsPollIdRoute,
+  adminPollsIndexRoute: adminPollsIndexRoute,
+}
+
+const adminPollsRouteWithChildren = adminPollsRoute._addFileChildren(
+  adminPollsRouteChildren,
+)
+
 interface adminRouteRouteChildren {
   adminAnalyticsRoute: typeof adminAnalyticsRoute
   adminCustomizeRoute: typeof adminCustomizeRoute
@@ -367,7 +437,7 @@ interface adminRouteRouteChildren {
   adminModerationRoute: typeof adminModerationRoute
   adminOverviewRoute: typeof adminOverviewRoute
   adminPagesRoute: typeof adminPagesRoute
-  adminPollsRoute: typeof adminPollsRoute
+  adminPollsRoute: typeof adminPollsRouteWithChildren
   adminSettingsRoute: typeof adminSettingsRoute
   adminCommentsCommentIdRoute: typeof adminCommentsCommentIdRoute
   adminCommentsIndexRoute: typeof adminCommentsIndexRoute
@@ -381,7 +451,7 @@ const adminRouteRouteChildren: adminRouteRouteChildren = {
   adminModerationRoute: adminModerationRoute,
   adminOverviewRoute: adminOverviewRoute,
   adminPagesRoute: adminPagesRoute,
-  adminPollsRoute: adminPollsRoute,
+  adminPollsRoute: adminPollsRouteWithChildren,
   adminSettingsRoute: adminSettingsRoute,
   adminCommentsCommentIdRoute: adminCommentsCommentIdRoute,
   adminCommentsIndexRoute: adminCommentsIndexRoute,
@@ -395,6 +465,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   adminRouteRoute: adminRouteRouteWithChildren,
   LoginRoute: LoginRoute,
+  PollWidgetRoute: PollWidgetRoute,
   RegisterRoute: RegisterRoute,
   WidgetRoute: WidgetRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,

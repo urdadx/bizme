@@ -64,6 +64,20 @@
       "when": 1782172800000,
       "tag": "0008_comment_attachment",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782050112697,
+      "tag": "0009_lean_red_shift",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1782176400000,
+      "tag": "0010_poll_vote_metadata",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,7 @@
 import { GalleryLinear } from "@/assets/icons/gallery-icon";
+import { uploadPollOptionImage } from "@/lib/poll-option-images";
+import { useTRPC } from "@/utils/trpc";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import {
@@ -16,12 +19,21 @@ import { PlusIcon } from "lucide-react";
 const maxChoices = 4;
 
 const createDefaultChoices = () => [
-	{ id: "choice-1", value: "" },
-	{ id: "choice-2", value: "" },
+	{ id: "choice-1", value: "", image: null as File | null, previewUrl: null as string | null },
+	{ id: "choice-2", value: "", image: null as File | null, previewUrl: null as string | null },
 ];
 
 export const CreatePollDialog = () => {
+	const trpc = useTRPC();
+	const queryClient = useQueryClient();
+	const createPoll = useMutation(trpc.polls.create.mutationOptions());
+	const [open, setOpen] = useState(false);
+	const [question, setQuestion] = useState("");
+	const [days, setDays] = useState("");
+	const [hours, setHours] = useState("");
+	const [minutes, setMinutes] = useState("");
 	const [choices, setChoices] = useState(createDefaultChoices);
+	const [error, setError] = useState<string | null>(null);
 
 	const addChoice = () => {
 		setChoices((current) => {
@@ -29,7 +41,10 @@ export const CreatePollDialog = () => {
 				return current;
 			}
 
-			return [...current, { id: `choice-${current.length + 1}`, value: "" }];
+			return [
+				...current,
+				{ id: `choice-${current.length + 1}`, value: "", image: null, previewUrl: null },
+			];
 		});
 	};
 
@@ -39,9 +54,107 @@ export const CreatePollDialog = () => {
 		);
 	};
 
+	const updateChoiceImage = (id: string, image: File | null) => {
+		setChoices((current) =>
+			current.map((choice) => {
+				if (choice.id !== id) {
+					return choice;
+				}
+
+				if (choice.previewUrl) {
+					URL.revokeObjectURL(choice.previewUrl);
+				}
+
+				return {
+					...choice,
+					image,
+					previewUrl: image ? URL.createObjectURL(image) : null,
+				};
+			}),
+		);
+	};
+
+	const resetForm = () => {
+		for (const choice of choices) {
+			if (choice.previewUrl) {
+				URL.revokeObjectURL(choice.previewUrl);
+			}
+		}
+
+		setQuestion("");
+		setDays("");
+		setHours("");
+		setMinutes("");
+		setChoices(createDefaultChoices());
+		setError(null);
+	};
+
+	const getClosesAt = () => {
+		const totalMinutes =
+			Number(days || 0) * 24 * 60 + Number(hours || 0) * 60 + Number(minutes || 0);
+
+		if (totalMinutes <= 0) {
+			return null;
+		}
+
+		return new Date(Date.now() + totalMinutes * 60 * 1000).toISOString();
+	};
+
+	const handleCreate = async () => {
+		const labels = choices.map((choice) => choice.value.trim()).filter(Boolean);
+
+		if (!question.trim()) {
+			setError("Add a poll question.");
+			return;
+		}
+
+		if (labels.length < 2) {
+			setError("Add at least two choices.");
+			return;
+		}
+
+		try {
+			setError(null);
+			const created = await createPoll.mutateAsync({
+				question,
+				status: "draft",
+				closesAt: getClosesAt(),
+				options: choices
+					.filter((choice) => choice.value.trim())
+					.map((choice) => ({ label: choice.value.trim() })),
+			});
+			const choicesWithLabels = choices.filter((choice) => choice.value.trim());
+
+			await Promise.all(
+				created.options.map((option, index) => {
+					const image = choicesWithLabels[index]?.image;
+
+					return image ? uploadPollOptionImage(option.id, image) : Promise.resolve();
+				}),
+			);
+			await queryClient.invalidateQueries({
+				queryKey: trpc.polls.list.queryOptions().queryKey,
+			});
+			setOpen(false);
+			resetForm();
+		} catch (error) {
+			setError(error instanceof Error ? error.message : "Unable to create poll.");
+		}
+	};
+
+	const handleOpenChange = (nextOpen: boolean) => {
+		setOpen(nextOpen);
+
+		if (!nextOpen) {
+			resetForm();
+		}
+	};
+
+	const isPending = createPoll.isPending;
+
 	return (
 		<>
-			<Dialog>
+			<Dialog open={open} onOpenChange={handleOpenChange}>
 				<DialogTrigger>
 					<Button>
 						<PlusIcon />
@@ -56,13 +169,15 @@ export const CreatePollDialog = () => {
 					</DialogHeader>
 
 					<div className="flex flex-col gap-2">
+						{error ? <p className="text-sm text-destructive">{error}</p> : null}
 						<div className="flex items-start gap-3">
 							<Input
+								value={question}
+								onChange={(event) => setQuestion(event.target.value)}
 								placeholder="Ask a question"
 								className="h-auto border-0 px-0 py-1 text-lg font-medium shadow-none outline-none ring-0 placeholder:text-muted-foreground focus-visible:ring-0"
 							/>
 						</div>
-
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center justify-between">
 								<h3 className="text-lg font-semibold">Choices</h3>
@@ -83,8 +198,22 @@ export const CreatePollDialog = () => {
 											type="file"
 											accept="image/*"
 											className="hidden"
+											onChange={(event) =>
+												updateChoiceImage(
+													choice.id,
+													event.target.files?.[0] ?? null,
+												)
+											}
 										/>
-										<GalleryLinear className="size-5" />
+										{choice.previewUrl ? (
+											<img
+												src={choice.previewUrl}
+												alt=""
+												className="size-full rounded-md object-cover"
+											/>
+										) : (
+											<GalleryLinear className="size-5" />
+										)}
 									</label>
 									<Input
 										value={choice.value}
@@ -119,19 +248,21 @@ export const CreatePollDialog = () => {
 								</h3>
 							</div>
 							<div className="grid grid-cols-3 gap-3">
-								<PollLengthInput label="Days" placeholder="0" />
-								<PollLengthInput label="Hours" placeholder="0" />
-								<PollLengthInput label="Minutes" placeholder="0" />
+								<PollLengthInput label="Days" value={days} onChange={setDays} />
+								<PollLengthInput label="Hours" value={hours} onChange={setHours} />
+								<PollLengthInput label="Minutes" value={minutes} onChange={setMinutes} />
 							</div>
 						</div>
 
 						<DialogFooter className="flex justify-end gap-2 mt-3">
 							<DialogClose>
-								<Button variant="outline" className="shadow-none">
+								<Button variant="outline" className="shadow-none" disabled={isPending}>
 									Cancel
 								</Button>
 							</DialogClose>
-							<Button className="shadow-none">Create poll</Button>
+							<Button className="shadow-none" onClick={handleCreate} disabled={isPending}>
+								{isPending ? "Creating..." : "Create poll"}
+							</Button>
 						</DialogFooter>
 					</div>
 				</DialogContent>
@@ -140,14 +271,24 @@ export const CreatePollDialog = () => {
 	);
 };
 
-function PollLengthInput({ label, placeholder }: { label: string; placeholder: string }) {
+function PollLengthInput({
+	label,
+	value,
+	onChange,
+}: {
+	label: string;
+	value: string;
+	onChange: (value: string) => void;
+}) {
 	return (
 		<label className="flex flex-col gap-2">
 			<span className="text-xs text-muted-foreground">{label}</span>
 			<Input
 				type="number"
 				min={0}
-				placeholder={placeholder}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				placeholder="0"
 				className="h-10 shadow-none"
 			/>
 		</label>
