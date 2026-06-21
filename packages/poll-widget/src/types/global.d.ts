@@ -7,6 +7,7 @@ export interface BizmePollInitOptions {
   pageUrl?: string;
   pageTitle?: string;
   pollId?: string;
+  colorScheme?: "system" | "light" | "dark";
   serverUrl?: string;
 }
 

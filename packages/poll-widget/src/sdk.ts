@@ -7,6 +7,7 @@ type BizmePollInitOptions = {
   pageUrl?: string;
   pageTitle?: string;
   pollId?: string;
+  colorScheme?: "system" | "light" | "dark";
   serverUrl?: string;
 };
 
@@ -33,7 +34,9 @@ function inferDefaultServerUrl() {
     return new URL(currentScript.src, window.location.href).origin;
   }
 
-  const candidate = document.querySelector('script[src*="/poll-sdk.js"]') as HTMLScriptElement | null;
+  const candidate = document.querySelector(
+    'script[src*="/poll-sdk.js"]',
+  ) as HTMLScriptElement | null;
 
   if (candidate?.src) {
     return new URL(candidate.src, window.location.href).origin;
@@ -58,6 +61,30 @@ function getTarget(initOptions: BizmePollInitOptions) {
   return document.querySelector(initOptions.selector) ?? document.body;
 }
 
+function getHostColorScheme(initOptions: BizmePollInitOptions) {
+  if (initOptions.colorScheme === "light" || initOptions.colorScheme === "dark") {
+    return initOptions.colorScheme;
+  }
+
+  const root = document.documentElement;
+  const explicitTheme =
+    root.dataset.theme || root.dataset.colorScheme || root.getAttribute("data-mode");
+
+  if (explicitTheme === "light" || explicitTheme === "dark") {
+    return explicitTheme;
+  }
+
+  if (root.classList.contains("dark")) return "dark";
+  if (root.classList.contains("light")) return "light";
+
+  const cssColorScheme = window.getComputedStyle(root).colorScheme;
+
+  if (cssColorScheme.includes("dark") && !cssColorScheme.includes("light")) return "dark";
+  if (cssColorScheme.includes("light") && !cssColorScheme.includes("dark")) return "light";
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 function buildWidgetUrl(initOptions: BizmePollInitOptions) {
   const serverUrl = normalizeUrl(initOptions.serverUrl, inferDefaultServerUrl());
   const apiUrl = normalizeUrl(initOptions.apiUrl, serverUrl);
@@ -68,6 +95,7 @@ function buildWidgetUrl(initOptions: BizmePollInitOptions) {
   url.searchParams.set("pageUrl", initOptions.pageUrl ?? window.location.href);
   url.searchParams.set("pageTitle", initOptions.pageTitle ?? document.title);
   url.searchParams.set("hostOrigin", window.location.origin);
+  url.searchParams.set("hostColorScheme", getHostColorScheme(initOptions));
 
   if (initOptions.pollId) {
     url.searchParams.set("pollId", initOptions.pollId);
@@ -176,7 +204,10 @@ function dispatch(command: BizmePollCommand, initOptions?: BizmePollInitOptions)
 
 const queuedCalls = window.BizmePoll?.q ?? [];
 
-const BizmePoll: BizmePollGlobal = (command: BizmePollCommand, initOptions?: BizmePollInitOptions) => {
+const BizmePoll: BizmePollGlobal = (
+  command: BizmePollCommand,
+  initOptions?: BizmePollInitOptions,
+) => {
   dispatch(command, initOptions);
 };
 

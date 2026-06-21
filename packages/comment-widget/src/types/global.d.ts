@@ -6,6 +6,7 @@ export interface BizmeInitOptions {
   apiUrl?: string;
   pageUrl?: string;
   pageTitle?: string;
+  colorScheme?: "system" | "light" | "dark";
   serverUrl?: string;
 }
 

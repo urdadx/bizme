@@ -14,7 +14,7 @@ import {
 	DialogTrigger,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, X } from "lucide-react";
 
 const maxChoices = 4;
 
@@ -43,7 +43,12 @@ export const CreatePollDialog = () => {
 
 			return [
 				...current,
-				{ id: `choice-${current.length + 1}`, value: "", image: null, previewUrl: null },
+				{
+					id: `choice-${current.length + 1}`,
+					value: "",
+					image: null,
+					previewUrl: null,
+				},
 			];
 		});
 	};
@@ -129,7 +134,9 @@ export const CreatePollDialog = () => {
 				created.options.map((option, index) => {
 					const image = choicesWithLabels[index]?.image;
 
-					return image ? uploadPollOptionImage(option.id, image) : Promise.resolve();
+					return image
+						? uploadPollOptionImage(option.id, image)
+						: Promise.resolve();
 				}),
 			);
 			await queryClient.invalidateQueries({
@@ -155,12 +162,14 @@ export const CreatePollDialog = () => {
 	return (
 		<>
 			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogTrigger>
-					<Button>
-						<PlusIcon />
-						Create a new poll
-					</Button>
-				</DialogTrigger>
+				<DialogTrigger
+					render={
+						<Button>
+							<PlusIcon />
+							Create a new poll
+						</Button>
+					}
+				/>
 				<DialogContent className="gap-5 shadow-none sm:max-w-xl">
 					<DialogHeader>
 						<DialogTitle className="text-xl font-semibold">
@@ -169,11 +178,15 @@ export const CreatePollDialog = () => {
 					</DialogHeader>
 
 					<div className="flex flex-col gap-2">
-						{error ? <p className="text-sm text-destructive">{error}</p> : null}
+						{error ? (
+							<p className="text-sm text-destructive">{error}</p>
+						) : null}
 						<div className="flex items-start gap-3">
 							<Input
 								value={question}
-								onChange={(event) => setQuestion(event.target.value)}
+								onChange={(event) =>
+									setQuestion(event.target.value)
+								}
 								placeholder="Ask a question"
 								className="h-auto border-0 px-0 py-1 text-lg font-medium shadow-none outline-none ring-0 placeholder:text-muted-foreground focus-visible:ring-0"
 							/>
@@ -190,31 +203,52 @@ export const CreatePollDialog = () => {
 								<div
 									key={choice.id}
 									className="flex items-center gap-2">
-									<label
-										htmlFor={`poll-choice-image-${choice.id}`}
-										className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md border bg-background text-muted-foreground hover:bg-muted">
-										<input
-											id={`poll-choice-image-${choice.id}`}
-											type="file"
-											accept="image/*"
-											className="hidden"
-											onChange={(event) =>
-												updateChoiceImage(
-													choice.id,
-													event.target.files?.[0] ?? null,
-												)
-											}
-										/>
-										{choice.previewUrl ? (
-											<img
-												src={choice.previewUrl}
-												alt=""
-												className="size-full rounded-md object-cover"
+									<div className="relative group size-10 shrink-0">
+										<label
+											htmlFor={`poll-choice-image-${choice.id}`}
+											className="flex size-full cursor-pointer items-center justify-center rounded-md border bg-background text-muted-foreground hover:bg-muted overflow-hidden">
+											<input
+												id={`poll-choice-image-${choice.id}`}
+												type="file"
+												accept="image/*"
+												className="hidden"
+												onChange={(event) =>
+													updateChoiceImage(
+														choice.id,
+														event.target
+															.files?.[0] ??
+															null,
+													)
+												}
 											/>
-										) : (
-											<GalleryLinear className="size-5" />
+											{choice.previewUrl ? (
+												<img
+													src={
+														choice.previewUrl
+													}
+													alt=""
+													className="size-full object-cover"
+												/>
+											) : (
+												<GalleryLinear className="size-5" />
+											)}
+										</label>
+										{choice.previewUrl && (
+											<button
+												type="button"
+												onClick={(e) => {
+													e.preventDefault();
+													e.stopPropagation();
+													updateChoiceImage(
+														choice.id,
+														null,
+													);
+												}}
+												className="absolute -top-1.5 -right-1.5 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100">
+												<X className="size-3" />
+											</button>
 										)}
-									</label>
+									</div>
 									<Input
 										value={choice.value}
 										onChange={(event) =>
@@ -248,19 +282,37 @@ export const CreatePollDialog = () => {
 								</h3>
 							</div>
 							<div className="grid grid-cols-3 gap-3">
-								<PollLengthInput label="Days" value={days} onChange={setDays} />
-								<PollLengthInput label="Hours" value={hours} onChange={setHours} />
-								<PollLengthInput label="Minutes" value={minutes} onChange={setMinutes} />
+								<PollLengthInput
+									label="Days"
+									value={days}
+									onChange={setDays}
+								/>
+								<PollLengthInput
+									label="Hours"
+									value={hours}
+									onChange={setHours}
+								/>
+								<PollLengthInput
+									label="Minutes"
+									value={minutes}
+									onChange={setMinutes}
+								/>
 							</div>
 						</div>
 
 						<DialogFooter className="flex justify-end gap-2 mt-3">
 							<DialogClose>
-								<Button variant="outline" className="shadow-none" disabled={isPending}>
+								<Button
+									variant="outline"
+									className="shadow-none"
+									disabled={isPending}>
 									Cancel
 								</Button>
 							</DialogClose>
-							<Button className="shadow-none" onClick={handleCreate} disabled={isPending}>
+							<Button
+								className="shadow-none"
+								onClick={handleCreate}
+								disabled={isPending}>
 								{isPending ? "Creating..." : "Create poll"}
 							</Button>
 						</DialogFooter>

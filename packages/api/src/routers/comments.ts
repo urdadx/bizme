@@ -61,6 +61,7 @@ export type CommentTreeItem = {
   locationContinent: string | null;
   deviceType: string | null;
   browser: string | null;
+  os: string | null;
   attachments: CommentAttachmentItem[];
   children: CommentTreeItem[];
 };
@@ -152,6 +153,15 @@ function getBrowser(userAgent: string) {
   return userAgent ? "Unknown" : undefined;
 }
 
+function getOS(userAgent: string) {
+  if (/Windows NT/i.test(userAgent)) return "Windows";
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return "iOS";
+  if (/Android/i.test(userAgent)) return "Android";
+  if (/Mac OS X|Macintosh/i.test(userAgent)) return "macOS";
+  if (/Linux/i.test(userAgent)) return "Linux";
+  return userAgent ? "Unknown" : undefined;
+}
+
 function getDeviceType(userAgent: string) {
   if (/tablet|ipad|playbook|silk/i.test(userAgent)) return "Tablet";
   if (/mobi|android|iphone|ipod|blackberry|phone/i.test(userAgent)) return "Mobile";
@@ -176,6 +186,7 @@ function getCommentMetadata(request: RequestWithCloudflare) {
     locationContinent: continentCode ? CONTINENT_NAMES[continentCode] ?? continentCode : isLocalhost ? "Africa" : undefined,
     deviceType: getDeviceType(userAgent),
     browser: getBrowser(userAgent),
+    os: getOS(userAgent),
   };
 }
 
@@ -214,6 +225,7 @@ function toTreeItem(
     locationContinent: row.locationContinent,
     deviceType: row.deviceType,
     browser: row.browser,
+    os: row.os,
     attachments: attachmentsByCommentId.get(row.id) ?? [],
     children: [],
   };

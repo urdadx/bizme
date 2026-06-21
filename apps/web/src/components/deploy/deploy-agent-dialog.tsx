@@ -79,9 +79,7 @@ export const DeployAgentDialog = () => {
 
 	return (
 		<Dialog open={isOpen} onOpenChange={setIsOpen}>
-			<DialogTrigger>
-				<DeployTriggerButton />
-			</DialogTrigger>
+			<DialogTrigger render={<DeployTriggerButton />} />
 			<DialogContent
 				showCloseButton={false}
 				className="w-full p-0 max-w-4xl! onboarding-height bg-gray-50 rounded-xl overflow-visible">

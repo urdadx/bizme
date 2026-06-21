@@ -17,6 +17,7 @@ const defaultColorTheme = getColorTheme("light");
 const defaultCustomization: CustomizationSettingsValue = {
   fontFamily: "inter",
   theme: defaultColorTheme.value,
+  colorScheme: "system",
   brandColor: defaultColorTheme.brandColor,
   textColor: defaultColorTheme.textColor,
   hidePoweredBy: false,
@@ -80,12 +81,7 @@ function CustomizePage({
         <div className="flex min-h-0 h-full w-full flex-col">
           <div className="flex-1 overflow-y-auto smooth-div p-5">
             <h2 className="text-2xl font-semibold mb-4">Customize</h2>
-            <CustomizeSettings
-              form={form}
-              setForm={setForm}
-              save={save}
-              isLoading={isLoading}
-            />
+            <CustomizeSettings form={form} setForm={setForm} save={save} isLoading={isLoading} />
           </div>
         </div>
       </div>
@@ -113,12 +109,7 @@ function CustomizePage({
           className="mt-0 flex min-h-0 flex-1 flex-col overflow-y-auto bg-background"
         >
           <div className="flex-1 p-5">
-            <CustomizeSettings
-              form={form}
-              setForm={setForm}
-              save={save}
-              isLoading={isLoading}
-            />
+            <CustomizeSettings form={form} setForm={setForm} save={save} isLoading={isLoading} />
           </div>
         </TabsContent>
 
@@ -150,6 +141,7 @@ function getFormState(
   return {
     fontFamily: customization?.fontFamily || defaultCustomization.fontFamily,
     theme: customization?.theme || defaultCustomization.theme,
+    colorScheme: customization?.colorScheme || defaultCustomization.colorScheme,
     brandColor: customization?.brandColor || defaultCustomization.brandColor,
     textColor: customization?.textColor || defaultCustomization.textColor,
     hidePoweredBy: customization?.hidePoweredBy || defaultCustomization.hidePoweredBy,

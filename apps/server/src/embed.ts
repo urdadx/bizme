@@ -10,6 +10,7 @@ import { z } from "zod";
 const DEFAULT_CUSTOMIZATION = {
   fontFamily: "inter",
   theme: "light",
+  colorScheme: "system",
   brandColor: "#6170F8",
   textColor: "#1F2937",
   hidePoweredBy: false,
@@ -164,6 +165,15 @@ function getBrowser(userAgent: string) {
   return userAgent ? "Unknown" : undefined;
 }
 
+function getOS(userAgent: string) {
+  if (/Windows NT/i.test(userAgent)) return "Windows";
+  if (/iPhone|iPad|iPod/i.test(userAgent)) return "iOS";
+  if (/Android/i.test(userAgent)) return "Android";
+  if (/Mac OS X|Macintosh/i.test(userAgent)) return "macOS";
+  if (/Linux/i.test(userAgent)) return "Linux";
+  return userAgent ? "Unknown" : undefined;
+}
+
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -178,7 +188,10 @@ function containsBannedWord(body: string, bannedWords: string[]) {
       return false;
     }
 
-    const pattern = new RegExp(`(^|[^a-z0-9_])${escapeRegExp(normalizedWord)}(?=$|[^a-z0-9_])`, "i");
+    const pattern = new RegExp(
+      `(^|[^a-z0-9_])${escapeRegExp(normalizedWord)}(?=$|[^a-z0-9_])`,
+      "i",
+    );
     return pattern.test(normalizedBody);
   });
 }
@@ -193,21 +206,29 @@ function getCommentMetadata(c: Context) {
   const request = c.req.raw as RequestWithCloudflare;
   const requestUrl = new URL(request.url);
   const host = c.req.header("host") ?? requestUrl.host;
-  const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(requestUrl.hostname) ||
+  const isLocalhost =
+    ["localhost", "127.0.0.1", "::1"].includes(requestUrl.hostname) ||
     host.startsWith("localhost:") ||
     host.startsWith("127.0.0.1:");
   const userAgent = c.req.header("user-agent") ?? "";
   const cfCountry = typeof request.cf?.country === "string" ? request.cf.country : undefined;
   const countryCode = (cfCountry ?? (isLocalhost ? "GH" : undefined))?.toUpperCase();
-  const continentCode = typeof request.cf?.continent === "string" ? request.cf.continent : undefined;
+  const continentCode =
+    typeof request.cf?.continent === "string" ? request.cf.continent : undefined;
 
   return {
-    locationCity: typeof request.cf?.city === "string" ? request.cf.city : isLocalhost ? "Accra" : undefined,
+    locationCity:
+      typeof request.cf?.city === "string" ? request.cf.city : isLocalhost ? "Accra" : undefined,
     locationCountry: getCountryName(countryCode),
     locationCountryCode: countryCode,
-    locationContinent: continentCode ? CONTINENT_NAMES[continentCode] ?? continentCode : isLocalhost ? "Africa" : undefined,
+    locationContinent: continentCode
+      ? (CONTINENT_NAMES[continentCode] ?? continentCode)
+      : isLocalhost
+        ? "Africa"
+        : undefined,
     deviceType: getDeviceType(userAgent),
     browser: getBrowser(userAgent),
+    os: getOS(userAgent),
   };
 }
 
@@ -1025,7 +1046,9 @@ export const embedRoutes = new Hono()
       return c.json(jsonError("Parent comment not found", 404), 404);
     }
 
-    return c.json({ comments: getCommentLevel(rows, result.data.parentId, attachmentsByCommentId) });
+    return c.json({
+      comments: getCommentLevel(rows, result.data.parentId, attachmentsByCommentId),
+    });
   })
   .get("/polls", async (c) => {
     const result = pollsQuerySchema.safeParse({
@@ -1051,10 +1074,11 @@ export const embedRoutes = new Hono()
     let targetPoll: PollRow | undefined;
 
     if (result.data.pollId) {
-      targetPoll = await db.query.poll.findFirst({
-        where: (table, { and, eq }) =>
-          and(eq(table.id, result.data.pollId as string), eq(table.workspaceId, workspace.id)),
-      }) ?? undefined;
+      targetPoll =
+        (await db.query.poll.findFirst({
+          where: (table, { and, eq }) =>
+            and(eq(table.id, result.data.pollId as string), eq(table.workspaceId, workspace.id)),
+        })) ?? undefined;
     }
 
     if (!targetPoll) {
@@ -1162,7 +1186,10 @@ export const embedRoutes = new Hono()
     if (embedSession?.email) {
       const blocked = await db.query.blockedUser.findFirst({
         where: (table, { and, eq }) =>
-          and(eq(table.workspaceId, workspace.id), eq(table.email, embedSession.email!.toLowerCase())),
+          and(
+            eq(table.workspaceId, workspace.id),
+            eq(table.email, embedSession.email!.toLowerCase()),
+          ),
       });
 
       if (blocked) {

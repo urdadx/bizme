@@ -10,6 +10,7 @@ import { getActiveWorkspaceId } from "./utils";
 const customizationInput = z.object({
   fontFamily: z.string().min(1),
   theme: z.string().min(1),
+  colorScheme: z.enum(["system", "light", "dark"]),
   brandColor: z.string().min(1),
   textColor: z.string().min(1),
   hidePoweredBy: z.boolean(),

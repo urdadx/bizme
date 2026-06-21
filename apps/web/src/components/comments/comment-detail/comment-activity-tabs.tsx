@@ -12,12 +12,17 @@ export function CommentActivityTabs({
   rootCommentId,
   onSubmitReply,
   isSubmittingReply,
+  customization,
 }: {
   comments: CommentReply[];
   reactions: CommentReaction[];
   rootCommentId: string;
   onSubmitReply: (body: string, images: File[]) => Promise<void> | void;
   isSubmittingReply?: boolean;
+  customization?: {
+    brandColor?: string;
+    textColor?: string;
+  };
 }) {
   return (
     <Tabs defaultValue="comments" className="w-full">
@@ -40,8 +45,16 @@ export function CommentActivityTabs({
 
       <TabsContent value="comments" className="mt-4">
         <div className="flex flex-col gap-6">
-          <CommentComposer onSubmit={onSubmitReply} isSubmitting={isSubmittingReply} />
-          <CommentsList comments={comments} rootCommentId={rootCommentId} />
+          <CommentComposer
+            onSubmit={onSubmitReply}
+            isSubmitting={isSubmittingReply}
+            customization={customization}
+          />
+          <CommentsList
+            comments={comments}
+            rootCommentId={rootCommentId}
+            customization={customization}
+          />
         </div>
       </TabsContent>
 

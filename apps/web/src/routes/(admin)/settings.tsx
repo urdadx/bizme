@@ -66,11 +66,11 @@ function RouteComponent() {
 									value="workspace">
 									Site settings
 								</TabsTrigger>
-								<TabsTrigger
+								{/* <TabsTrigger
 									className="shrink-0 data-[state=active]:bg-muted data-[state=active]:shadow-none"
 									value="billing">
 									Billing
-								</TabsTrigger>
+								</TabsTrigger> */}
 							</TabsList>
 						</div>
 						<TabsContent className="py-4 space-y-8" value="account">

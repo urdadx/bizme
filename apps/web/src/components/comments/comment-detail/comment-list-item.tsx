@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVerticalIcon, PencilIcon, PinIcon } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useState } from "react";
 import { CommentComposer } from "./comment-composer";
 
@@ -36,6 +37,7 @@ export type CommentMenuRole = "admin" | "commenter";
 
 export function CommentListItem({
   comment,
+  customization,
   isReplying,
   onReply,
   viewerRole = "admin",
@@ -47,6 +49,10 @@ export function CommentListItem({
   isPending = false,
 }: {
   comment: CommentReply;
+  customization?: {
+    brandColor?: string;
+    textColor?: string;
+  };
   isReplying: boolean;
   onReply: () => void;
   viewerRole?: CommentMenuRole;
@@ -59,6 +65,19 @@ export function CommentListItem({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment.content);
+  const colorStyle = {
+    "--comment-brand-color": customization?.brandColor ?? "var(--ring)",
+    color: customization?.textColor,
+    borderColor: customization?.brandColor,
+  } as CSSProperties;
+  const filledButtonStyle = {
+    backgroundColor: customization?.brandColor,
+    color: customization?.textColor,
+  };
+  const outlineButtonStyle = {
+    color: customization?.textColor,
+    borderColor: customization?.brandColor,
+  };
 
   async function handleSaveEdit() {
     const body = draft.trim();
@@ -94,15 +113,22 @@ export function CommentListItem({
                     <textarea
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
-                      className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      style={colorStyle}
+                      className="min-h-20 rounded-md border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--comment-brand-color)]"
                     />
                     <div className="flex items-center gap-2">
-                      <Button size="sm" onClick={handleSaveEdit} disabled={isPending}>
+                      <Button
+                        size="sm"
+                        style={filledButtonStyle}
+                        onClick={handleSaveEdit}
+                        disabled={isPending}
+                      >
                         Save
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
+                        style={outlineButtonStyle}
                         disabled={isPending}
                         onClick={() => {
                           setDraft(comment.content);
@@ -115,7 +141,9 @@ export function CommentListItem({
                   </div>
                 ) : (
                   <>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{comment.content}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {comment.content}
+                    </p>
                     {comment.attachments.length > 0 ? (
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {comment.attachments.map((attachment) => (
@@ -124,7 +152,8 @@ export function CommentListItem({
                             href={attachment.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="block overflow-hidden rounded-lg border bg-muted">
+                            className="block overflow-hidden rounded-lg border bg-muted"
+                          >
                             <img
                               src={attachment.url}
                               alt={attachment.filename}
@@ -182,13 +211,21 @@ export function CommentListItem({
               <Button
                 variant="ghost"
                 size="sm"
+                style={{ color: customization?.textColor }}
                 disabled={isPending}
                 onClick={() => onLike?.(comment.id)}
               >
-                <LikeIcon /> <span className="ml-1 text-[#888888]">{comment.likes}</span>
+                <LikeIcon color={customization?.textColor} />
+                <span className="ml-1">{comment.likes}</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={onReply}>
-                <ChatLinear /> <span className="ml-1 text-[#888888]">{comment.replies}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                style={{ color: customization?.textColor }}
+                onClick={onReply}
+              >
+                <ChatLinear color={customization?.textColor} />
+                <span className="ml-1">{comment.replies}</span>
               </Button>
             </div>
           </div>
@@ -199,6 +236,7 @@ export function CommentListItem({
             <CommentComposer
               uploadId={`reply-file-upload-${comment.id}`}
               isSubmitting={isPending}
+              customization={customization}
               onSubmit={(body, images) => onSubmitReply?.(comment.id, body, images)}
             />
           </div>
@@ -210,6 +248,7 @@ export function CommentListItem({
               <CommentListItem
                 key={child.id}
                 comment={child}
+                customization={customization}
                 isReplying={false}
                 onReply={() => undefined}
                 viewerRole={viewerRole}

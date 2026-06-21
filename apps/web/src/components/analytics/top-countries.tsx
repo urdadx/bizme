@@ -20,7 +20,9 @@ const continentIcons = {
 function getFlagIcon(countryCode: string | undefined, title: string) {
 	if (!countryCode) return null;
 
-	return <img src={`https://flag.vercel.app/m/${countryCode}.svg`} className="w-4" alt={title} />;
+	return (
+		<img src={`https://flag.vercel.app/m/${countryCode}.svg`} className="w-4" alt={title} />
+	);
 }
 
 export function TopCountries() {
@@ -86,11 +88,6 @@ export function TopCountries() {
 							Continents
 						</TabsTrigger>
 					</TabsList>
-					{/* <div className="flex items-center gap-1">
-						<div className="text-muted-foreground text-sm flex items-center gap-1">
-							<MousePointerClick className="h-4 w-4" /> Location
-						</div>
-					</div> */}
 				</div>
 
 				<div className="flex-1 min-h-0 overflow-hidden">

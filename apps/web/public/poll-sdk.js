@@ -21,6 +21,18 @@
 		if (!initOptions.selector) return document.body;
 		return document.querySelector(initOptions.selector) ?? document.body;
 	}
+	function getHostColorScheme(initOptions) {
+		if (initOptions.colorScheme === "light" || initOptions.colorScheme === "dark") return initOptions.colorScheme;
+		const root = document.documentElement;
+		const explicitTheme = root.dataset.theme || root.dataset.colorScheme || root.getAttribute("data-mode");
+		if (explicitTheme === "light" || explicitTheme === "dark") return explicitTheme;
+		if (root.classList.contains("dark")) return "dark";
+		if (root.classList.contains("light")) return "light";
+		const cssColorScheme = window.getComputedStyle(root).colorScheme;
+		if (cssColorScheme.includes("dark") && !cssColorScheme.includes("light")) return "dark";
+		if (cssColorScheme.includes("light") && !cssColorScheme.includes("dark")) return "light";
+		return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+	}
 	function buildWidgetUrl(initOptions) {
 		const serverUrl = normalizeUrl(initOptions.serverUrl, inferDefaultServerUrl());
 		const apiUrl = normalizeUrl(initOptions.apiUrl, serverUrl);
@@ -30,6 +42,7 @@
 		url.searchParams.set("pageUrl", initOptions.pageUrl ?? window.location.href);
 		url.searchParams.set("pageTitle", initOptions.pageTitle ?? document.title);
 		url.searchParams.set("hostOrigin", window.location.origin);
+		url.searchParams.set("hostColorScheme", getHostColorScheme(initOptions));
 		if (initOptions.pollId) url.searchParams.set("pollId", initOptions.pollId);
 		return url.toString();
 	}

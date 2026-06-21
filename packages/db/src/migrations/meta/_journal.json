@@ -78,6 +78,20 @@
       "when": 1782176400000,
       "tag": "0010_poll_vote_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1782262800000,
+      "tag": "0011_analytics_os_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1782349200000,
+      "tag": "0012_workspace_customization_color_scheme",
+      "breakpoints": true
     }
   ]
 }

@@ -9,183 +9,194 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronsDown, ChevronsUp } from "lucide-react";
 
 export const Route = createFileRoute("/(admin)/comments/$commentId")({
-	component: RouteComponent,
+  component: RouteComponent,
 });
 
 function RouteComponent() {
-	const { commentId } = Route.useParams();
-	const trpc = useTRPC();
-	const navigate = useNavigate();
-	const queryClient = useQueryClient();
-	const commentQuery = useQuery(trpc.comments.detail.queryOptions({ id: commentId }));
-	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
-	const replyComment = useMutation(trpc.comments.reply.mutationOptions());
-	const likeComment = useMutation(trpc.comments.like.mutationOptions());
-	const classifyComment = useMutation(trpc.comments.classify.mutationOptions());
-	const blockUser = useMutation(trpc.blockedUsers.block.mutationOptions());
-	const unblockUser = useMutation(trpc.blockedUsers.unblock.mutationOptions());
+  const { commentId } = Route.useParams();
+  const trpc = useTRPC();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const commentQuery = useQuery(trpc.comments.detail.queryOptions({ id: commentId }));
+  const customizationQuery = useQuery(trpc.workspaceCustomization.get.queryOptions());
+  const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
+  const replyComment = useMutation(trpc.comments.reply.mutationOptions());
+  const likeComment = useMutation(trpc.comments.like.mutationOptions());
+  const classifyComment = useMutation(trpc.comments.classify.mutationOptions());
+  const blockUser = useMutation(trpc.blockedUsers.block.mutationOptions());
+  const unblockUser = useMutation(trpc.blockedUsers.unblock.mutationOptions());
 
-	async function handleDelete() {
-		await deleteComment.mutateAsync({ id: commentId });
-		await queryClient.invalidateQueries({
-			queryKey: trpc.comments.list.queryOptions().queryKey,
-		});
-		await navigate({ to: "/comments" });
-	}
+  async function handleDelete() {
+    await deleteComment.mutateAsync({ id: commentId });
+    await queryClient.invalidateQueries({
+      queryKey: trpc.comments.list.queryOptions().queryKey,
+    });
+    await navigate({ to: "/comments" });
+  }
 
-	async function handleReply(body: string, _images: File[]) {
-		const reply = await replyComment.mutateAsync({ id: commentId, body });
-		await uploadCommentImages(reply.id, _images);
-		await queryClient.invalidateQueries({
-			queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
-		});
-	}
+  async function handleReply(body: string, _images: File[]) {
+    const reply = await replyComment.mutateAsync({ id: commentId, body });
+    await uploadCommentImages(reply.id, _images);
+    await queryClient.invalidateQueries({
+      queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+    });
+  }
 
-	async function handleLike() {
-		await likeComment.mutateAsync({ id: commentId });
-		await queryClient.invalidateQueries({
-			queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
-		});
-	}
+  async function handleLike() {
+    await likeComment.mutateAsync({ id: commentId });
+    await queryClient.invalidateQueries({
+      queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+    });
+  }
 
-	async function handleClassificationChange(classification: "legitimate" | "spam") {
-		await classifyComment.mutateAsync({ id: commentId, classification });
-		await Promise.all([
-			queryClient.invalidateQueries({
-				queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
-			}),
-			queryClient.invalidateQueries({
-				queryKey: trpc.comments.list.queryOptions().queryKey,
-			}),
-		]);
-	}
+  async function handleClassificationChange(classification: "legitimate" | "spam") {
+    await classifyComment.mutateAsync({ id: commentId, classification });
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: trpc.comments.list.queryOptions().queryKey,
+      }),
+    ]);
+  }
 
-	async function handleBlockedChange(blocked: boolean) {
-		if (!commentQuery.data?.comment.authorEmail) return;
+  async function handleBlockedChange(blocked: boolean) {
+    if (!commentQuery.data?.comment.authorEmail) return;
 
-		if (blocked) {
-			await blockUser.mutateAsync({
-				name: commentQuery.data.comment.author,
-				email: commentQuery.data.comment.authorEmail,
-				reason: "Blocked from comment detail",
-			});
-		} else {
-			await unblockUser.mutateAsync({
-				email: commentQuery.data.comment.authorEmail,
-			});
-		}
+    if (blocked) {
+      await blockUser.mutateAsync({
+        name: commentQuery.data.comment.author,
+        email: commentQuery.data.comment.authorEmail,
+        reason: "Blocked from comment detail",
+      });
+    } else {
+      await unblockUser.mutateAsync({
+        email: commentQuery.data.comment.authorEmail,
+      });
+    }
 
-		await Promise.all([
-			queryClient.invalidateQueries({
-				queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
-			}),
-			queryClient.invalidateQueries({
-				queryKey: trpc.comments.list.queryOptions().queryKey,
-			}),
-			queryClient.invalidateQueries({
-				queryKey: trpc.blockedUsers.list.queryOptions().queryKey,
-			}),
-		]);
-	}
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: trpc.comments.list.queryOptions().queryKey,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: trpc.blockedUsers.list.queryOptions().queryKey,
+      }),
+    ]);
+  }
 
-	if (commentQuery.isLoading) {
-		return <div className="p-5 text-sm text-muted-foreground">Loading comment...</div>;
-	}
+  if (commentQuery.isLoading) {
+    return <div className="p-5 text-sm text-muted-foreground">Loading comment...</div>;
+  }
 
-	if (commentQuery.error || !commentQuery.data) {
-		return (
-			<div className="p-5 text-sm text-destructive">
-				{commentQuery.error?.message ?? "Comment not found."}
-			</div>
-		);
-	}
+  if (commentQuery.error || !commentQuery.data) {
+    return (
+      <div className="p-5 text-sm text-destructive">
+        {commentQuery.error?.message ?? "Comment not found."}
+      </div>
+    );
+  }
 
-	const { comment, page, replies, reactions } = commentQuery.data;
+  const { comment, page, replies, reactions } = commentQuery.data;
+  const customization = customizationQuery.data
+    ? {
+        brandColor: customizationQuery.data.brandColor,
+        textColor: customizationQuery.data.textColor,
+      }
+    : undefined;
 
-	return (
-		<div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:flex-row lg:gap-0">
-			<div className="min-h-0 flex-1 overflow-hidden">
-				<aside
-					className="no-scrollbar relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-white"
-					aria-label="Comment panel">
-					<div className="sticky top-0 z-10 flex items-center justify-between bg-white p-5 pb-4">
-						<Button variant="outline" size="sm" onClick={() => void navigate({ to: "/comments" })}>
-							<ArrowLeft />
-							Back
-						</Button>
-						<div className="flex items-center gap-2">
-							<Button variant="outline" size="sm">
-								<ChevronsUp />
-							</Button>
-							<Button variant="outline" size="sm">
-								<ChevronsDown />
-							</Button>
-						</div>
-					</div>
+  return (
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden lg:flex-row lg:gap-0">
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <aside
+          className="no-scrollbar relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto bg-white"
+          aria-label="Comment panel"
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between bg-white p-5 pb-4">
+            <Button variant="outline" size="sm" onClick={() => void navigate({ to: "/comments" })}>
+              <ArrowLeft />
+              Back
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <ChevronsUp />
+              </Button>
+              <Button variant="outline" size="sm">
+                <ChevronsDown />
+              </Button>
+            </div>
+          </div>
 
-					<div className="min-h-0 flex-1 px-5 pb-5 pt-2">
-						<div className="flex w-full flex-col gap-4">
-							<div className="flex justify-between items-center">
-								<h2 className="text-xl font-semibold">
-									{comment.author}
-								</h2>
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={likeComment.isPending}
-									onClick={() => void handleLike()}>
-									<LikeIcon />
-									<span className="text-[#888888]">{comment.likes}</span>
-								</Button>
-							</div>
-							<p className="w-full text-sm leading-6 text-muted-foreground">
-								{comment.content}
-							</p>
-							{comment.attachments.length > 0 ? (
-								<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-									{comment.attachments.map((attachment) => (
-										<a
-											key={attachment.id}
-											href={attachment.url}
-											target="_blank"
-											rel="noreferrer"
-											className="block overflow-hidden rounded-lg border bg-muted">
-											<img
-												src={attachment.url}
-												alt={attachment.filename}
-												className="aspect-video w-full object-cover"
-											/>
-										</a>
-									))}
-								</div>
-							) : null}
-							<CommentActivityTabs
-								comments={replies}
-								reactions={reactions}
-								rootCommentId={comment.id}
-								onSubmitReply={handleReply}
-								isSubmittingReply={replyComment.isPending}
-							/>
-						</div>
-					</div>
-				</aside>
-			</div>
-			<div className="min-h-0 lg:flex lg:w-90 lg:shrink-0 lg:border-l lg:bg-background">
-				<div className="flex h-full min-h-0 w-full flex-col">
-					<CommentsMeta
-						comment={comment}
-						page={page}
-						onDelete={() => void handleDelete()}
-						isDeleting={deleteComment.isPending}
-						onClassificationChange={(classification) =>
-							void handleClassificationChange(classification)
-						}
-						isClassifying={classifyComment.isPending}
-						onBlockedChange={(blocked) => void handleBlockedChange(blocked)}
-						isBlocking={blockUser.isPending || unblockUser.isPending}
-					/>
-				</div>
-			</div>
-		</div>
-	);
+          <div className="min-h-0 flex-1 px-5 pb-5 pt-2">
+            <div className="flex w-full flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">{comment.author}</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  style={{
+                    color: customization?.textColor,
+                    borderColor: customization?.brandColor,
+                  }}
+                  disabled={likeComment.isPending}
+                  onClick={() => void handleLike()}
+                >
+                  <LikeIcon color={customization?.textColor} />
+                  <span>{comment.likes}</span>
+                </Button>
+              </div>
+              <p className="w-full text-sm leading-6 text-muted-foreground">{comment.content}</p>
+              {comment.attachments.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {comment.attachments.map((attachment) => (
+                    <a
+                      key={attachment.id}
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block overflow-hidden rounded-lg border bg-muted"
+                    >
+                      <img
+                        src={attachment.url}
+                        alt={attachment.filename}
+                        className="aspect-video w-full object-cover"
+                      />
+                    </a>
+                  ))}
+                </div>
+              ) : null}
+              <CommentActivityTabs
+                comments={replies}
+                reactions={reactions}
+                rootCommentId={comment.id}
+                onSubmitReply={handleReply}
+                isSubmittingReply={replyComment.isPending}
+                customization={customization}
+              />
+            </div>
+          </div>
+        </aside>
+      </div>
+      <div className="min-h-0 lg:flex lg:w-90 lg:shrink-0 lg:border-l lg:bg-background">
+        <div className="flex h-full min-h-0 w-full flex-col">
+          <CommentsMeta
+            comment={comment}
+            page={page}
+            onDelete={() => void handleDelete()}
+            isDeleting={deleteComment.isPending}
+            onClassificationChange={(classification) =>
+              void handleClassificationChange(classification)
+            }
+            isClassifying={classifyComment.isPending}
+            onBlockedChange={(blocked) => void handleBlockedChange(blocked)}
+            isBlocking={blockUser.isPending || unblockUser.isPending}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

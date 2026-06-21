@@ -1,4 +1,5 @@
 import { MainAnalytics } from "@/components/analytics/main-analytics";
+import { TopTechnology } from "@/components/analytics/top-technology";
 import { TopCountries } from "@/components/analytics/top-countries";
 import { TopPages } from "@/components/analytics/top-pages";
 import { createFileRoute } from "@tanstack/react-router";
@@ -22,6 +23,8 @@ function RouteComponent() {
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 py-6">
 						<TopCountries />
 						<TopPages />
+						<TopTechnology type="technology" />
+						<TopTechnology type="devices" />
 					</div>
 				</div>
 			</div>

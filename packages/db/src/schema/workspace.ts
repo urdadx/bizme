@@ -43,6 +43,9 @@ export const workspaceCustomization = sqliteTable("workspace_customization", {
     .references(() => organization.id, { onDelete: "cascade" }),
   fontFamily: text("font_family").default("inter").notNull(),
   theme: text("theme").default("light").notNull(),
+  colorScheme: text("color_scheme", { enum: ["system", "light", "dark"] })
+    .default("system")
+    .notNull(),
   brandColor: text("brand_color").default("#6170F8").notNull(),
   textColor: text("text_color").default("#1F2937").notNull(),
   hidePoweredBy: integer("hide_powered_by", { mode: "boolean" }).default(false).notNull(),
@@ -153,6 +156,7 @@ export const comment = sqliteTable(
     locationContinent: text("location_continent"),
     deviceType: text("device_type"),
     browser: text("browser"),
+    os: text("os"),
     body: text("body").notNull(),
     status: text("status", { enum: commentStatuses }).default("visible").notNull(),
     classification: text("classification", { enum: commentClassifications })
@@ -276,6 +280,7 @@ export const pollVote = sqliteTable(
     locationContinent: text("location_continent"),
     deviceType: text("device_type"),
     browser: text("browser"),
+    os: text("os"),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
@@ -362,10 +367,10 @@ export const pollRelations = relations(poll, ({ one, many }) => ({
     fields: [poll.workspaceId],
     references: [organization.id],
   }),
-    page: one(page, {
-      fields: [poll.pageId],
-      references: [page.id],
-    }),
+  page: one(page, {
+    fields: [poll.pageId],
+    references: [page.id],
+  }),
   options: many(pollOption),
   votes: many(pollVote),
 }));

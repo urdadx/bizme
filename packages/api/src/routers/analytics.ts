@@ -295,4 +295,50 @@ export const analyticsRouter = router({
       continents: toSortedStats(continents),
     };
   }),
+  technology: protectedProcedure.query(async ({ ctx }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+    const [comments, polls] = await Promise.all([
+      db.query.comment.findMany({
+        columns: {
+          browser: true,
+          deviceType: true,
+          os: true,
+        },
+        where: (table, { and, eq, ne }) =>
+          and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+      }),
+      db.query.poll.findMany({
+        columns: {
+          id: true,
+        },
+        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
+      }),
+    ]);
+    const pollIds = polls.map((poll) => poll.id);
+    const votes = pollIds.length > 0
+      ? await db.query.pollVote.findMany({
+        columns: {
+          browser: true,
+          deviceType: true,
+          os: true,
+        },
+        where: (table) => inArray(table.pollId, pollIds),
+      })
+      : [];
+    const browsers = new Map<string, LocationStat>();
+    const operatingSystems = new Map<string, LocationStat>();
+    const devices = new Map<string, LocationStat>();
+
+    for (const row of [...comments, ...votes]) {
+      incrementStat(browsers, row.browser);
+      incrementStat(operatingSystems, row.os);
+      incrementStat(devices, row.deviceType);
+    }
+
+    return {
+      browsers: toSortedStats(browsers),
+      operatingSystems: toSortedStats(operatingSystems),
+      devices: toSortedStats(devices),
+    };
+  }),
 });

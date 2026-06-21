@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Paperclip, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
 	PromptInput,
 	PromptInputTextarea,
@@ -16,7 +16,19 @@ export function ComposerPreview({ customization }: { customization?: Customizati
 	const [input, setInput] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [files, setFiles] = useState<File[]>([]);
+	const [previews, setPreviews] = useState<string[]>([]);
 	const uploadInputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		const newPreviews = files.map((file) => URL.createObjectURL(file));
+		setPreviews(newPreviews);
+
+		return () => {
+			for (const url of newPreviews) {
+				URL.revokeObjectURL(url);
+			}
+		};
+	}, [files]);
 
 	const handleSubmit = () => {
 		if (input.trim() || files.length > 0) {
@@ -50,27 +62,30 @@ export function ComposerPreview({ customization }: { customization?: Customizati
 			isLoading={isLoading}
 			onSubmit={handleSubmit}
 			style={{ color: customization?.textColor }}
-			className="w-150 shadow-none rounded-xl h-25 max-w-xl">
+			className="flex flex-col w-full max-w-xl shadow-none rounded-xl min-h-25">
 			{files.length > 0 && (
 				<div className="flex flex-wrap gap-2 pb-2">
 					{files.map((file, index) => (
 						<div
 							key={index}
-							className="bg-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
+							className="group relative h-20 w-20 overflow-hidden rounded-lg border bg-secondary"
 							onClick={(e) => e.stopPropagation()}>
-							<Paperclip className="size-4" />
-							<span className="max-w-30 truncate">{file.name}</span>
+							<img
+								src={previews[index]}
+								alt={file.name}
+								className="h-full w-full object-cover"
+							/>
 							<button
 								onClick={() => handleRemoveFile(index)}
-								className="hover:bg-secondary/50 rounded-full p-1">
-								<X className="size-4" />
+								className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100">
+								<X className="size-3" />
 							</button>
 						</div>
 					))}
 				</div>
 			)}
 
-			<PromptInputTextarea placeholder="Write a comment..." />
+			<PromptInputTextarea placeholder="Write a comment..." className="flex-1" />
 
 			<PromptInputActions className="flex items-center justify-between gap-2 pt-2">
 				<PromptInputAction tooltip="Attach files">

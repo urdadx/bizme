@@ -12,10 +12,11 @@ import {
 } from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { Code2, Eye, LinkIcon, MoreHorizontal, PauseCircle, PlayCircle } from "lucide-react";
 
 import { ChartLinear } from "@/assets/icons/chart-icon";
 import { SearchLinear } from "@/assets/icons/search-icon";
+import { TrashLines } from "@/assets/icons/trash-icon";
 import { CuteIconWrapper } from "@/components/cute-icon-wrapper";
 import Loader from "@/components/loader";
 import { Button } from "@/components/ui/button";
@@ -46,19 +47,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useTRPC } from "@/utils/trpc";
 import { env } from "@better-comments/env/web";
-import { Link } from "@tanstack/react-router";
 import { CreatePollDialog } from "./create-poll-dialog";
-
-type PollRow = {
-	id: string;
-	workspaceId: string;
-	question: string;
-	votes: number;
-	options: number;
-	status: "active" | "closed" | "draft";
-	closesAtLabel: string | null;
-	lastActivity: string;
-};
+import { PollDetailsSheet, type PollRow } from "./poll-details-sheet";
 
 type PollStatusFilter = "all" | PollRow["status"];
 
@@ -113,12 +103,14 @@ if(window.self===window.top&&window.location.pathname!=="/poll-widget"){
 }
 
 function getColumns({
+	onViewDetails,
 	onStatusChange,
 	onDelete,
 	onCopyShareLink,
 	onCopyEmbedScript,
 	isMutating,
 }: {
+	onViewDetails: (row: PollRow) => void;
 	onStatusChange: (id: string, status: PollRow["status"]) => void;
 	onDelete: (id: string) => void;
 	onCopyShareLink: (row: PollRow) => void;
@@ -180,7 +172,9 @@ function getColumns({
 			accessorKey: "lastActivity",
 			header: "Last activity",
 			cell: ({ row }) => (
-				<span className="text-muted-foreground">{row.getValue("lastActivity")}</span>
+				<span className="text-muted-foreground">
+					{row.getValue("lastActivity")}
+				</span>
 			),
 			minSize: 140,
 		},
@@ -200,34 +194,44 @@ function getColumns({
 						<MoreHorizontal className="h-4 w-4" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end" className="w-44 min-w-44">
-						<DropdownMenuItem
-							render={<Link to="/polls/$pollId" params={{ pollId: row.original.id }} />}>
+						<DropdownMenuItem onClick={() => onViewDetails(row.original)}>
+							<Eye className="size-4" />
 							View details
 						</DropdownMenuItem>
 						{row.original.status !== "active" ? (
 							<DropdownMenuItem
 								disabled={isMutating}
-								onClick={() => onStatusChange(row.original.id, "active")}>
+								onClick={() =>
+									onStatusChange(row.original.id, "active")
+								}>
+								<PlayCircle className="size-4 text-[#888888]" />
 								Publish
 							</DropdownMenuItem>
 						) : null}
 						{row.original.status === "active" ? (
 							<DropdownMenuItem
 								disabled={isMutating}
-								onClick={() => onStatusChange(row.original.id, "closed")}>
-								Close
+								onClick={() =>
+									onStatusChange(row.original.id, "closed")
+								}>
+								<PauseCircle className="size-4" />
+								Unpublish
 							</DropdownMenuItem>
 						) : null}
 						<DropdownMenuItem onClick={() => onCopyShareLink(row.original)}>
+							<LinkIcon className="size-4" />
 							Copy share link
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => onCopyEmbedScript(row.original)}>
+						<DropdownMenuItem
+							onClick={() => onCopyEmbedScript(row.original)}>
+							<Code2 className="size-4" />
 							Copy embed script
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							disabled={isMutating}
 							className="text-red-500"
 							onClick={() => onDelete(row.original.id)}>
+							<TrashLines color="red" />
 							Delete
 						</DropdownMenuItem>
 					</DropdownMenuContent>
@@ -246,6 +250,7 @@ export function PollsTable() {
 	const updateStatus = useMutation(trpc.polls.updateStatus.mutationOptions());
 	const deletePoll = useMutation(trpc.polls.delete.mutationOptions());
 	const [error, setError] = useState<string | null>(null);
+	const [selectedPoll, setSelectedPoll] = useState<PollRow | null>(null);
 	const [pagination, setPagination] = useState<PaginationState>({
 		pageIndex: 0,
 		pageSize: 10,
@@ -259,17 +264,24 @@ export function PollsTable() {
 		},
 	]);
 
-	async function invalidatePolls() {
-		await queryClient.invalidateQueries({
-			queryKey: trpc.polls.list.queryOptions().queryKey,
-		});
+	async function invalidatePolls(id?: string) {
+		await Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: trpc.polls.list.queryOptions().queryKey,
+			}),
+			id
+				? queryClient.invalidateQueries({
+						queryKey: trpc.polls.detail.queryOptions({ id }).queryKey,
+					})
+				: Promise.resolve(),
+		]);
 	}
 
 	async function handleStatusChange(id: string, status: PollRow["status"]) {
 		try {
 			setError(null);
 			await updateStatus.mutateAsync({ id, status });
-			await invalidatePolls();
+			await invalidatePolls(id);
 		} catch (error) {
 			setError(error instanceof Error ? error.message : "Unable to update poll.");
 		}
@@ -279,6 +291,7 @@ export function PollsTable() {
 		try {
 			setError(null);
 			await deletePoll.mutateAsync({ id });
+			if (selectedPoll?.id === id) setSelectedPoll(null);
 			await invalidatePolls();
 		} catch (error) {
 			setError(error instanceof Error ? error.message : "Unable to delete poll.");
@@ -287,6 +300,7 @@ export function PollsTable() {
 
 	const data = pollsQuery.data ?? [];
 	const columns = getColumns({
+		onViewDetails: setSelectedPoll,
 		onStatusChange: (id, status) => void handleStatusChange(id, status),
 		onDelete: (id) => void handleDelete(id),
 		onCopyShareLink: (row) => {
@@ -329,6 +343,15 @@ export function PollsTable() {
 
 	return (
 		<div className="space-y-4">
+			<PollDetailsSheet
+				poll={selectedPoll}
+				open={selectedPoll !== null}
+				onOpenChange={(open) => {
+					if (!open) setSelectedPoll(null);
+				}}
+				onStatusChange={(id, status) => void handleStatusChange(id, status)}
+				isMutating={updateStatus.isPending || deletePoll.isPending}
+			/>
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
 			{pollsQuery.error ? (
 				<p className="text-sm text-destructive">{pollsQuery.error.message}</p>
@@ -434,7 +457,9 @@ export function PollsTable() {
 					<TableBody>
 						{pollsQuery.isPending ? (
 							<TableRow>
-								<TableCell colSpan={columns.length} className="h-14 text-center">
+								<TableCell
+									colSpan={columns.length}
+									className="h-14 text-center">
 									<Loader />
 								</TableCell>
 							</TableRow>
@@ -443,14 +468,18 @@ export function PollsTable() {
 								<TableCell
 									colSpan={columns.length}
 									className="h-24 text-center text-sm text-muted-foreground">
-									{data.length === 0 ? "No polls yet." : "No polls match your filters."}
+									{data.length === 0
+										? "No polls yet."
+										: "No polls match your filters."}
 								</TableCell>
 							</TableRow>
 						) : (
 							table.getRowModel().rows.map((row) => (
 								<TableRow key={row.id}>
 									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id} className="h-14">
+										<TableCell
+											key={cell.id}
+											className="h-14">
 											{flexRender(
 												cell.column.columnDef.cell,
 												cell.getContext(),
