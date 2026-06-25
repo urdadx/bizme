@@ -1,44 +1,36 @@
-FROM node:22-slim AS base
+FROM oven/bun:1 AS deps
 
 WORKDIR /app
 
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:/usr/local/bin:$PATH"
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* bun.lockb* bun.lock* ./
+COPY packages ./packages
+COPY apps ./apps
 
-RUN corepack enable \
-	&& corepack prepare pnpm@10.10.0 --activate \
-	&& npm install -g bun@1.2.23
+RUN bun install
 
-COPY . .
+FROM deps AS builder
 
-RUN pnpm install --frozen-lockfile
+WORKDIR /app
 
-FROM base AS build
+RUN cd apps/server && bun run build
 
-ENV NODE_ENV=production
+FROM oven/bun:1-slim AS runner
 
-RUN pnpm --filter server build
-
-FROM node:22-slim AS runner
+WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV DATABASE_URL=file:/data/local.db
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:/usr/local/bin:$PATH"
 
-RUN corepack enable \
-	&& corepack prepare pnpm@10.10.0 --activate \
-	&& npm install -g bun@1.2.23
+COPY --from=deps /app /app
+COPY --from=builder /app/apps/server/dist ./apps/server/dist
+COPY docker/server/start.sh ./docker/server/start.sh
 
-COPY --from=build /app /app
-
-WORKDIR /app/apps/server
-
-RUN mkdir -p /data uploads/comment-images uploads/poll-option-images
+RUN chmod +x ./docker/server/start.sh \
+	&& mkdir -p /data ./apps/server/uploads/comment-images ./apps/server/uploads/poll-option-images
 
 EXPOSE 3000
 
 VOLUME ["/data", "/app/apps/server/uploads"]
 
-CMD ["sh", "-c", "if [ -f dist/index.mjs ]; then bun run dist/index.mjs; elif [ -f dist/index.js ]; then bun run dist/index.js; else bun run dist/src/index.js; fi"]
+CMD ["/app/docker/server/start.sh"]
