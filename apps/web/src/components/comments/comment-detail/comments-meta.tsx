@@ -7,15 +7,12 @@ import { TrashLines } from "@/assets/icons/trash-icon";
 import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { CopyIcon } from "lucide-react";
+import { PinIcon } from "lucide-react";
 import { useState } from "react";
+import { SquareIcon } from "@/assets/icons/square-icon";
+import { AtSignIcon } from "@/assets/icons/at-sign-icon";
 
 type CommentClassification = "legitimate" | "spam";
 
@@ -55,6 +52,7 @@ type CommentsMetaProps = {
 		date: string;
 		status: string;
 		classification: CommentClassification;
+		isPinned: boolean;
 		isBlocked: boolean;
 		locationCity: string | null;
 		locationCountry: string | null;
@@ -69,6 +67,8 @@ type CommentsMetaProps = {
 	};
 	onDelete?: () => void;
 	isDeleting?: boolean;
+	onPinChange?: (pinned: boolean) => void;
+	isPinning?: boolean;
 	onClassificationChange?: (classification: CommentClassification) => void;
 	isClassifying?: boolean;
 	onBlockedChange?: (blocked: boolean) => void;
@@ -80,6 +80,8 @@ export const CommentsMeta = ({
 	page,
 	onDelete,
 	isDeleting = false,
+	onPinChange,
+	isPinning = false,
 	onClassificationChange,
 	isClassifying = false,
 	onBlockedChange,
@@ -90,12 +92,12 @@ export const CommentsMeta = ({
 		{
 			label: "Page",
 			value: page.path,
-			icon: DesktopIconLinear,
+			icon: SquareIcon,
 		},
 		{
 			label: "Provider",
 			value: comment.authorProvider,
-			icon: GlobeLinear,
+			icon: AtSignIcon,
 		},
 		{
 			label: "Location",
@@ -144,10 +146,15 @@ export const CommentsMeta = ({
 						<Button
 							variant="outline"
 							size="sm"
-							onClick={() =>
-								void navigator.clipboard.writeText(page.url)
-							}>
-							<CopyIcon />
+							disabled={isPinning || !onPinChange}
+							onClick={() => onPinChange?.(!comment.isPinned)}>
+							<PinIcon
+								className={cn(
+									"size-4",
+									comment.isPinned && "fill-current",
+								)}
+							/>
+							<span>{comment.isPinned ? "Pinned" : "Pin"}</span>
 						</Button>
 					</div>
 					<Button
@@ -178,7 +185,7 @@ export const CommentsMeta = ({
 				<div className="flex flex-col space-y-4 py-6 border-b">
 					<div className="flex items-center justify-between gap-4">
 						<p className="w-full text-sm leading-6 text-muted-foreground">
-							Moderation status
+							Comment status
 						</p>
 						<Select
 							value={comment.classification}
@@ -192,9 +199,12 @@ export const CommentsMeta = ({
 								size="sm"
 								className={cn(
 									"w-34 rounded-sm shadow-none",
-									classificationConfig[comment.classification].className,
+									classificationConfig[comment.classification]
+										.className,
 								)}>
-								<ClassificationBadge classification={comment.classification} />
+								<ClassificationBadge
+									classification={comment.classification}
+								/>
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="legitimate">
@@ -212,7 +222,11 @@ export const CommentsMeta = ({
 						</p>
 						<Select
 							value={comment.isBlocked ? "yes" : "no"}
-							disabled={isBlocking || !comment.authorEmail || !onBlockedChange}
+							disabled={
+								isBlocking ||
+								!comment.authorEmail ||
+								!onBlockedChange
+							}
 							onValueChange={(value) => {
 								if (value === "yes" || value === "no") {
 									onBlockedChange?.(value === "yes");

@@ -25,6 +25,7 @@ function RouteComponent() {
 	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
 	const replyComment = useMutation(trpc.comments.reply.mutationOptions());
 	const likeComment = useMutation(trpc.comments.like.mutationOptions());
+	const pinComment = useMutation(trpc.comments.pin.mutationOptions());
 	const classifyComment = useMutation(trpc.comments.classify.mutationOptions());
 	const blockUser = useMutation(trpc.blockedUsers.block.mutationOptions());
 	const unblockUser = useMutation(trpc.blockedUsers.unblock.mutationOptions());
@@ -50,6 +51,21 @@ function RouteComponent() {
 		await queryClient.invalidateQueries({
 			queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
 		});
+	}
+
+	async function handlePinChange(isPinned: boolean) {
+		await pinComment.mutateAsync({ id: commentId, isPinned });
+		await Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+			}),
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.list.queryOptions().queryKey,
+			}),
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.neighbors.queryOptions({ id: commentId }).queryKey,
+			}),
+		]);
 	}
 
 	async function handleClassificationChange(classification: "legitimate" | "spam") {
@@ -217,6 +233,8 @@ function RouteComponent() {
 						page={page}
 						onDelete={() => void handleDelete()}
 						isDeleting={deleteComment.isPending}
+						onPinChange={(isPinned) => void handlePinChange(isPinned)}
+						isPinning={pinComment.isPending}
 						onClassificationChange={(classification) =>
 							void handleClassificationChange(classification)
 						}

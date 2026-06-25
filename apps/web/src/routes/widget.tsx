@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { MoreVerticalIcon, PencilIcon, PinIcon, X } from "lucide-react";
 
@@ -46,6 +47,7 @@ type CommentItem = {
 	content: string;
 	likes: number;
 	replies: number;
+	isPinned: boolean;
 	avatar: string | null;
 	attachments: {
 		id: string;
@@ -69,6 +71,7 @@ type ColorScheme = "system" | "light" | "dark";
 
 type EmbedCommentsResponse = {
 	comments?: CommentItem[];
+	nextOffset?: number | null;
 };
 
 type EmbedCommentResponse = {
@@ -105,6 +108,7 @@ const DEFAULT_TEXT_COLOR = "#1F2937";
 const DEFAULT_DARK_TEXT_COLOR = "#F8FAFC";
 const VISITOR_STORAGE_KEY = "bizme_visitor_id";
 const BLOCKED_COMMENTER_MESSAGE = "This commenter is blocked";
+const COMMENTS_PAGE_SIZE = 20;
 
 export const Route = createFileRoute("/widget")({
 	validateSearch: (search: Record<string, unknown>): WidgetSearch => ({
@@ -283,6 +287,15 @@ function removeCommentFromTree(
 	return { items: next, removed };
 }
 
+function sortPinnedComments(items: CommentItem[]): CommentItem[] {
+	return [...items]
+		.sort((first, second) => Number(second.isPinned) - Number(first.isPinned))
+		.map((item) => ({
+			...item,
+			children: sortPinnedComments(item.children),
+		}));
+}
+
 function WidgetRoute() {
 	const search = Route.useSearch();
 	const apiUrl = normalizeApiUrl(search.apiUrl);
@@ -295,7 +308,7 @@ function WidgetRoute() {
 	const [input, setInput] = useState("");
 	const [files, setFiles] = useState<File[]>([]);
 	const [visitorId, setVisitorId] = useState<string | null>(() => getStoredVisitorId());
-	const [isLoading, setIsLoading] = useState(true);
+	const [isConfigLoading, setIsConfigLoading] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [isReplying, setIsReplying] = useState(false);
@@ -309,9 +322,11 @@ function WidgetRoute() {
 	const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_COLOR);
 	const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
 	const [resolvedColorScheme, setResolvedColorScheme] = useState<"light" | "dark">(() =>
-		resolveColorScheme("system", search.hostColorScheme),
+		search.hostColorScheme ?? "light",
 	);
 	const uploadInputRef = useRef<HTMLInputElement>(null);
+	const loadMoreRef = useRef<HTMLDivElement>(null);
+	const loadedCommentPagesRef = useRef(0);
 
 	const loadAuthSession = async () => {
 		if (!apiUrl) return null;
@@ -337,7 +352,7 @@ function WidgetRoute() {
 		replyBody,
 		input,
 		files,
-		isLoading,
+		isConfigLoading,
 		loadingRepliesCommentId,
 		statusMessage,
 	]);
@@ -387,31 +402,21 @@ function WidgetRoute() {
 	useEffect(() => {
 		let cancelled = false;
 
-		async function loadWidget() {
+		async function loadWidgetConfig() {
 			if (!search.installKey || !apiUrl) {
 				setStatusMessage("Missing widget install key or API URL.");
-				setIsLoading(false);
+				setIsConfigLoading(false);
 				return;
 			}
 
-			setIsLoading(true);
+			setIsConfigLoading(true);
 			setStatusMessage(null);
 
 			try {
-				const params = new URLSearchParams({
-					installKey: search.installKey,
-					pageUrl,
-				});
-				const [configResponse, commentsResponse] = await Promise.all([
-					fetchJson<EmbedConfigResponse>(
-						apiUrl,
-						`/embed/config?installKey=${encodeURIComponent(search.installKey)}`,
-					),
-					fetchJson<EmbedCommentsResponse>(
-						apiUrl,
-						`/embed/comments?${params.toString()}`,
-					),
-				]);
+				const configResponse = await fetchJson<EmbedConfigResponse>(
+					apiUrl,
+					`/embed/config?installKey=${encodeURIComponent(search.installKey)}`,
+				);
 
 				if (cancelled) return;
 
@@ -425,7 +430,6 @@ function WidgetRoute() {
 						search.hostColorScheme,
 					),
 				);
-				setComments(commentsResponse.comments ?? []);
 			} catch (error) {
 				if (cancelled) return;
 
@@ -434,22 +438,131 @@ function WidgetRoute() {
 				);
 			} finally {
 				if (!cancelled) {
-					setIsLoading(false);
+					setIsConfigLoading(false);
 				}
 			}
 		}
 
-		void loadWidget();
+		void loadWidgetConfig();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [apiUrl, pageUrl, search.hostColorScheme, search.installKey]);
+	}, [apiUrl, search.hostColorScheme, search.installKey]);
+
+	const commentsQuery = useInfiniteQuery({
+		queryKey: ["embed-comments", apiUrl, search.installKey, pageUrl],
+		initialPageParam: 0,
+		enabled: Boolean(apiUrl && search.installKey),
+		queryFn: ({ pageParam }) => {
+			if (!search.installKey) {
+				throw new Error("Missing widget install key.");
+			}
+
+			const params = new URLSearchParams({
+				installKey: search.installKey,
+				pageUrl,
+				limit: String(COMMENTS_PAGE_SIZE),
+				offset: String(pageParam),
+			});
+
+			return fetchJson<EmbedCommentsResponse>(
+				apiUrl,
+				`/embed/comments?${params.toString()}`,
+			);
+		},
+		getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+	});
+
+	const isLoading = isConfigLoading || commentsQuery.isLoading;
+
+	useEffect(() => {
+		loadedCommentPagesRef.current = 0;
+		setComments([]);
+	}, [apiUrl, pageUrl, search.installKey]);
+
+	useEffect(() => {
+		const pages = commentsQuery.data?.pages ?? [];
+		const loadedPageCount = loadedCommentPagesRef.current;
+
+		if (pages.length <= loadedPageCount) return;
+
+		const nextComments = pages
+			.slice(loadedPageCount)
+			.flatMap((page) => page.comments ?? []);
+
+		setComments((current) => {
+			if (loadedPageCount === 0) {
+				return sortPinnedComments(nextComments);
+			}
+
+			const existingIds = new Set(current.map((comment) => comment.id));
+			return sortPinnedComments([
+				...current,
+				...nextComments.filter((comment) => !existingIds.has(comment.id)),
+			]);
+		});
+
+		loadedCommentPagesRef.current = pages.length;
+	}, [commentsQuery.data]);
+
+	useEffect(() => {
+		if (!commentsQuery.error) return;
+
+		setStatusMessage(
+			commentsQuery.error instanceof Error
+				? commentsQuery.error.message
+				: "Unable to load comments.",
+		);
+	}, [commentsQuery.error]);
+
+	useEffect(() => {
+		const target = loadMoreRef.current;
+
+		if (!target || !commentsQuery.hasNextPage) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting && !commentsQuery.isFetchingNextPage) {
+					void commentsQuery.fetchNextPage();
+				}
+			},
+			{ rootMargin: "160px" },
+		);
+
+		observer.observe(target);
+		return () => observer.disconnect();
+	}, [
+		commentsQuery.fetchNextPage,
+		commentsQuery.hasNextPage,
+		commentsQuery.isFetchingNextPage,
+	]);
 
 	const effectiveTextColor =
 		resolvedColorScheme === "dark" && textColor === DEFAULT_TEXT_COLOR
 			? DEFAULT_DARK_TEXT_COLOR
 			: textColor;
+
+	useEffect(() => {
+		const root = document.documentElement;
+		const body = document.body;
+		const previousRootBackground = root.style.backgroundColor;
+		const previousBodyBackground = body.style.backgroundColor;
+		const previousColorScheme = root.style.colorScheme;
+		const hadDarkClass = root.classList.contains("dark");
+
+		root.classList.toggle("dark", resolvedColorScheme === "dark");
+		root.style.backgroundColor = "var(--background)";
+		root.style.colorScheme = resolvedColorScheme;
+		body.style.backgroundColor = "var(--background)";
+
+		return () => {
+			root.classList.toggle("dark", hadDarkClass);
+			root.style.backgroundColor = previousRootBackground;
+			root.style.colorScheme = previousColorScheme;
+			body.style.backgroundColor = previousBodyBackground;
+		};
+	}, [resolvedColorScheme]);
 
 	const ensureAnonymousVisitor = async () => {
 		if (visitorId) {
@@ -562,7 +675,7 @@ function WidgetRoute() {
 				attachments,
 			} as CommentItem;
 
-			setComments((current) => [createdComment, ...current]);
+			setComments((current) => sortPinnedComments([createdComment, ...current]));
 			setInput("");
 			setFiles([]);
 
@@ -599,7 +712,7 @@ function WidgetRoute() {
 			apiUrl,
 			`/embed/comments?${params.toString()}`,
 		);
-		return response.comments ?? [];
+		return sortPinnedComments(response.comments ?? []);
 	};
 
 	const loadReplies = async (commentId: string) => {
@@ -810,7 +923,7 @@ function WidgetRoute() {
 	return (
 		<div
 			className={cn(
-				"min-h-screen bg-background p-0 text-sm",
+				"min-h-dvh bg-background p-0 text-sm",
 				resolvedColorScheme === "dark" && "dark",
 			)}
 			style={{ color: effectiveTextColor, colorScheme: resolvedColorScheme }}>
@@ -896,7 +1009,7 @@ function WidgetRoute() {
 
 				<div className="flex flex-col rounded-lg border bg-background p-4">
 					{isLoading ? (
-						<div className="py-4 text-sm text-muted-foreground">
+						<div className="py-4 text-sm text-center text-muted-foreground">
 							Loading comments...
 						</div>
 					) : null}
@@ -933,6 +1046,17 @@ function WidgetRoute() {
 								/>
 							))
 						: null}
+					{!isLoading && comments.length > 0 ? (
+						<div
+							ref={loadMoreRef}
+							className="py-3 text-center text-xs text-muted-foreground">
+							{commentsQuery.isFetchingNextPage
+								? "Loading more comments..."
+								: commentsQuery.hasNextPage
+									? ""
+									: "You're all caught up."}
+						</div>
+					) : null}
 				</div>
 			</div>
 
@@ -1071,6 +1195,12 @@ function CommentCard({
 									<span className="text-xs text-muted-foreground">
 										{comment.date}
 									</span>
+									{comment.isPinned ? (
+										<span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+											<PinIcon className="size-3 fill-current" />
+											Pinned
+										</span>
+									) : null}
 								</div>
 								{isEditing ? (
 									<div className="mt-2 space-y-2">

@@ -38,7 +38,7 @@ export function ReactionsList({ reactions }: { reactions: CommentReaction[] }) {
 						</div>
 					</div>
 					<div className="min-w-0">
-						<h3 className="truncate text-sm font-semibold">
+						<h3 className="truncate font-sans text-[#494444] text-xs font-semibold">
 							{reaction.name}
 						</h3>
 						<p className="text-xs text-muted-foreground">

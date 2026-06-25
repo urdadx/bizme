@@ -5,7 +5,13 @@ import { uploadCommentImages } from "@/lib/comment-attachments";
 import { useTRPC } from "@/utils/trpc";
 import { CommentListItem, type CommentReply } from "./comment-list-item";
 
-export function CommentsList({ comments, rootCommentId }: { comments: CommentReply[]; rootCommentId: string }) {
+export function CommentsList({
+	comments,
+	rootCommentId,
+}: {
+	comments: CommentReply[];
+	rootCommentId: string;
+}) {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -27,7 +33,10 @@ export function CommentsList({ comments, rootCommentId }: { comments: CommentRep
 		setItems(comments);
 	}, [comments]);
 
-	function updateLocalComment(id: string, updater: (comment: CommentReply) => CommentReply | null) {
+	function updateLocalComment(
+		id: string,
+		updater: (comment: CommentReply) => CommentReply | null,
+	) {
 		function visit(comment: CommentReply): CommentReply | null {
 			if (comment.id === id) {
 				return updater(comment);
@@ -76,7 +85,9 @@ export function CommentsList({ comments, rootCommentId }: { comments: CommentRep
 			await invalidateDetail();
 			updateLocalComment(id, (comment) => ({ ...comment, isPinned }));
 		} catch (error) {
-			setError(error instanceof Error ? error.message : "Unable to update pinned state.");
+			setError(
+				error instanceof Error ? error.message : "Unable to update pinned state.",
+			);
 		}
 	}
 
@@ -113,7 +124,7 @@ export function CommentsList({ comments, rootCommentId }: { comments: CommentRep
 		<div className="flex flex-col">
 			{error ? <p className="pb-2 text-sm text-destructive">{error}</p> : null}
 			{items.length === 0 ? (
-				<p className="text-sm text-muted-foreground">No replies yet.</p>
+				<p className="text-sm text-center text-muted-foreground">No replies yet.</p>
 			) : null}
 			{items.map((reply) => (
 				<CommentListItem
@@ -128,7 +139,9 @@ export function CommentsList({ comments, rootCommentId }: { comments: CommentRep
 					onLike={handleLike}
 					onSubmitReply={handleReply}
 					onReply={() =>
-						setReplyingTo((current) => (current === reply.id ? null : reply.id))
+						setReplyingTo((current) =>
+							current === reply.id ? null : reply.id,
+						)
 					}
 				/>
 			))}

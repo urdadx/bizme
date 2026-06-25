@@ -39,6 +39,8 @@ const commentsQuerySchema = z.object({
   installKey: z.string().min(1),
   pageUrl: z.string().url(),
   parentId: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 const pollsQuerySchema = z.object({
@@ -108,6 +110,7 @@ type EmbedComment = {
   content: string;
   likes: number;
   replies: number;
+  isPinned: boolean;
   avatar: string | null;
   attachments: EmbedCommentAttachment[];
   children: EmbedComment[];
@@ -503,6 +506,7 @@ function toEmbedComment(
     content: row.body,
     likes: row.likesCount,
     replies: 0,
+    isPinned: row.isPinned,
     avatar: getCommentAvatar(row),
     attachments: attachmentsByCommentId.get(row.id) ?? [],
     children: [],
@@ -515,11 +519,7 @@ async function getNextPageCommentNumber(workspaceId: string, pageId: string) {
       commentNumber: true,
     },
     where: (table, { and, eq, isNull }) =>
-      and(
-        eq(table.workspaceId, workspaceId),
-        eq(table.pageId, pageId),
-        isNull(table.parentId),
-      ),
+      and(eq(table.workspaceId, workspaceId), eq(table.pageId, pageId), isNull(table.parentId)),
     orderBy: (table) => [desc(table.commentNumber)],
   });
 
@@ -990,10 +990,11 @@ function getCommentLevel(
   rows: CommentRow[],
   parentId?: string,
   attachmentsByCommentId: Map<string, EmbedCommentAttachment[]> = new Map(),
+  countRows = rows,
 ) {
   const replyCounts = new Map<string, number>();
 
-  for (const row of rows) {
+  for (const row of countRows) {
     if (row.parentId) {
       replyCounts.set(row.parentId, (replyCounts.get(row.parentId) ?? 0) + 1);
     }
@@ -1042,6 +1043,8 @@ export const embedRoutes = new Hono()
       installKey: c.req.query("installKey"),
       pageUrl: c.req.query("pageUrl"),
       parentId: c.req.query("parentId") || undefined,
+      limit: c.req.query("limit") || undefined,
+      offset: c.req.query("offset") || undefined,
     });
 
     if (!result.success) {
@@ -1067,19 +1070,44 @@ export const embedRoutes = new Hono()
       return c.json({ comments: [] });
     }
 
-    const rows = await db.query.comment.findMany({
+    const allVisibleRows = await db.query.comment.findMany({
       where: (table, { and, eq }) =>
         and(eq(table.pageId, existingPage.id), eq(table.status, "visible")),
-      orderBy: (table, { asc }) => asc(table.createdAt),
+      orderBy: (table, { asc, desc }) => [desc(table.isPinned), asc(table.createdAt)],
     });
-    const attachmentsByCommentId = await getAttachmentsByCommentId(rows.map((row) => row.id));
 
-    if (result.data.parentId && !rows.some((row) => row.id === result.data.parentId)) {
+    if (result.data.parentId && !allVisibleRows.some((row) => row.id === result.data.parentId)) {
       return c.json(jsonError("Parent comment not found", 404), 404);
     }
 
+    const rows =
+      result.data.limit && !result.data.parentId
+        ? await db.query.comment.findMany({
+            where: (table, { and, eq, isNull }) =>
+              and(
+                eq(table.pageId, existingPage.id),
+                eq(table.status, "visible"),
+                isNull(table.parentId),
+              ),
+            orderBy: (table, { asc, desc }) => [desc(table.isPinned), asc(table.createdAt)],
+            limit: result.data.limit,
+            offset: result.data.offset,
+          })
+        : allVisibleRows;
+    const attachmentsByCommentId = await getAttachmentsByCommentId(rows.map((row) => row.id));
+    const nextOffset =
+      result.data.limit && !result.data.parentId && rows.length === result.data.limit
+        ? result.data.offset + result.data.limit
+        : null;
+
     return c.json({
-      comments: getCommentLevel(rows, result.data.parentId, attachmentsByCommentId),
+      comments: getCommentLevel(
+        result.data.limit && !result.data.parentId ? rows : allVisibleRows,
+        result.data.parentId,
+        attachmentsByCommentId,
+        allVisibleRows,
+      ),
+      nextOffset,
     });
   })
   .get("/polls", async (c) => {
@@ -1238,15 +1266,16 @@ export const embedRoutes = new Hono()
     let parentComment: CommentRow | null = null;
 
     if (result.data.parentId) {
-      parentComment = await db.query.comment.findFirst({
-        where: (table, { and, eq }) =>
-          and(
-            eq(table.id, result.data.parentId as string),
-            eq(table.workspaceId, workspace.id),
-            eq(table.pageId, commentPage.id),
-            eq(table.status, "visible"),
-          ),
-      }) ?? null;
+      parentComment =
+        (await db.query.comment.findFirst({
+          where: (table, { and, eq }) =>
+            and(
+              eq(table.id, result.data.parentId as string),
+              eq(table.workspaceId, workspace.id),
+              eq(table.pageId, commentPage.id),
+              eq(table.status, "visible"),
+            ),
+        })) ?? null;
 
       if (!parentComment) {
         return c.json(jsonError("Parent comment not found", 404), 404);

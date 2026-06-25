@@ -45,6 +45,7 @@ export function CommentListItem({
 	onLike,
 	onSubmitReply,
 	isPending = false,
+	isChild = false,
 }: {
 	comment: CommentReply;
 	isReplying: boolean;
@@ -56,9 +57,13 @@ export function CommentListItem({
 	onLike?: (id: string) => Promise<void> | void;
 	onSubmitReply?: (id: string, body: string, images: File[]) => Promise<void> | void;
 	isPending?: boolean;
+	isChild?: boolean;
 }) {
 	const [isEditing, setIsEditing] = useState(false);
+	const [areChildrenVisible, setAreChildrenVisible] = useState(false);
 	const [draft, setDraft] = useState(comment.content);
+	const hiddenRepliesCount = areChildrenVisible ? 0 : comment.children.length;
+	const hiddenRepliesLabel = hiddenRepliesCount === 1 ? "reply" : "replies";
 
 	async function handleSaveEdit() {
 		const body = draft.trim();
@@ -70,12 +75,11 @@ export function CommentListItem({
 	}
 
 	return (
-		<div className="border-b py-4 last:border-b-0 first:pt-0">
+		<div
+			className={
+				isChild ? "py-2" : "border-b py-4 last:border-b-0 first:pt-0"
+			}>
 			<div className="relative">
-				{comment.children.length > 0 && (
-					<div className="absolute top-10 bottom-5 left-5 w-px bg-border" />
-				)}
-
 				<div className="relative flex gap-3">
 					<Avatar size="lg">
 						<AvatarImage src={comment.avatar} alt={comment.author} />
@@ -250,8 +254,17 @@ export function CommentListItem({
 					</div>
 				)}
 
-				{comment.children.length > 0 && (
-					<div className="mt-4 flex flex-col gap-4">
+				{hiddenRepliesCount > 0 ? (
+					<button
+						type="button"
+						className="mt-3 ml-13 text-xs font-medium text-muted-foreground hover:text-foreground"
+						onClick={() => setAreChildrenVisible(true)}>
+						{`Show ${hiddenRepliesCount} ${hiddenRepliesLabel}`}
+					</button>
+				) : null}
+
+				{areChildrenVisible && comment.children.length > 0 && (
+					<div className="mt-4 ml-5 border-l border-border pl-8">
 						{comment.children.map((child) => (
 							<CommentListItem
 								key={child.id}
@@ -265,6 +278,7 @@ export function CommentListItem({
 								onLike={onLike}
 								onSubmitReply={onSubmitReply}
 								isPending={isPending}
+								isChild
 							/>
 						))}
 					</div>

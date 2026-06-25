@@ -59,15 +59,16 @@ const data = {
 	],
 	settings: [
 		{
-			title: "Settings",
-			url: "/settings",
-			icon: SettingsLinear,
-		},
-		{
 			title: "Analytics",
 			url: "/analytics",
 			icon: ChartLinear,
 		},
+		{
+			title: "Settings",
+			url: "/settings",
+			icon: SettingsLinear,
+		},
+
 		{
 			title: "Domain",
 			url: "/domain",
@@ -85,8 +86,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarHeader>
 				<SidebarContent className="bg-[#FCFCFC]">
 					<NavMain items={data.overview} />
-					<NavActivity items={data.activity} />
 					<NavCustomize items={data.customize} />
+					<NavActivity items={data.activity} />
 					<NavSettings items={data.settings} />
 				</SidebarContent>
 				<SidebarFooter>

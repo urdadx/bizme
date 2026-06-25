@@ -4,6 +4,7 @@ import { blockedUsersRouter } from "./blocked-users";
 import { commentsRouter } from "./comments";
 import { notificationsRouter } from "./notifications";
 import { pollsRouter } from "./polls";
+import { sitesRouter } from "./sites";
 import { workspaceCustomizationRouter } from "./workspace-customization";
 import { workspaceSettingsRouter } from "./workspace-settings";
 
@@ -22,6 +23,7 @@ export const appRouter = router({
   comments: commentsRouter,
   notifications: notificationsRouter,
   polls: pollsRouter,
+  sites: sitesRouter,
   analytics: analyticsRouter,
   getSession: publicProcedure.query(({ ctx }) => {
     return ctx.session ?? null;
