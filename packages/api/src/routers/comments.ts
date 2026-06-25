@@ -43,6 +43,7 @@ export type CommentAttachmentItem = {
 
 export type CommentTreeItem = {
   id: string;
+  commentNumber: number | null;
   author: string;
   authorEmail: string | null;
   authorProvider: CommentRow["authorProvider"];
@@ -207,6 +208,7 @@ function toTreeItem(
 ): CommentTreeItem {
   return {
     id: row.id,
+    commentNumber: row.commentNumber,
     author: getAuthorName(row),
     authorEmail: row.authorEmail,
     authorProvider: row.authorProvider,
@@ -322,6 +324,23 @@ async function getWorkspaceComment(workspaceId: string, id: string) {
   return existing;
 }
 
+async function getNextPageCommentNumber(workspaceId: string, pageId: string) {
+  const latest = await db.query.comment.findFirst({
+    columns: {
+      commentNumber: true,
+    },
+    where: (table, { and, eq, isNull }) =>
+      and(
+        eq(table.workspaceId, workspaceId),
+        eq(table.pageId, pageId),
+        isNull(table.parentId),
+      ),
+    orderBy: (table) => [desc(table.commentNumber)],
+  });
+
+  return (latest?.commentNumber ?? 0) + 1;
+}
+
 async function requireWorkspaceAdmin(
   session: NonNullable<Context["session"]>,
   workspaceId: string,
@@ -368,8 +387,10 @@ export const commentsRouter = router({
 
         return {
           id: item.id,
+          commentNumber: item.commentNumber,
           commenter: getAuthorName(item),
           authorProvider: item.authorProvider,
+          avatar: getAvatar(item),
           preview: getPreview(item.body),
           page: commentPage?.path ?? "Unknown page",
           pageUrl: commentPage?.url ?? null,
@@ -458,6 +479,32 @@ export const commentsRouter = router({
       } satisfies Pick<PageRow, "id" | "title" | "path" | "url">,
       replies,
       reactions: reactions.map((reaction) => toReactionItem(reaction, userById)),
+    };
+  }),
+  neighbors: protectedProcedure.input(commentIdInput).query(async ({ ctx, input }) => {
+    const workspaceId = getActiveWorkspaceId(ctx.session);
+    const selectedComment = await getWorkspaceComment(workspaceId, input.id);
+    const rootComments = await db.query.comment.findMany({
+      columns: {
+        id: true,
+      },
+      where: (table, { and, eq, isNull, ne }) =>
+        and(
+          eq(table.workspaceId, workspaceId),
+          isNull(table.parentId),
+          ne(table.status, "deleted"),
+        ),
+      orderBy: (table) => [desc(table.isPinned), desc(table.updatedAt)],
+    });
+    const currentRootId = selectedComment.parentId ?? selectedComment.id;
+    const currentIndex = rootComments.findIndex((item) => item.id === currentRootId);
+
+    return {
+      previousId: currentIndex > 0 ? rootComments[currentIndex - 1]?.id ?? null : null,
+      nextId:
+        currentIndex >= 0 && currentIndex < rootComments.length - 1
+          ? rootComments[currentIndex + 1]?.id ?? null
+          : null,
     };
   }),
   update: protectedProcedure.input(commentUpdateInput).mutation(async ({ ctx, input }) => {

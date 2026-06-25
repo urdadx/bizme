@@ -47,7 +47,7 @@ function withOccurrenceKeys(values: string[]) {
 
     return {
       index,
-      key: `${value}-${occurrence}`,
+      key: `${index}-${occurrence}`,
       value,
     };
   });

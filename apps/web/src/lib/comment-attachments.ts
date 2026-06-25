@@ -1,8 +1,20 @@
 import { env } from "@better-comments/env/web";
 
-export async function uploadCommentImages(commentId: string, images: File[]) {
+export type UploadedCommentAttachment = {
+	id: string;
+	url: string;
+	filename: string;
+	mimeType: string;
+	size: number;
+};
+
+export async function uploadCommentImages(
+	commentId: string,
+	images: File[],
+	options: { visitorId?: string } = {},
+) {
 	if (images.length === 0) {
-		return;
+		return [];
 	}
 
 	const formData = new FormData();
@@ -16,10 +28,14 @@ export async function uploadCommentImages(commentId: string, images: File[]) {
 		method: "POST",
 		body: formData,
 		credentials: "include",
+		headers: options.visitorId ? { "X-Bizme-Visitor-Id": options.visitorId } : undefined,
 	});
 
 	if (!response.ok) {
 		const payload = await response.json().catch(() => null);
 		throw new Error(payload?.error?.message ?? "Unable to upload images.");
 	}
+
+	const payload = await response.json().catch(() => null);
+	return (payload?.attachments ?? []) as UploadedCommentAttachment[];
 }

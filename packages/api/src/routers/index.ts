@@ -2,6 +2,7 @@ import { protectedProcedure, publicProcedure, router } from "../index";
 import { analyticsRouter } from "./analytics";
 import { blockedUsersRouter } from "./blocked-users";
 import { commentsRouter } from "./comments";
+import { notificationsRouter } from "./notifications";
 import { pollsRouter } from "./polls";
 import { workspaceCustomizationRouter } from "./workspace-customization";
 import { workspaceSettingsRouter } from "./workspace-settings";
@@ -19,6 +20,7 @@ export const appRouter = router({
   workspaceCustomization: workspaceCustomizationRouter,
   workspaceSettings: workspaceSettingsRouter,
   comments: commentsRouter,
+  notifications: notificationsRouter,
   polls: pollsRouter,
   analytics: analyticsRouter,
   getSession: publicProcedure.query(({ ctx }) => {

@@ -56,67 +56,72 @@ export function ComposerPreview({ customization }: { customization?: Customizati
 	};
 
 	return (
-		<PromptInput
-			value={input}
-			onValueChange={setInput}
-			isLoading={isLoading}
-			onSubmit={handleSubmit}
-			style={{ color: customization?.textColor }}
-			className="flex flex-col w-full max-w-xl shadow-none rounded-xl min-h-25">
-			{files.length > 0 && (
-				<div className="flex flex-wrap gap-2 pb-2">
-					{files.map((file, index) => (
-						<div
-							key={index}
-							className="group relative h-20 w-20 overflow-hidden rounded-lg border bg-secondary"
-							onClick={(e) => e.stopPropagation()}>
-							<img
-								src={previews[index]}
-								alt={file.name}
-								className="h-full w-full object-cover"
+		<div className="flex w-full max-w-xl flex-col gap-2">
+			<PromptInput
+				value={input}
+				onValueChange={setInput}
+				isLoading={isLoading}
+				onSubmit={handleSubmit}
+				style={{ color: customization?.textColor }}
+				className="flex flex-col w-full shadow-none rounded-xl min-h-25">
+				{files.length > 0 && (
+					<div className="flex flex-wrap gap-2 pb-2">
+						{files.map((file, index) => (
+							<div
+								key={index}
+								className="group relative h-20 w-20 overflow-hidden rounded-lg border bg-secondary"
+								onClick={(e) => e.stopPropagation()}>
+								<img
+									src={previews[index]}
+									alt={file.name}
+									className="h-full w-full object-cover"
+								/>
+								<button
+									onClick={() => handleRemoveFile(index)}
+									className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100">
+									<X className="size-3" />
+								</button>
+							</div>
+						))}
+					</div>
+				)}
+
+				<PromptInputTextarea placeholder="Write a comment..." className="flex-1" />
+
+				<PromptInputActions className="flex items-center justify-between gap-2 pt-2">
+					<PromptInputAction tooltip="Attach files">
+						<label
+							htmlFor="file-upload"
+							className="hover:bg-secondary-foreground/10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-2xl">
+							<input
+								type="file"
+								multiple
+								onChange={handleFileChange}
+								className="hidden"
+								id="file-upload"
 							/>
-							<button
-								onClick={() => handleRemoveFile(index)}
-								className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100">
-								<X className="size-3" />
-							</button>
-						</div>
-					))}
-				</div>
+							<GalleryLinear
+								color={customization?.brandColor ?? "currentColor"}
+								className="text-primary size-5"
+							/>
+						</label>
+					</PromptInputAction>
+
+					<PromptInputAction tooltip={"Submit comment"}>
+						<Button
+							variant="default"
+							size="sm"
+							style={{ backgroundColor: customization?.brandColor }}
+							className=""
+							onClick={handleSubmit}>
+							Comment
+						</Button>
+					</PromptInputAction>
+				</PromptInputActions>
+			</PromptInput>
+			{!customization?.hidePoweredBy && (
+				<p className="text-center text-xs text-muted-foreground">Powered by Bizme</p>
 			)}
-
-			<PromptInputTextarea placeholder="Write a comment..." className="flex-1" />
-
-			<PromptInputActions className="flex items-center justify-between gap-2 pt-2">
-				<PromptInputAction tooltip="Attach files">
-					<label
-						htmlFor="file-upload"
-						className="hover:bg-secondary-foreground/10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-2xl">
-						<input
-							type="file"
-							multiple
-							onChange={handleFileChange}
-							className="hidden"
-							id="file-upload"
-						/>
-						<GalleryLinear
-							color={customization?.brandColor ?? "currentColor"}
-							className="text-primary size-5"
-						/>
-					</label>
-				</PromptInputAction>
-
-				<PromptInputAction tooltip={"Submit comment"}>
-					<Button
-						variant="default"
-						size="sm"
-						style={{ backgroundColor: customization?.brandColor }}
-						className=""
-						onClick={handleSubmit}>
-						Comment
-					</Button>
-				</PromptInputAction>
-			</PromptInputActions>
-		</PromptInput>
+		</div>
 	);
 }

@@ -1,7 +1,14 @@
 import { db, markCommentDeleted, toggleCommentLike, updateCommentBody } from "@better-comments/db";
-import { comment, commentAttachment, page, poll, pollVote } from "@better-comments/db/schema/index";
+import {
+  comment,
+  commentAttachment,
+  notification,
+  page,
+  poll,
+  pollVote,
+} from "@better-comments/db/schema/index";
 import { env } from "@better-comments/env/server";
-import { eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { setCookie } from "hono/cookie";
@@ -79,7 +86,7 @@ const likeCommentSchema = z.object({
   authorProvider: z.enum(["anonymous", "google", "github"]).default("anonymous"),
 });
 
-type CommentRow = typeof comment.$inferSelect;
+export type CommentRow = typeof comment.$inferSelect;
 type CommentAttachmentRow = typeof commentAttachment.$inferSelect;
 
 type PollRow = typeof poll.$inferSelect;
@@ -94,6 +101,7 @@ type EmbedCommentAttachment = {
 
 type EmbedComment = {
   id: string;
+  commentNumber: number | null;
   author: string;
   authorProvider: CommentRow["authorProvider"];
   date: string;
@@ -232,7 +240,7 @@ function getCommentMetadata(c: Context) {
   };
 }
 
-type EmbedAuthSession = {
+export type EmbedAuthSession = {
   provider: EmbedAuthProvider;
   providerUserId: string;
   name: string;
@@ -466,6 +474,12 @@ function formatRelativeDate(date: Date) {
   return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
 }
 
+function getNotificationPreview(body: string) {
+  const preview = body.trim().replace(/\s+/g, " ");
+
+  return preview.length > 120 ? `${preview.slice(0, 117)}...` : preview;
+}
+
 function toEmbedAttachment(row: CommentAttachmentRow): EmbedCommentAttachment {
   return {
     id: row.id,
@@ -482,6 +496,7 @@ function toEmbedComment(
 ): EmbedComment {
   return {
     id: row.id,
+    commentNumber: row.commentNumber,
     author: row.authorName ?? "Anonymous",
     authorProvider: row.authorProvider,
     date: formatRelativeDate(row.createdAt),
@@ -492,6 +507,23 @@ function toEmbedComment(
     attachments: attachmentsByCommentId.get(row.id) ?? [],
     children: [],
   };
+}
+
+async function getNextPageCommentNumber(workspaceId: string, pageId: string) {
+  const latest = await db.query.comment.findFirst({
+    columns: {
+      commentNumber: true,
+    },
+    where: (table, { and, eq, isNull }) =>
+      and(
+        eq(table.workspaceId, workspaceId),
+        eq(table.pageId, pageId),
+        isNull(table.parentId),
+      ),
+    orderBy: (table) => [desc(table.commentNumber)],
+  });
+
+  return (latest?.commentNumber ?? 0) + 1;
 }
 
 function getCommentAvatar(row: CommentRow) {
@@ -506,7 +538,7 @@ function getCommentAvatar(row: CommentRow) {
   return null;
 }
 
-async function getEmbedSession(headers: Headers) {
+export async function getEmbedSession(headers: Headers) {
   const session = await decodeSignedPayload<EmbedAuthSession>(
     getCookieValue(headers, EMBED_SESSION_COOKIE),
   );
@@ -518,7 +550,7 @@ async function getEmbedSession(headers: Headers) {
   return session;
 }
 
-function canManageEmbedComment({
+export function canManageEmbedComment({
   row,
   embedSession,
   visitorId,
@@ -1203,8 +1235,10 @@ export const embedRoutes = new Hono()
       result.data.pageTitle,
     );
 
+    let parentComment: CommentRow | null = null;
+
     if (result.data.parentId) {
-      const parent = await db.query.comment.findFirst({
+      parentComment = await db.query.comment.findFirst({
         where: (table, { and, eq }) =>
           and(
             eq(table.id, result.data.parentId as string),
@@ -1212,14 +1246,17 @@ export const embedRoutes = new Hono()
             eq(table.pageId, commentPage.id),
             eq(table.status, "visible"),
           ),
-      });
+      }) ?? null;
 
-      if (!parent) {
+      if (!parentComment) {
         return c.json(jsonError("Parent comment not found", 404), 404);
       }
     }
 
     const id = crypto.randomUUID();
+    const commentNumber = parentComment
+      ? null
+      : await getNextPageCommentNumber(workspace.id, commentPage.id);
     const metadata = getCommentMetadata(c);
     const hasBannedWord = containsBannedWord(result.data.body, config.settings.bannedWords);
     const status = hasBannedWord ? "pending" : "visible";
@@ -1229,6 +1266,7 @@ export const embedRoutes = new Hono()
       workspaceId: workspace.id,
       pageId: commentPage.id,
       parentId: result.data.parentId,
+      commentNumber,
       authorName: embedSession?.name ?? result.data.authorName ?? "Anonymous",
       authorEmail: embedSession?.email,
       authorImage: embedSession?.avatar,
@@ -1249,6 +1287,19 @@ export const embedRoutes = new Hono()
     if (!created) {
       return c.json(jsonError("Unable to create comment", 400), 400);
     }
+
+    await db.insert(notification).values({
+      id: crypto.randomUUID(),
+      workspaceId: workspace.id,
+      type: parentComment ? "reply_created" : "comment_created",
+      title: parentComment ? "New reply" : "New comment",
+      message: getNotificationPreview(created.body),
+      entityType: "comment",
+      entityId: created.id,
+      href: `/comments/${parentComment?.id ?? created.id}`,
+      actorName: created.authorName,
+      actorAvatar: getCommentAvatar(created),
+    });
 
     return c.json({ comment: toEmbedComment(created) }, 201);
   })

@@ -12,7 +12,7 @@ import { logger } from "hono/logger";
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-import { embedRoutes } from "./embed";
+import { canManageEmbedComment, embedRoutes, getEmbedSession } from "./embed";
 
 const app = new Hono();
 const MAX_COMMENT_IMAGE_SIZE = 2 * 1024 * 1024;
@@ -118,7 +118,15 @@ app.post("/comment-attachments", async (c) => {
     return c.json({ error: { message: "Comment not found" } }, 404);
   }
 
-  if (!(await requireWorkspaceAdmin(c.req.raw.headers, targetComment.workspaceId))) {
+  const adminSession = await requireWorkspaceAdmin(c.req.raw.headers, targetComment.workspaceId);
+  const embedSession = await getEmbedSession(c.req.raw.headers);
+  const canManageComment = canManageEmbedComment({
+    row: targetComment,
+    embedSession,
+    visitorId: c.req.header("X-Bizme-Visitor-Id"),
+  });
+
+  if (!adminSession && !canManageComment) {
     return c.json({ error: { message: "Admin permission required" } }, 403);
   }
 

@@ -50,11 +50,7 @@ export function CommentActivityTabs({
             isSubmitting={isSubmittingReply}
             customization={customization}
           />
-          <CommentsList
-            comments={comments}
-            rootCommentId={rootCommentId}
-            customization={customization}
-          />
+          <CommentsList comments={comments} rootCommentId={rootCommentId} />
         </div>
       </TabsContent>
 

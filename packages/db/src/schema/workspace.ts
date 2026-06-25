@@ -14,6 +14,7 @@ export const workspaceDomainStatuses = ["pending", "active", "failed"] as const;
 export const commentStatuses = ["visible", "pending", "hidden", "deleted"] as const;
 export const commentClassifications = ["legitimate", "spam"] as const;
 export const commentAuthorProviders = ["anonymous", "google", "github", "email"] as const;
+export const notificationTypes = ["comment_created", "reply_created"] as const;
 export const pollStatuses = ["draft", "active", "closed"] as const;
 
 export const workspaceSettings = sqliteTable("workspace_settings", {
@@ -105,6 +106,32 @@ export const blockedUser = sqliteTable(
   ],
 );
 
+export const notification = sqliteTable(
+  "notification",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    type: text("type", { enum: notificationTypes }).notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    href: text("href").notNull(),
+    actorName: text("actor_name"),
+    actorAvatar: text("actor_avatar"),
+    readAt: integer("read_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+  },
+  (table) => [
+    index("notification_workspaceId_idx").on(table.workspaceId),
+    index("notification_workspaceId_readAt_idx").on(table.workspaceId, table.readAt),
+  ],
+);
+
 export const page = sqliteTable(
   "page",
   {
@@ -142,6 +169,7 @@ export const comment = sqliteTable(
     parentId: text("parent_id").references((): AnySQLiteColumn => comment.id, {
       onDelete: "cascade",
     }),
+    commentNumber: integer("comment_number"),
     authorName: text("author_name"),
     authorEmail: text("author_email"),
     authorImage: text("author_image"),
@@ -177,6 +205,7 @@ export const comment = sqliteTable(
     index("comment_pageId_idx").on(table.pageId),
     index("comment_parentId_idx").on(table.parentId),
     index("comment_status_idx").on(table.status),
+    uniqueIndex("comment_pageId_commentNumber_unique").on(table.pageId, table.commentNumber),
   ],
 );
 
@@ -316,6 +345,13 @@ export const workspaceDomainRelations = relations(workspaceDomain, ({ one }) => 
 export const blockedUserRelations = relations(blockedUser, ({ one }) => ({
   workspace: one(organization, {
     fields: [blockedUser.workspaceId],
+    references: [organization.id],
+  }),
+}));
+
+export const notificationRelations = relations(notification, ({ one }) => ({
+  workspace: one(organization, {
+    fields: [notification.workspaceId],
     references: [organization.id],
   }),
 }));

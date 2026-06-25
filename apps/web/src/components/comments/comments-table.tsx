@@ -15,8 +15,7 @@ import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 
 import { SearchLinear } from "@/assets/icons/search-icon";
-import { UserLinear } from "@/assets/icons/user-icon";
-import { CuteIconWrapper } from "@/components/cute-icon-wrapper";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Loader from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +52,7 @@ type CommentRow = {
 	id: string;
 	commenter: string;
 	authorProvider: "anonymous" | "google" | "github" | "email";
+	avatar: string;
 	preview: string;
 	page: string;
 	pageUrl: string | null;
@@ -87,7 +87,15 @@ function getColumns({
 			filterFn: (row, filterValue) => row.original.authorProvider === filterValue,
 			cell: ({ row }) => (
 				<div className="flex items-center gap-2">
-					<CuteIconWrapper icon={UserLinear} color="#0ea5e9" />
+					<Avatar size="sm">
+						<AvatarImage
+							src={row.original.avatar}
+							alt={row.original.commenter}
+						/>
+						<AvatarFallback>
+							{row.original.commenter.slice(0, 2).toUpperCase()}
+						</AvatarFallback>
+					</Avatar>
 					<span className="block max-w-44 truncate font-medium md:max-w-56">
 						{row.getValue("commenter")}
 					</span>
