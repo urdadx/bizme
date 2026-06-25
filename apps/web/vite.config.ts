@@ -7,6 +7,13 @@ export default defineConfig({
   server: {
     port: 3001,
   },
+  preview: {
+    allowedHosts: [
+      "bizme.urdadx.com",
+      "bizme-api.urdadx.com",
+      "bizme-web-mbyjct-592f93-91-98-78-138.traefik.me",
+    ],
+  },
   resolve: {
     tsconfigPaths: true,
   },
