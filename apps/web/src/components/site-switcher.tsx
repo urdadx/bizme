@@ -1,6 +1,10 @@
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+	useMutation,
+	useQueryClient,
+	type QueryClient,
+} from "@tanstack/react-query";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,6 +31,45 @@ import { authClient } from "@/lib/auth-client";
 import { Skeleton } from "./ui/skeleton";
 import { useOrganizationsQuery, useSessionQuery } from "@/hooks/use-auth-queries";
 import { useTRPC } from "@/utils/trpc";
+
+const SITE_SCOPED_QUERY_ROOTS = new Set([
+	"analytics",
+	"blockedUsers",
+	"comments",
+	"getSession",
+	"notifications",
+	"polls",
+	"workspaceCustomization",
+	"workspaceSettings",
+]);
+
+function getQueryRoot(queryKey: readonly unknown[]) {
+	const first = queryKey[0];
+
+	if (Array.isArray(first)) {
+		return typeof first[0] === "string" ? first[0] : null;
+	}
+
+	return typeof first === "string" ? first : null;
+}
+
+async function invalidateSiteScopedQueries(
+	queryClient: QueryClient,
+	includeOrganizations = false,
+) {
+	await Promise.all([
+		queryClient.invalidateQueries({ queryKey: ["auth", "session"] }),
+		includeOrganizations
+			? queryClient.invalidateQueries({ queryKey: ["auth", "organizations"] })
+			: Promise.resolve(),
+		queryClient.invalidateQueries({
+			predicate: (query) => {
+				const root = getQueryRoot(query.queryKey);
+				return root ? SITE_SCOPED_QUERY_ROOTS.has(root) : false;
+			},
+		}),
+	]);
+}
 
 export function SiteSwitcher() {
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -55,7 +98,7 @@ export function SiteSwitcher() {
 			return;
 		}
 
-		await queryClient.invalidateQueries({ queryKey: ["auth", "session"] });
+		await invalidateSiteScopedQueries(queryClient);
 		setPendingSiteId(null);
 	};
 
@@ -76,10 +119,7 @@ export function SiteSwitcher() {
 			});
 
 			setPendingSiteId(site.id);
-			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: ["auth", "organizations"] }),
-				queryClient.invalidateQueries({ queryKey: ["auth", "session"] }),
-			]);
+			await invalidateSiteScopedQueries(queryClient, true);
 			setSiteName("");
 			setWebsiteUrl("");
 			setIsDialogOpen(false);

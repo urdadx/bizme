@@ -120,7 +120,7 @@ export function TopTechnology({ type }: TechnologyCardProps) {
 										</div>
 										{!hasData && (
 											<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-												<div className=" text-sm font-medium text-foreground shadow-sm">
+												<div className=" text-sm font-medium text-foreground">
 													No data available yet
 												</div>
 											</div>
@@ -179,7 +179,7 @@ export function TopTechnology({ type }: TechnologyCardProps) {
 									</div>
 									{!hasBrowserData && (
 										<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-											<div className=" text-sm font-medium text-foreground shadow-sm">
+											<div className=" text-sm font-medium text-foreground">
 												No data available yet
 											</div>
 										</div>

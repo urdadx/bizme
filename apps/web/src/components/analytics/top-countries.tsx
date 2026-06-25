@@ -25,6 +25,14 @@ function getFlagIcon(countryCode: string | undefined, title: string) {
 	);
 }
 
+function NoDataMessage() {
+	return (
+		<div className="flex h-full items-center justify-center text-sm font-normal text-foreground">
+			No data available yet
+		</div>
+	);
+}
+
 export function TopCountries() {
 	const [countriesDialogOpen, setCountriesDialogOpen] = useState(false);
 	const [citiesDialogOpen, setCitiesDialogOpen] = useState(false);
@@ -94,15 +102,19 @@ export function TopCountries() {
 					<TabsContent value="countries" className="h-full m-0 p-0">
 						<div className="h-full flex flex-col">
 							<div className="flex-1 min-h-0 px-4 pt-4 overflow-hidden">
-								<BarList
-									tab="Countries"
-									unit="visits"
-									data={topCountries}
-									barBackground="bg-green-200"
-									hoverBackground="hover:bg-green-50"
-									maxValue={maxCountryCount}
-									limit={5}
-								/>
+								{topCountries.length > 0 ? (
+									<BarList
+										tab="Countries"
+										unit="visits"
+										data={topCountries}
+										barBackground="bg-green-200"
+										hoverBackground="hover:bg-green-50"
+										maxValue={maxCountryCount}
+										limit={5}
+									/>
+								) : (
+									<NoDataMessage />
+								)}
 							</div>
 							{mapCountries.length > 5 && (
 								<div className="shrink-0 px-4 py-3 ">
@@ -133,15 +145,19 @@ export function TopCountries() {
 					<TabsContent value="cities" className="h-full m-0 p-0">
 						<div className="h-full flex flex-col">
 							<div className="flex-1 min-h-0 px-4 pt-4 overflow-hidden">
-								<BarList
-									tab="Cities"
-									unit="visits"
-									data={topCities}
-									barBackground="bg-green-200"
-									hoverBackground="hover:bg-green-50"
-									maxValue={maxCityCount}
-									limit={5}
-								/>
+								{topCities.length > 0 ? (
+									<BarList
+										tab="Cities"
+										unit="visits"
+										data={topCities}
+										barBackground="bg-green-200"
+										hoverBackground="hover:bg-green-50"
+										maxValue={maxCityCount}
+										limit={5}
+									/>
+								) : (
+									<NoDataMessage />
+								)}
 							</div>
 							{mapCities.length > 5 && (
 								<div className="shrink-0 px-4 py-3 ">
@@ -172,15 +188,19 @@ export function TopCountries() {
 					<TabsContent value="continents" className="h-full m-0 p-0">
 						<div className="h-full flex flex-col">
 							<div className="flex-1 min-h-0 px-4 pt-4 overflow-hidden">
-								<BarList
-									tab="Continents"
-									unit="visits"
-									data={topContinents}
-									barBackground="bg-green-200"
-									hoverBackground="hover:bg-green-50"
-									maxValue={maxContinentCount}
-									limit={5}
-								/>
+								{topContinents.length > 0 ? (
+									<BarList
+										tab="Continents"
+										unit="visits"
+										data={topContinents}
+										barBackground="bg-green-200"
+										hoverBackground="hover:bg-green-50"
+										maxValue={maxContinentCount}
+										limit={5}
+									/>
+								) : (
+									<NoDataMessage />
+								)}
 							</div>
 							{mapContinents.length > 5 && (
 								<div className="shrink-0 px-4 py-3 ">

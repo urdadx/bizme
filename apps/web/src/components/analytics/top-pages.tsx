@@ -8,8 +8,7 @@ import { GlobeLinear } from "@/assets/icons/globe-icon";
 import { useTRPC } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 
-export const EMPTY_PAGES = [
-];
+export const EMPTY_PAGES = [];
 
 interface PagesOverviewProps {
 	pagesData?: {
@@ -95,7 +94,9 @@ export function TopPages({ pagesData }: PagesOverviewProps) {
 							<div className="flex-1 min-h-0 px-4 overflow-hidden">
 								<div className="relative h-full">
 									<div
-									className={hasData ? undefined : "hidden"}>
+										className={
+											hasData ? undefined : "hidden"
+										}>
 										<BarList
 											tab="Pages"
 											unit="comments"
@@ -108,7 +109,7 @@ export function TopPages({ pagesData }: PagesOverviewProps) {
 									</div>
 									{!hasData && (
 										<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-											<div className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+											<div className=" px-4 py-2 text-sm font-medium text-foreground">
 												No data available yet
 											</div>
 										</div>

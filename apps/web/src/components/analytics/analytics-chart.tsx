@@ -132,7 +132,7 @@ export function AnalyticsChart({
 			</ChartContainer>
 			{!hasData && (
 				<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-					<div className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-foreground shadow-sm">
+					<div className=" px-4 py-2 text-sm font-medium text-foreground ">
 						{emptyText}
 					</div>
 				</div>
