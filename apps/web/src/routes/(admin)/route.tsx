@@ -5,9 +5,9 @@ export const Route = createFileRoute("/(admin)")({
 	ssr: false,
 	component: RouteComponent,
 	beforeLoad: async ({ context, location }) => {
-		const session = await context.queryClient.fetchQuery(
-			context.trpc.getSession.queryOptions(),
-		);
+		const session = await context.queryClient
+			.fetchQuery(context.trpc.getSession.queryOptions())
+			.catch(() => null);
 
 		if (!session) {
 			throw redirect({
