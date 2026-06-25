@@ -1,5 +1,6 @@
 import { db } from "@better-comments/db";
 import {
+  DEFAULT_BANNED_WORDS,
   member,
   organization,
   session,
@@ -14,6 +15,7 @@ import { protectedProcedure, router } from "../index";
 
 const createSiteInput = z.object({
   name: z.string().trim().min(1).max(120),
+  logo: z.string().trim().url().max(1000).optional().or(z.literal("")),
   websiteUrl: z.string().trim().url().max(500).optional().or(z.literal("")),
 });
 
@@ -56,6 +58,7 @@ export const sitesRouter = router({
       id,
       name: input.name,
       slug,
+      logo: input.logo?.trim() || null,
       websiteUrl,
     });
 
@@ -68,6 +71,7 @@ export const sitesRouter = router({
       }),
       db.insert(workspaceSettings).values({
         workspaceId: id,
+        bannedWords: DEFAULT_BANNED_WORDS,
       }),
       db.insert(workspaceCustomization).values({
         workspaceId: id,

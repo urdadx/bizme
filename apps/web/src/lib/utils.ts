@@ -340,6 +340,28 @@ export const getApexDomain = (url: string) => {
   return domain;
 };
 
+export function normalizeWebsiteUrl(url: string) {
+  const trimmedUrl = url.trim();
+
+  if (!trimmedUrl || /^https?:\/\//i.test(trimmedUrl)) {
+    return trimmedUrl;
+  }
+
+  return `https://${trimmedUrl}`;
+}
+
+export function getWebsiteFaviconUrl(url: string) {
+  const normalizedUrl = normalizeWebsiteUrl(url);
+
+  if (!normalizedUrl) return "";
+
+  const apexDomain = getApexDomain(normalizedUrl);
+
+  if (!apexDomain) return "";
+
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(apexDomain)}&sz=64`;
+}
+
 // Verify the URL entered by user
 export const validDomainRegex = new RegExp(
   /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/,

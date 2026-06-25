@@ -81,14 +81,23 @@ export function createAuth() {
       organization({
         organizationHooks: {
           afterCreateOrganization: async ({ organization, user }) => {
-            await db
-              .update(schema.session)
-              .set({
-                activeOrganizationId: organization.id,
-                isOnboarded: true,
-                updatedAt: new Date(),
-              })
-              .where(eq(schema.session.userId, user.id));
+            await Promise.all([
+              db
+                .update(schema.session)
+                .set({
+                  activeOrganizationId: organization.id,
+                  isOnboarded: true,
+                  updatedAt: new Date(),
+                })
+                .where(eq(schema.session.userId, user.id)),
+              db
+                .insert(schema.workspaceSettings)
+                .values({
+                  workspaceId: organization.id,
+                  bannedWords: schema.DEFAULT_BANNED_WORDS,
+                })
+                .onConflictDoNothing(),
+            ]);
           },
         },
         schema: {

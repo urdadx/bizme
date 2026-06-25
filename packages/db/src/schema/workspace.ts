@@ -16,6 +16,7 @@ export const commentClassifications = ["legitimate", "spam"] as const;
 export const commentAuthorProviders = ["anonymous", "google", "github", "email"] as const;
 export const notificationTypes = ["comment_created", "reply_created"] as const;
 export const pollStatuses = ["draft", "active", "closed"] as const;
+export const DEFAULT_BANNED_WORDS = ["fuck", "nude", "crap"];
 
 export const workspaceSettings = sqliteTable("workspace_settings", {
   workspaceId: text("workspace_id")

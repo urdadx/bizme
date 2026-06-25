@@ -28,6 +28,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui
 import { ArrowDownLinear } from "@/assets/icons/arrow-down";
 import { CheckMarkIcon } from "@/assets/icons/checkmark-icon";
 import { authClient } from "@/lib/auth-client";
+import { getWebsiteFaviconUrl, normalizeWebsiteUrl } from "@/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 import { useOrganizationsQuery, useSessionQuery } from "@/hooks/use-auth-queries";
 import { useTRPC } from "@/utils/trpc";
@@ -104,6 +105,8 @@ export function SiteSwitcher() {
 
 	const handleCreateSite = async () => {
 		const name = siteName.trim();
+		const normalizedWebsiteUrl = normalizeWebsiteUrl(websiteUrl);
+		const logo = getWebsiteFaviconUrl(normalizedWebsiteUrl);
 
 		if (!name) {
 			setError("Site name is required.");
@@ -115,7 +118,8 @@ export function SiteSwitcher() {
 		try {
 			const site = await createSite.mutateAsync({
 				name,
-				websiteUrl: websiteUrl.trim(),
+				logo: logo || undefined,
+				websiteUrl: normalizedWebsiteUrl,
 			});
 
 			setPendingSiteId(site.id);

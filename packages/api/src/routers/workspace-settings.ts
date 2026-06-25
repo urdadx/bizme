@@ -1,5 +1,8 @@
 import { db } from "@better-comments/db";
-import { workspaceSettings } from "@better-comments/db/schema/index";
+import {
+  DEFAULT_BANNED_WORDS,
+  workspaceSettings,
+} from "@better-comments/db/schema/index";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -7,7 +10,6 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../index";
 import { getActiveWorkspaceId } from "./utils";
 
-const DEFAULT_BANNED_WORDS = ["fuck", "nude", "crap"];
 const MAX_BANNED_WORDS = 100;
 const MAX_BANNED_WORD_LENGTH = 80;
 

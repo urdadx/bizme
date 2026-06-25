@@ -10,30 +10,54 @@ import {
   AlertDialogTitle,
 } from "../ui/alert-dialog";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
-import { useNavigate } from "@tanstack/react-router";
+import { useOrganizationsQuery } from "@/hooks/use-auth-queries";
 
 export function DeleteWorkspace() {
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: organization } = authClient.useActiveOrganization();
+  const { data: organizations = [], isPending: isOrganizationsPending } = useOrganizationsQuery();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const organizationIndex = organizations.findIndex((item) => item.id === organization?.id);
+  const nextOrganization =
+    organizationIndex >= 0
+      ? organizations[organizationIndex + 1] ?? organizations[organizationIndex - 1]
+      : organizations.find((item) => item.id !== organization?.id);
+  const canDelete = Boolean(organization && nextOrganization && organizations.length > 1);
 
   const handleDeleteWorkspace = async () => {
-    if (!organization) {
+    if (!organization || !nextOrganization) {
       return;
     }
 
     setIsDeleting(true);
+    setError(null);
 
     try {
-      const { error } = await authClient.organization.delete({
+      const { error: deleteError } = await authClient.organization.delete({
         organizationId: organization.id,
       });
 
-      if (!error) {
-        await navigate({ to: "/onboarding" });
+      if (deleteError) {
+        throw new Error(deleteError.message ?? "Unable to delete site.");
       }
+
+      const { error: switchError } = await authClient.organization.setActive({
+        organizationId: nextOrganization.id,
+      });
+
+      if (switchError) {
+        throw new Error(switchError.message ?? "Unable to switch sites.");
+      }
+
+      await queryClient.invalidateQueries();
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to delete site.");
     } finally {
       setIsDeleting(false);
     }
@@ -52,6 +76,12 @@ export function DeleteWorkspace() {
                   including your agents, conversations, and settings.
                 </span>
               </div>
+              {!isOrganizationsPending && !canDelete ? (
+                <p className="text-sm text-muted-foreground">
+                  You need at least one site, so this site cannot be deleted.
+                </p>
+              ) : null}
+              {error ? <p className="text-sm text-destructive">{error}</p> : null}
             </div>
           </div>
         </div>
@@ -60,6 +90,7 @@ export function DeleteWorkspace() {
             onClick={() => setIsDeleteDialogOpen(true)}
             className="bg-red-500 text-white hover:bg-red-600"
             size="sm"
+            disabled={!canDelete || isOrganizationsPending || isDeleting}
           >
             Yes, delete
           </Button>
@@ -80,7 +111,7 @@ export function DeleteWorkspace() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 text-white"
-              disabled={isDeleting}
+              disabled={!canDelete || isDeleting}
               onClick={handleDeleteWorkspace}
             >
               {isDeleting ? "Deleting..." : "Yes, delete"}

@@ -7,6 +7,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input";
 import LoadingDots from "@/components/loading-dots";
 import { authClient } from "@/lib/auth-client";
+import { getWebsiteFaviconUrl, normalizeWebsiteUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding/")({
 	component: RouteComponent,
@@ -23,6 +24,7 @@ function RouteComponent() {
 		const formData = new FormData(event.currentTarget);
 		const name = String(formData.get("workspaceName") ?? "").trim();
 		const websiteUrl = normalizeWebsiteUrl(String(formData.get("websiteUrl") ?? ""));
+		const logo = getWebsiteFaviconUrl(websiteUrl);
 
 		setError(null);
 		setIsPending(true);
@@ -31,6 +33,7 @@ function RouteComponent() {
 			const { error } = await authClient.organization.create({
 				name,
 				slug: createWorkspaceSlug(name),
+				logo: logo || undefined,
 				websiteUrl,
 			});
 
@@ -114,14 +117,4 @@ function createWorkspaceSlug(name: string) {
 		.replace(/^-+|-+$/g, "");
 
 	return slug || `workspace-${Date.now()}`;
-}
-
-function normalizeWebsiteUrl(url: string) {
-	const trimmedUrl = url.trim();
-
-	if (/^https?:\/\//i.test(trimmedUrl)) {
-		return trimmedUrl;
-	}
-
-	return `https://${trimmedUrl}`;
 }
