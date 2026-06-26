@@ -12,6 +12,7 @@
   "scripts": {
     "db:local": "turso dev --db-file local.db",
     "db:push": "drizzle-kit push",
+    "db:seed": "bun -e \"console.log('No database seed configured; skipping.')\"",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate"
