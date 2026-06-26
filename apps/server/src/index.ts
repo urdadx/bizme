@@ -1,7 +1,7 @@
 import { createContext } from "@better-comments/api/context";
 import { appRouter } from "@better-comments/api/routers/index";
 import { auth } from "@better-comments/auth";
-import { db } from "@better-comments/db";
+import { db, ensureAuthSchema } from "@better-comments/db";
 import { comment, commentAttachment, pollOption } from "@better-comments/db/schema/index";
 import { env } from "@better-comments/env/server";
 import { trpcServer } from "@hono/trpc-server";
@@ -24,6 +24,12 @@ const COMMENT_IMAGE_MIME_TYPES = new Map([
   ["image/webp", "webp"],
   ["image/gif", "gif"],
 ]);
+let authSchemaReady: Promise<void> | null = null;
+
+function ensureAuthSchemaReady() {
+  authSchemaReady ??= ensureAuthSchema();
+  return authSchemaReady;
+}
 
 function getPublicUploadUrl(requestUrl: string, path: string, filename: string) {
   const url = new URL(requestUrl);
@@ -50,6 +56,10 @@ async function requireWorkspaceAdmin(headers: Headers, workspaceId: string) {
 }
 
 app.use(logger());
+app.use("/*", async (_c, next) => {
+  await ensureAuthSchemaReady();
+  await next();
+});
 app.use(
   "/*",
   cors({
@@ -228,10 +238,7 @@ app.post("/poll-option-images", async (c) => {
   const url = getPublicUploadUrl(c.req.url, "poll-option-images", filename);
 
   await Bun.write(join(POLL_OPTION_IMAGE_UPLOAD_DIR, filename), file);
-  await db
-    .update(pollOption)
-    .set({ imageUrl: url })
-    .where(eq(pollOption.id, optionId));
+  await db.update(pollOption).set({ imageUrl: url }).where(eq(pollOption.id, optionId));
 
   return c.json({ url }, 201);
 });
