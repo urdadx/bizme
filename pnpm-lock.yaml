@@ -84,6 +84,9 @@ importers:
       '@hono/trpc-server':
         specifier: ^0.4.0
         version: 0.4.2(@trpc/server@11.17.0(typescript@6.0.3))(hono@4.12.18)
+      '@libsql/client':
+        specifier: 0.15.15
+        version: 0.15.15
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.17.0(typescript@6.0.3)
@@ -99,6 +102,9 @@ importers:
       hono:
         specifier: 'catalog:'
         version: 4.12.18
+      libsql:
+        specifier: 0.5.22
+        version: 0.5.22
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -115,6 +121,10 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+    optionalDependencies:
+      '@libsql/linux-x64-gnu':
+        specifier: 0.5.22
+        version: 0.5.22
 
   apps/web:
     dependencies:

@@ -14,13 +14,18 @@
     "@better-comments/auth": "workspace:*",
     "@better-comments/db": "workspace:*",
     "@better-comments/env": "workspace:*",
+    "@libsql/client": "0.15.15",
     "@hono/trpc-server": "^0.4.0",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
     "hono": "catalog:",
+    "libsql": "0.5.22",
     "zod": "catalog:"
+  },
+  "optionalDependencies": {
+    "@libsql/linux-x64-gnu": "0.5.22"
   },
   "devDependencies": {
     "@better-comments/config": "workspace:*",
