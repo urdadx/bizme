@@ -1,9 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { RiChat3Line, RiCodeSSlashLine, RiGlobalLine } from "@remixicon/react";
+import { RiCodeSSlashLine, RiGlobalLine } from "@remixicon/react";
 
 export function Setup() {
   return (
-    <section id="howtouse" className=" py-6 sm:y-0 px-4">
+    <section id="setup" className=" py-6 sm:y-0 px-4">
       <div className="max-w-5xl mx-auto">
         <div className="relative z-10 mx-auto  max-w-xl space-y-4 text-center md:space-y-6">
           <h2 className="instrument-serif-regular text-3xl lg:text-4xl">
@@ -42,7 +42,7 @@ export function Setup() {
 
               {/* Content section */}
               <div className="p-2 px-1">
-                <h3 className="text-lg font-sans font-normal mb-1">
+                <h3 className="text-base font-sans font-normal mb-1">
                   Create your site
                 </h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
@@ -75,7 +75,7 @@ export function Setup() {
 
               {/* Content section */}
               <div className="p-2 px-1">
-                <h3 className="text-lg font-sans font-normal  mb-1">
+                <h3 className="text-base font-sans font-normal  mb-1">
                   Install Bizme
                 </h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
@@ -102,11 +102,8 @@ export function Setup() {
 
                     <div className="flex justify-start items-center space-x-2">
                       <div className="bg-blue-100 rounded-md px-2 py-1 flex items-center gap-1.5">
-                        <div className="rounded-md bg-blue-100 p-1">
-                          <RiChat3Line className="w-3 h-3 text-blue-400" />
-                        </div>
-                        <span className="text-xs text-blue-700">
-                          New comment
+                        <span className="text-xs text-blue-700 px-3 py-1">
+                          Let me know what you think
                         </span>
                       </div>
                     </div>
@@ -116,12 +113,12 @@ export function Setup() {
 
               {/* Content section */}
               <div className="p-2 px-1">
-                <h3 className="text-lg font-sans font-normal mb-1">
-                  Start receiving comments
+                <h3 className="text-base font-sans font-normal mb-1">
+                  Start engaging
                 </h3>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Your comment section is now live. Visitors can discuss your
-                  content
+                  Your comment section is now live. Your audience can engage
+                  with you.
                 </p>
               </div>
             </CardContent>
