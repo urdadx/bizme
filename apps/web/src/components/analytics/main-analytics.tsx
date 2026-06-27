@@ -13,8 +13,10 @@ import { useTRPC } from "@/utils/trpc";
 import NumberFlow from "@number-flow/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Checkbox } from "../ui/checkbox";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { AnalyticsChart } from "./analytics-chart";
+
+type TimeRange = "24h" | "7d" | "30d" | "90d";
 
 const TIME_RANGE_ITEMS = [
   { label: "Last 24 hours", value: "24h" },
@@ -34,11 +36,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function MainAnalytics() {
+export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
   const [showComments, setShowComments] = React.useState(true);
   const [showVotes, setShowVotes] = React.useState(true);
   const trpc = useTRPC();
-  const overviewQuery = useSuspenseQuery(trpc.analytics.overview.queryOptions());
+  const overviewQuery = useSuspenseQuery(trpc.analytics.overview.queryOptions({ timeRange }));
   const overviewData = overviewQuery.data;
   const chartData = overviewData.chartData;
   const hasData =
@@ -46,8 +48,6 @@ export function MainAnalytics() {
     overviewData.metrics.totalVotes > 0 ||
     chartData.some((item) => item.comments > 0 || item.votes > 0);
   const navigate = useNavigate({ from: "/analytics" });
-  const { timeRange } = useSearch({ from: "/(admin)/analytics" });
-  const selectedTimeRange = (timeRange as "24h" | "7d" | "30d" | "90d") || "24h";
 
   return (
     <div className="mt-4 flex flex-col space-y-4 w-full">
@@ -55,7 +55,7 @@ export function MainAnalytics() {
         <h1 className="text-2xl font-semibold">Analytics</h1>
         <Select
           items={TIME_RANGE_ITEMS}
-          value={selectedTimeRange}
+          value={timeRange}
           onValueChange={(value) => {
             if (value !== null) {
               navigate({

@@ -8,6 +8,8 @@ import BarList from "./bar-list";
 import { Africa, Asia, Europe, NorthAmerica, Oceania, SouthAmerica } from "../continents";
 import { ViewAllStats } from "./view-stats";
 
+type TimeRange = "24h" | "7d" | "30d" | "90d";
+
 const continentIcons = {
 	Africa,
 	Asia,
@@ -33,12 +35,12 @@ function NoDataMessage() {
 	);
 }
 
-export function TopCountries() {
+export function TopCountries({ timeRange }: { timeRange: TimeRange }) {
 	const [countriesDialogOpen, setCountriesDialogOpen] = useState(false);
 	const [citiesDialogOpen, setCitiesDialogOpen] = useState(false);
 	const [continentsDialogOpen, setContinentsDialogOpen] = useState(false);
 	const trpc = useTRPC();
-	const locationsQuery = useQuery(trpc.analytics.locations.queryOptions());
+	const locationsQuery = useQuery(trpc.analytics.locations.queryOptions({ timeRange }));
 	const locations = locationsQuery.data ?? { countries: [], cities: [], continents: [] };
 
 	const mapCountries = locations.countries.map((country) => ({

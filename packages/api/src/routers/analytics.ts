@@ -1,5 +1,6 @@
 import { db } from "@better-comments/db";
-import { desc, inArray } from "drizzle-orm";
+import { and, desc, gte, inArray } from "drizzle-orm";
+import { z } from "zod";
 
 import { protectedProcedure, router } from "../index";
 import { getActiveWorkspaceId } from "./utils";
@@ -10,8 +11,60 @@ type LocationStat = {
   countryCode?: string;
 };
 
+type ChartStat = {
+  date: string;
+  comments: number;
+  votes: number;
+};
+
+const timeRangeSchema = z.object({
+  timeRange: z.enum(["24h", "7d", "30d", "90d"]).default("24h"),
+}).optional();
+
+type TimeRange = NonNullable<z.infer<typeof timeRangeSchema>>["timeRange"];
+
 function toDateKey(date: Date) {
   return date.toISOString().slice(0, 10);
+}
+
+function toHourKey(date: Date) {
+  return `${date.toISOString().slice(0, 13)}:00:00.000Z`;
+}
+
+function getRangeStart(timeRange: TimeRange) {
+  const start = new Date();
+  const hours = timeRange === "24h" ? 24 : Number.parseInt(timeRange, 10) * 24;
+  start.setHours(start.getHours() - hours);
+  return start;
+}
+
+function getChartBuckets(timeRange: TimeRange) {
+  if (timeRange === "24h") {
+    const currentHour = new Date();
+    currentHour.setMinutes(0, 0, 0);
+
+    return Array.from({ length: 24 }, (_, index) => {
+      const date = new Date(currentHour);
+      date.setHours(currentHour.getHours() - (23 - index));
+      const key = toHourKey(date);
+      return [key, { date: key, comments: 0, votes: 0 }] as [string, ChartStat];
+    });
+  }
+
+  const daysCount = Number.parseInt(timeRange, 10);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: daysCount }, (_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (daysCount - 1 - index));
+    const key = toDateKey(date);
+    return [key, { date: key, comments: 0, votes: 0 }] as [string, ChartStat];
+  });
+}
+
+function getChartKey(date: Date, timeRange: TimeRange) {
+  return timeRange === "24h" ? toHourKey(date) : toDateKey(date);
 }
 
 function formatCommentDate(date: Date) {
@@ -24,17 +77,6 @@ function formatCommentDate(date: Date) {
 
 function getPreview(body: string) {
   return body.length > 80 ? `${body.slice(0, 77)}...` : body;
-}
-
-function getLastSevenDays() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() - (6 - index));
-    return toDateKey(date);
-  });
 }
 
 function incrementStat(map: Map<string, LocationStat>, title: string | null, countryCode?: string | null) {
@@ -59,8 +101,11 @@ function toSortedStats(map: Map<string, LocationStat>) {
 }
 
 export const analyticsRouter = router({
-  overview: protectedProcedure.query(async ({ ctx }) => {
+  overview: protectedProcedure.input(timeRangeSchema).query(async ({ ctx, input }) => {
     const workspaceId = getActiveWorkspaceId(ctx.session);
+    const timeRange = input?.timeRange;
+    const chartTimeRange = timeRange ?? "7d";
+    const rangeStart = timeRange ? getRangeStart(timeRange) : undefined;
     const [comments, pages, polls] = await Promise.all([
       db.query.comment.findMany({
         columns: {
@@ -77,8 +122,12 @@ export const analyticsRouter = router({
           updatedAt: true,
           parentId: true,
         },
-        where: (table, { and, eq, ne }) =>
-          and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+        where: (table, { and, eq, gte, ne }) =>
+          and(
+            eq(table.workspaceId, workspaceId),
+            ne(table.status, "deleted"),
+            rangeStart ? gte(table.createdAt, rangeStart) : undefined,
+          ),
         orderBy: (table) => [desc(table.updatedAt)],
       }),
       db.query.page.findMany({
@@ -108,7 +157,7 @@ export const analyticsRouter = router({
             createdAt: true,
             visitorId: true,
           },
-          where: (table) => inArray(table.pollId, pollIds),
+          where: (table) => and(inArray(table.pollId, pollIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
         })
         : [],
       rootCommentIds.length > 0
@@ -116,20 +165,19 @@ export const analyticsRouter = router({
           columns: {
             visitorId: true,
           },
-          where: (table) => inArray(table.commentId, rootCommentIds),
+          where: (table) => and(inArray(table.commentId, rootCommentIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
         })
         : [],
     ]);
-    const days = getLastSevenDays();
-    const dayStats = new Map(days.map((date) => [date, { date, comments: 0, votes: 0 }]));
+    const dayStats = new Map(getChartBuckets(chartTimeRange));
 
     for (const item of rootComments) {
-      const stat = dayStats.get(toDateKey(item.createdAt));
+      const stat = dayStats.get(getChartKey(item.createdAt, chartTimeRange));
       if (stat) stat.comments += 1;
     }
 
     for (const item of votes) {
-      const stat = dayStats.get(toDateKey(item.createdAt));
+      const stat = dayStats.get(getChartKey(item.createdAt, chartTimeRange));
       if (stat) stat.votes += 1;
     }
 
@@ -272,11 +320,16 @@ export const analyticsRouter = router({
       totalReactions,
     };
   }),
-  locations: protectedProcedure.query(async ({ ctx }) => {
+  locations: protectedProcedure.input(timeRangeSchema).query(async ({ ctx, input }) => {
     const workspaceId = getActiveWorkspaceId(ctx.session);
+    const rangeStart = input?.timeRange ? getRangeStart(input.timeRange) : undefined;
     const rows = await db.query.comment.findMany({
-      where: (table, { and, eq, ne }) =>
-        and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+      where: (table, { and, eq, gte, ne }) =>
+        and(
+          eq(table.workspaceId, workspaceId),
+          ne(table.status, "deleted"),
+          rangeStart ? gte(table.createdAt, rangeStart) : undefined,
+        ),
       orderBy: (table) => [desc(table.createdAt)],
     });
     const countries = new Map<string, LocationStat>();
@@ -295,8 +348,9 @@ export const analyticsRouter = router({
       continents: toSortedStats(continents),
     };
   }),
-  technology: protectedProcedure.query(async ({ ctx }) => {
+  technology: protectedProcedure.input(timeRangeSchema).query(async ({ ctx, input }) => {
     const workspaceId = getActiveWorkspaceId(ctx.session);
+    const rangeStart = input?.timeRange ? getRangeStart(input.timeRange) : undefined;
     const [comments, polls] = await Promise.all([
       db.query.comment.findMany({
         columns: {
@@ -304,8 +358,12 @@ export const analyticsRouter = router({
           deviceType: true,
           os: true,
         },
-        where: (table, { and, eq, ne }) =>
-          and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
+        where: (table, { and, eq, gte, ne }) =>
+          and(
+            eq(table.workspaceId, workspaceId),
+            ne(table.status, "deleted"),
+            rangeStart ? gte(table.createdAt, rangeStart) : undefined,
+          ),
       }),
       db.query.poll.findMany({
         columns: {
@@ -322,7 +380,7 @@ export const analyticsRouter = router({
           deviceType: true,
           os: true,
         },
-        where: (table) => inArray(table.pollId, pollIds),
+        where: (table) => and(inArray(table.pollId, pollIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
       })
       : [];
     const browsers = new Map<string, LocationStat>();

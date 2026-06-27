@@ -11,6 +11,8 @@ type TechnologyStat = {
 	value: number;
 };
 
+type TimeRange = "24h" | "7d" | "30d" | "90d";
+
 const browserIcons: Record<string, string> = {
 	brave: "/browser/brave.png",
 	chrome: "/browser/chrome.png",
@@ -63,11 +65,12 @@ function mapStats(data: TechnologyStat[], icon: (title: string) => ReactNode) {
 
 type TechnologyCardProps = {
 	type: "technology" | "devices";
+	timeRange: TimeRange;
 };
 
-export function TopTechnology({ type }: TechnologyCardProps) {
+export function TopTechnology({ type, timeRange }: TechnologyCardProps) {
 	const trpc = useTRPC();
-	const technologyQuery = useQuery(trpc.analytics.technology.queryOptions());
+	const technologyQuery = useQuery(trpc.analytics.technology.queryOptions({ timeRange }));
 	const technology = technologyQuery.data ?? {
 		browsers: [],
 		operatingSystems: [],

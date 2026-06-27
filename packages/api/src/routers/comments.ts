@@ -144,6 +144,27 @@ function getCountryName(country: string | undefined) {
   return new Intl.DisplayNames(["en"], { type: "region" }).of(country.toUpperCase()) ?? country;
 }
 
+function getHeaderValue(headers: Headers, name: string) {
+  const value = headers.get(name)?.trim();
+  return value ? value : undefined;
+}
+
+function getCloudflareCountryCode(request: RequestWithCloudflare) {
+  const country = getHeaderValue(request.headers, "cf-ipcountry") ??
+    (typeof request.cf?.country === "string" ? request.cf.country : undefined);
+  const countryCode = country?.toUpperCase();
+
+  return countryCode && countryCode !== "XX" ? countryCode : undefined;
+}
+
+function getCloudflareValue(
+  request: RequestWithCloudflare,
+  headerName: string,
+  cfValue: unknown,
+) {
+  return getHeaderValue(request.headers, headerName) ?? (typeof cfValue === "string" ? cfValue : undefined);
+}
+
 function getBrowser(userAgent: string) {
   if (/Edg\//.test(userAgent)) return "Edge";
   if (/OPR\//.test(userAgent)) return "Opera";
@@ -176,12 +197,12 @@ function getCommentMetadata(request: RequestWithCloudflare) {
     host.startsWith("localhost:") ||
     host.startsWith("127.0.0.1:");
   const userAgent = request.headers.get("user-agent") ?? "";
-  const cfCountry = typeof request.cf?.country === "string" ? request.cf.country : undefined;
-  const countryCode = (cfCountry ?? (isLocalhost ? "GH" : undefined))?.toUpperCase();
-  const continentCode = typeof request.cf?.continent === "string" ? request.cf.continent : undefined;
+  const countryCode = getCloudflareCountryCode(request) ?? (isLocalhost ? "GH" : undefined);
+  const continentCode = getCloudflareValue(request, "cf-ipcontinent", request.cf?.continent);
+  const city = getCloudflareValue(request, "cf-ipcity", request.cf?.city);
 
   return {
-    locationCity: typeof request.cf?.city === "string" ? request.cf.city : isLocalhost ? "Accra" : undefined,
+    locationCity: city ?? (isLocalhost ? "Accra" : undefined),
     locationCountry: getCountryName(countryCode),
     locationCountryCode: countryCode,
     locationContinent: continentCode ? CONTINENT_NAMES[continentCode] ?? continentCode : isLocalhost ? "Africa" : undefined,

@@ -10,7 +10,10 @@ import { useQuery } from "@tanstack/react-query";
 
 export const EMPTY_PAGES = [];
 
+type TimeRange = "24h" | "7d" | "30d" | "90d";
+
 interface PagesOverviewProps {
+	timeRange: TimeRange;
 	pagesData?: {
 		id?: string;
 		pageName?: string | null;
@@ -22,35 +25,11 @@ interface PagesOverviewProps {
 	}[];
 }
 
-export function TopPages({ pagesData }: PagesOverviewProps) {
+export function TopPages({ timeRange, pagesData }: PagesOverviewProps) {
 	const navigate = useNavigate();
 	const trpc = useTRPC();
-	const commentsQuery = useQuery(trpc.comments.list.queryOptions());
-
-	const commentPages = useMemo(() => {
-		if (pagesData) return pagesData;
-
-		const pages = new Map<
-			string,
-			{ id: string; pageName: string; url: string | null; comments: number }
-		>();
-
-		for (const comment of commentsQuery.data ?? []) {
-			const pageKey = comment.pageUrl ?? comment.page;
-			const page = pages.get(pageKey) ?? {
-				id: pageKey,
-				pageName: comment.page,
-				url: comment.pageUrl,
-				comments: 0,
-			};
-			page.comments += 1;
-			pages.set(pageKey, page);
-		}
-
-		return Array.from(pages.values()).sort(
-			(a, b) => b.comments - a.comments || a.pageName.localeCompare(b.pageName),
-		);
-	}, [commentsQuery.data, pagesData]);
+	const overviewQuery = useQuery(trpc.analytics.overview.queryOptions({ timeRange }));
+	const commentPages = pagesData ?? overviewQuery.data?.pagesData ?? EMPTY_PAGES;
 
 	const mapPages = useMemo(() => {
 		return commentPages.map((page) => {

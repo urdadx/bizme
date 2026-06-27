@@ -34,7 +34,15 @@ interface AnalyticsChartProps {
 }
 
 const formatDateLabel = (value: string) => {
-	return new Date(value).toLocaleDateString("en-US", {
+	const date = new Date(value);
+
+	if (value.includes("T")) {
+		return date.toLocaleTimeString("en-US", {
+			hour: "numeric",
+		});
+	}
+
+	return date.toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 	});

@@ -166,6 +166,23 @@ function getCountryName(country: string | undefined) {
   return new Intl.DisplayNames(["en"], { type: "region" }).of(country.toUpperCase()) ?? country;
 }
 
+function getHeaderValue(c: Context, name: string) {
+  const value = c.req.header(name)?.trim();
+  return value ? value : undefined;
+}
+
+function getCloudflareCountryCode(c: Context, request: RequestWithCloudflare) {
+  const country = getHeaderValue(c, "cf-ipcountry") ??
+    (typeof request.cf?.country === "string" ? request.cf.country : undefined);
+  const countryCode = country?.toUpperCase();
+
+  return countryCode && countryCode !== "XX" ? countryCode : undefined;
+}
+
+function getCloudflareValue(c: Context, headerName: string, cfValue: unknown) {
+  return getHeaderValue(c, headerName) ?? (typeof cfValue === "string" ? cfValue : undefined);
+}
+
 function getBrowser(userAgent: string) {
   if (/Edg\//.test(userAgent)) return "Edge";
   if (/OPR\//.test(userAgent)) return "Opera";
@@ -222,14 +239,12 @@ function getCommentMetadata(c: Context) {
     host.startsWith("localhost:") ||
     host.startsWith("127.0.0.1:");
   const userAgent = c.req.header("user-agent") ?? "";
-  const cfCountry = typeof request.cf?.country === "string" ? request.cf.country : undefined;
-  const countryCode = (cfCountry ?? (isLocalhost ? "GH" : undefined))?.toUpperCase();
-  const continentCode =
-    typeof request.cf?.continent === "string" ? request.cf.continent : undefined;
+  const countryCode = getCloudflareCountryCode(c, request) ?? (isLocalhost ? "GH" : undefined);
+  const continentCode = getCloudflareValue(c, "cf-ipcontinent", request.cf?.continent);
+  const city = getCloudflareValue(c, "cf-ipcity", request.cf?.city);
 
   return {
-    locationCity:
-      typeof request.cf?.city === "string" ? request.cf.city : isLocalhost ? "Accra" : undefined,
+    locationCity: city ?? (isLocalhost ? "Accra" : undefined),
     locationCountry: getCountryName(countryCode),
     locationCountryCode: countryCode,
     locationContinent: continentCode
