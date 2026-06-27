@@ -161,11 +161,11 @@ export function MostRecentComments({
 	onCommentsId: _onCommentsId,
 }: MostRecentCommentsProps) {
 	const trpc = useTRPC();
-	const commentsQuery = useQuery({
+	const { data: commentsData } = useQuery({
 		...trpc.comments.list.queryOptions(),
 		enabled: !comments,
 	});
-	const recentComments = comments ?? (commentsQuery.data ?? []).slice(0, 5).map((comment) => ({
+	const recentComments = comments ?? (commentsData ?? []).slice(0, 5).map((comment) => ({
 		id: comment.id,
 		date: comment.date ?? formatCommentDate(comment.createdAt) ?? comment.lastActivity,
 		user: comment.commenter,

@@ -71,7 +71,11 @@ function RouteComponent() {
   const trpc = useTRPC();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const pollQuery = useQuery(trpc.polls.detail.queryOptions({ id: pollId }));
+  const {
+    data: pollData,
+    error: pollError,
+    isLoading: isPollLoading,
+  } = useQuery(trpc.polls.detail.queryOptions({ id: pollId }));
   const updateStatus = useMutation(trpc.polls.updateStatus.mutationOptions());
   const deletePoll = useMutation(trpc.polls.delete.mutationOptions());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -100,7 +104,7 @@ function RouteComponent() {
     await navigate({ to: "/polls" });
   }
 
-  if (pollQuery.isLoading) {
+  if (isPollLoading) {
     return (
       <div className="flex h-full items-center justify-center p-5 text-sm text-muted-foreground">
         <Loader />
@@ -108,16 +112,19 @@ function RouteComponent() {
     );
   }
 
-  if (pollQuery.error || !pollQuery.data) {
+  if (pollError || !pollData) {
     return (
       <div className="p-5 text-sm text-destructive">
-        {pollQuery.error?.message ?? "Poll not found."}
+        {pollError?.message ?? "Poll not found."}
       </div>
     );
   }
 
-  const { poll, options } = pollQuery.data;
-  const winningOption = [...options].sort((a, b) => b.votes - a.votes)[0];
+  const { poll, options } = pollData;
+  const winningOption = options.reduce<(typeof options)[number] | undefined>(
+    (current, option) => (!current || option.votes > current.votes ? option : current),
+    undefined,
+  );
   const metaCards = [
     { label: "Total votes", value: poll.totalVotes, icon: ChartLinear },
     { label: "Unique voters", value: poll.uniqueVisitors, icon: UsersRound },

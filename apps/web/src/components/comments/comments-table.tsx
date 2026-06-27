@@ -179,7 +179,11 @@ function getColumns({
 export function CommentsTable() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const commentsQuery = useQuery(trpc.comments.list.queryOptions());
+	const {
+		data: commentsData,
+		error: commentsError,
+		isPending: areCommentsPending,
+	} = useQuery(trpc.comments.list.queryOptions());
 	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
 	const [error, setError] = useState<string | null>(null);
 	const [pagination, setPagination] = useState<PaginationState>({
@@ -207,7 +211,7 @@ export function CommentsTable() {
 		}
 	}
 
-	const data = commentsQuery.data ?? [];
+	const data = commentsData ?? [];
 	const commentPageFilterItems = [
 		{ label: "All pages", value: "all" },
 		...Array.from(new Set(data.map((comment) => comment.page))).map((page) => ({
@@ -257,8 +261,8 @@ export function CommentsTable() {
 	return (
 		<div className="space-y-4">
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
-			{commentsQuery.error ? (
-				<p className="text-sm text-destructive">{commentsQuery.error.message}</p>
+			{commentsError ? (
+				<p className="text-sm text-destructive">{commentsError.message}</p>
 			) : null}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
@@ -385,7 +389,7 @@ export function CommentsTable() {
 						))}
 					</TableHeader>
 					<TableBody>
-						{commentsQuery.isPending ? (
+						{areCommentsPending ? (
 							<TableRow>
 								<TableCell
 									colSpan={columns.length}

@@ -8,28 +8,32 @@ import { GlobeLinear } from "@/assets/icons/globe-icon";
 import { useTRPC } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 
-export const EMPTY_PAGES = [];
+type PageData = {
+	id?: string;
+	pageName?: string | null;
+	title?: string;
+	url?: string | null;
+	href?: string;
+	comments?: number;
+	value?: number;
+};
+
+export const EMPTY_PAGES: PageData[] = [];
 
 type TimeRange = "24h" | "7d" | "30d" | "90d";
 
 interface PagesOverviewProps {
 	timeRange: TimeRange;
-	pagesData?: {
-		id?: string;
-		pageName?: string | null;
-		title?: string;
-		url?: string | null;
-		href?: string;
-		comments?: number;
-		value?: number;
-	}[];
+	pagesData?: PageData[];
 }
 
 export function TopPages({ timeRange, pagesData }: PagesOverviewProps) {
 	const navigate = useNavigate();
 	const trpc = useTRPC();
-	const overviewQuery = useQuery(trpc.analytics.overview.queryOptions({ timeRange }));
-	const commentPages = pagesData ?? overviewQuery.data?.pagesData ?? EMPTY_PAGES;
+	const { data: overviewData } = useQuery(
+		trpc.analytics.overview.queryOptions({ timeRange })
+	);
+	const commentPages: PageData[] = pagesData ?? overviewData?.pagesData ?? EMPTY_PAGES;
 
 	const mapPages = useMemo(() => {
 		return commentPages.map((page) => {

@@ -17,7 +17,7 @@ import {
 } from "@shikijs/transformers";
 import { CheckIcon, CopyIcon, FileIcon } from "lucide-react";
 import type { ComponentProps, HTMLAttributes, ReactElement, ReactNode } from "react";
-import { cloneElement, createContext, useContext, useEffect, useState } from "react";
+import { cloneElement, createContext, useContext, useEffect, useMemo, useState } from "react";
 import { type BundledLanguage, type CodeOptionsMultipleThemes, codeToHtml } from "shiki";
 
 export type { BundledLanguage } from "shiki";
@@ -170,9 +170,13 @@ export const CodeBlock = ({
 		prop: controlledValue,
 		onChange: controlledOnValueChange,
 	});
+	const contextValue = useMemo(
+		() => ({ value, onValueChange, data }),
+		[value, onValueChange, data],
+	);
 
 	return (
-		<CodeBlockContext.Provider value={{ value, onValueChange, data }}>
+		<CodeBlockContext.Provider value={contextValue}>
 			<div
 				className={cn("size-full overflow-hidden rounded-md border", className)}
 				{...props}

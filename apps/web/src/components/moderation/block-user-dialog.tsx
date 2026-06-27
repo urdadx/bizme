@@ -24,12 +24,12 @@ export function BlockUserDialog({ open, onOpenChange }: BlockUserDialogProps) {
 	const queryClient = useQueryClient();
 	const [email, setEmail] = useState("");
 	const [error, setError] = useState<string | null>(null);
-	const candidatesQuery = useQuery({
+	const { data: candidatesData } = useQuery({
 		...trpc.blockedUsers.candidates.queryOptions(),
 		enabled: open,
 	});
 	const blockUser = useMutation(trpc.blockedUsers.block.mutationOptions());
-	const candidates = candidatesQuery.data ?? [];
+	const candidates = candidatesData ?? [];
 
 	async function refreshBlockedUsers() {
 		await Promise.all([

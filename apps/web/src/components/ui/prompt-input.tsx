@@ -1,7 +1,7 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import React, { createContext, useContext, useLayoutEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 type PromptInputContextType = {
 	isLoading: boolean;
@@ -62,19 +62,22 @@ function PromptInput({
 		if (!disabled) textareaRef.current?.focus();
 		onClick?.(e);
 	};
+	const contextValue = useMemo(
+		() => ({
+			isLoading,
+			value: value ?? internalValue,
+			setValue: onValueChange ?? handleChange,
+			maxHeight,
+			onSubmit,
+			disabled,
+			textareaRef,
+		}),
+		[disabled, handleChange, internalValue, isLoading, maxHeight, onSubmit, onValueChange, value],
+	);
 
 	return (
 		<TooltipProvider>
-			<PromptInputContext.Provider
-				value={{
-					isLoading,
-					value: value ?? internalValue,
-					setValue: onValueChange ?? handleChange,
-					maxHeight,
-					onSubmit,
-					disabled,
-					textareaRef,
-				}}>
+			<PromptInputContext.Provider value={contextValue}>
 				<div
 					onClick={handleClick}
 					className={cn(

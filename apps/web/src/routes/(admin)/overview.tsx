@@ -12,8 +12,9 @@ export const Route = createFileRoute("/(admin)/overview")({
 
 function RouteComponent() {
 	const trpc = useTRPC();
-	const overviewQuery = useSuspenseQuery(trpc.analytics.overview.queryOptions());
-	const overviewData = overviewQuery.data;
+	const { data: overviewData } = useSuspenseQuery(
+		trpc.analytics.overview.queryOptions()
+	);
 
 	return (
 		<div className="relative mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden p-4 md:p-6">

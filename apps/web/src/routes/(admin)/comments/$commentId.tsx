@@ -19,9 +19,17 @@ function RouteComponent() {
 	const trpc = useTRPC();
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const commentQuery = useQuery(trpc.comments.detail.queryOptions({ id: commentId }));
-	const neighborsQuery = useQuery(trpc.comments.neighbors.queryOptions({ id: commentId }));
-	const customizationQuery = useQuery(trpc.workspaceCustomization.get.queryOptions());
+	const {
+		data: commentData,
+		error: commentError,
+		isLoading: isCommentLoading,
+	} = useQuery(trpc.comments.detail.queryOptions({ id: commentId }));
+	const { data: neighborsData } = useQuery(
+		trpc.comments.neighbors.queryOptions({ id: commentId })
+	);
+	const { data: customizationData } = useQuery(
+		trpc.workspaceCustomization.get.queryOptions()
+	);
 	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
 	const replyComment = useMutation(trpc.comments.reply.mutationOptions());
 	const likeComment = useMutation(trpc.comments.like.mutationOptions());
@@ -40,10 +48,12 @@ function RouteComponent() {
 
 	async function handleReply(body: string, _images: File[]) {
 		const reply = await replyComment.mutateAsync({ id: commentId, body });
-		await uploadCommentImages(reply.id, _images);
-		await queryClient.invalidateQueries({
-			queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
-		});
+		await Promise.all([
+			uploadCommentImages(reply.id, _images),
+			queryClient.invalidateQueries({
+				queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
+			}),
+		]);
 	}
 
 	async function handleLike() {
@@ -81,17 +91,17 @@ function RouteComponent() {
 	}
 
 	async function handleBlockedChange(blocked: boolean) {
-		if (!commentQuery.data?.comment.authorEmail) return;
+		if (!commentData?.comment.authorEmail) return;
 
 		if (blocked) {
 			await blockUser.mutateAsync({
-				name: commentQuery.data.comment.author,
-				email: commentQuery.data.comment.authorEmail,
+				name: commentData.comment.author,
+				email: commentData.comment.authorEmail,
 				reason: "Blocked from comment detail",
 			});
 		} else {
 			await unblockUser.mutateAsync({
-				email: commentQuery.data.comment.authorEmail,
+				email: commentData.comment.authorEmail,
 			});
 		}
 
@@ -108,7 +118,7 @@ function RouteComponent() {
 		]);
 	}
 
-	if (commentQuery.isLoading) {
+	if (isCommentLoading) {
 		return (
 			<div className="max-w-5xl lg:max-w-6xl w-full min-h-screen mx-auto p-2 sm:p-6">
 				<div className="flex items-center justify-center h-96">
@@ -118,21 +128,21 @@ function RouteComponent() {
 		);
 	}
 
-	if (commentQuery.error || !commentQuery.data) {
+	if (commentError || !commentData) {
 		return (
 			<div className="p-5 text-sm text-destructive">
-				{commentQuery.error?.message ?? "Comment not found."}
+				{commentError?.message ?? "Comment not found."}
 			</div>
 		);
 	}
 
-	const { comment, page, replies, reactions } = commentQuery.data;
-	const previousCommentId = neighborsQuery.data?.previousId ?? null;
-	const nextCommentId = neighborsQuery.data?.nextId ?? null;
-	const customization = customizationQuery.data
+	const { comment, page, replies, reactions } = commentData;
+	const previousCommentId = neighborsData?.previousId ?? null;
+	const nextCommentId = neighborsData?.nextId ?? null;
+	const customization = customizationData
 		? {
-				brandColor: customizationQuery.data.brandColor,
-				textColor: customizationQuery.data.textColor,
+				brandColor: customizationData.brandColor,
+				textColor: customizationData.textColor,
 			}
 		: undefined;
 

@@ -101,8 +101,7 @@ export function CommentsList({
 		try {
 			setError(null);
 			const reply = await replyComment.mutateAsync({ id, body });
-			await uploadCommentImages(reply.id, images);
-			await invalidateDetail();
+			await Promise.all([uploadCommentImages(reply.id, images), invalidateDetail()]);
 			setReplyingTo(null);
 		} catch (error) {
 			setError(error instanceof Error ? error.message : "Unable to submit reply.");

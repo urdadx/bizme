@@ -30,15 +30,17 @@ export const Route = createFileRoute("/(admin)/customize")({
 
 function RouteComponent() {
   const trpc = useTRPC();
-  const customizationQuery = useQuery(trpc.workspaceCustomization.get.queryOptions());
-  const customization = getFormState(customizationQuery.data);
+  const { data: customizationData, isPending: isCustomizationPending } = useQuery(
+    trpc.workspaceCustomization.get.queryOptions()
+  );
+  const customization = getFormState(customizationData);
   const formKey = JSON.stringify(customization);
 
   return (
     <CustomizePage
       key={formKey}
       customization={customization}
-      isLoading={customizationQuery.isPending}
+      isLoading={isCustomizationPending}
     />
   );
 }

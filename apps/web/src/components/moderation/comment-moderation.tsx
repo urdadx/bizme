@@ -8,11 +8,12 @@ import { Switch } from "../ui/switch";
 export function CommentsModeration() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const settingsQuery = useQuery(trpc.workspaceSettings.get.queryOptions());
+	const { data: settings, isPending: areSettingsPending } = useQuery(
+		trpc.workspaceSettings.get.queryOptions()
+	);
 	const updateSettings = useMutation(trpc.workspaceSettings.update.mutationOptions());
 	const [allowAnonymousComments, setAllowAnonymousComments] = useState(false);
 	const [allowImageUploads, setAllowImageUploads] = useState(true);
-	const settings = settingsQuery.data;
 
 	useEffect(() => {
 		if (settings) {
@@ -73,7 +74,7 @@ export function CommentsModeration() {
 						<Switch
 							id="allow-anonymous-comments"
 							checked={allowAnonymousComments}
-							disabled={settingsQuery.isPending || updateSettings.isPending}
+							disabled={areSettingsPending || updateSettings.isPending}
 							onCheckedChange={handleAnonymousCommentsChange}
 						/>
 					</div>
@@ -92,7 +93,7 @@ export function CommentsModeration() {
 						<Switch
 							id="allow-image-uploads"
 							checked={allowImageUploads}
-							disabled={settingsQuery.isPending || updateSettings.isPending}
+							disabled={areSettingsPending || updateSettings.isPending}
 							onCheckedChange={handleImageUploadsChange}
 						/>
 					</div>

@@ -40,8 +40,9 @@ export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
   const [showComments, setShowComments] = React.useState(true);
   const [showVotes, setShowVotes] = React.useState(true);
   const trpc = useTRPC();
-  const overviewQuery = useSuspenseQuery(trpc.analytics.overview.queryOptions({ timeRange }));
-  const overviewData = overviewQuery.data;
+  const { data: overviewData } = useSuspenseQuery(
+    trpc.analytics.overview.queryOptions({ timeRange })
+  );
   const chartData = overviewData.chartData;
   const hasData =
     overviewData.metrics.totalComments > 0 ||

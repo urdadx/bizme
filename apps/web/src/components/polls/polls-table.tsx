@@ -246,7 +246,11 @@ function getColumns({
 export function PollsTable() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const pollsQuery = useQuery(trpc.polls.list.queryOptions());
+	const {
+		data: pollsData,
+		error: pollsError,
+		isPending: arePollsPending,
+	} = useQuery(trpc.polls.list.queryOptions());
 	const updateStatus = useMutation(trpc.polls.updateStatus.mutationOptions());
 	const deletePoll = useMutation(trpc.polls.delete.mutationOptions());
 	const [error, setError] = useState<string | null>(null);
@@ -298,7 +302,7 @@ export function PollsTable() {
 		}
 	}
 
-	const data = pollsQuery.data ?? [];
+	const data = pollsData ?? [];
 	const columns = getColumns({
 		onViewDetails: setSelectedPoll,
 		onStatusChange: (id, status) => void handleStatusChange(id, status),
@@ -353,8 +357,8 @@ export function PollsTable() {
 				isMutating={updateStatus.isPending || deletePoll.isPending}
 			/>
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
-			{pollsQuery.error ? (
-				<p className="text-sm text-destructive">{pollsQuery.error.message}</p>
+			{pollsError ? (
+				<p className="text-sm text-destructive">{pollsError.message}</p>
 			) : null}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
@@ -455,7 +459,7 @@ export function PollsTable() {
 						))}
 					</TableHeader>
 					<TableBody>
-						{pollsQuery.isPending ? (
+						{arePollsPending ? (
 							<TableRow>
 								<TableCell
 									colSpan={columns.length}

@@ -13,6 +13,13 @@ import { useTRPC } from "@/utils/trpc";
 import { SidebarTrigger } from "./ui/sidebar";
 import { DeployAgentDialog } from "./deploy/deploy-agent-dialog";
 
+const notificationDateFormatter = new Intl.DateTimeFormat("en", {
+	month: "short",
+	day: "numeric",
+	hour: "numeric",
+	minute: "2-digit",
+});
+
 function formatNotificationDate(value: Date | string | number | null | undefined) {
 	if (!value) return "Just now";
 
@@ -20,12 +27,7 @@ function formatNotificationDate(value: Date | string | number | null | undefined
 
 	if (Number.isNaN(date.getTime())) return "Just now";
 
-	return new Intl.DateTimeFormat("en", {
-		month: "short",
-		day: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-	}).format(date);
+	return notificationDateFormatter.format(date);
 }
 
 function getNotificationCommentId(href: string) {
@@ -35,9 +37,13 @@ function getNotificationCommentId(href: string) {
 export const Navbar = () => {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const notificationsQuery = useQuery(trpc.notifications.list.queryOptions());
-	const unreadCountQuery = useQuery(trpc.notifications.unreadCount.queryOptions());
-	const unreadCount = unreadCountQuery.data ?? 0;
+	const { data: notifications, isPending: areNotificationsPending } = useQuery(
+		trpc.notifications.list.queryOptions()
+	);
+	const { data: unreadCountData } = useQuery(
+		trpc.notifications.unreadCount.queryOptions()
+	);
+	const unreadCount = unreadCountData ?? 0;
 
 	const invalidateNotifications = () => {
 		void queryClient.invalidateQueries({
@@ -90,12 +96,12 @@ export const Navbar = () => {
 							) : null}
 						</div>
 						<div className="max-h-96 overflow-y-auto p-1">
-							{notificationsQuery.isPending ? (
+							{areNotificationsPending ? (
 								<p className="px-3 py-6 text-center text-sm text-muted-foreground">
 									Loading notifications...
 								</p>
-							) : notificationsQuery.data?.length ? (
-								notificationsQuery.data.map((notification) => (
+							) : notifications?.length ? (
+								notifications.map((notification) => (
 									<DropdownMenuItem
 										key={notification.id}
 										className="items-start gap-3 p-3"

@@ -26,25 +26,32 @@ function wordsToTags(words: string[]) {
 }
 
 function normalizeTags(tags: Tag[]) {
-	return Array.from(new Set(tags.map((tag) => tag.text.trim().toLowerCase()).filter(Boolean)));
+	return Array.from(
+		new Set(
+			tags.flatMap((tag) => {
+				const text = tag.text.trim().toLowerCase();
+				return text ? [text] : [];
+			}),
+		),
+	);
 }
 
 export function BannedWords() {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
-	const settingsQuery = useQuery(trpc.workspaceSettings.get.queryOptions());
+	const { data: settings, isPending: areSettingsPending } = useQuery(
+		trpc.workspaceSettings.get.queryOptions()
+	);
 	const updateSettings = useMutation(trpc.workspaceSettings.update.mutationOptions());
 	const [tags, setTags] = useState<Tag[]>(bannedWordTags);
 
 	useEffect(() => {
-		if (settingsQuery.data) {
-			setTags(wordsToTags(settingsQuery.data.bannedWords));
+		if (settings) {
+			setTags(wordsToTags(settings.bannedWords));
 		}
-	}, [settingsQuery.data]);
+	}, [settings]);
 
 	async function handleSave() {
-		const settings = settingsQuery.data;
-
 		if (!settings) {
 			return;
 		}
@@ -84,7 +91,7 @@ export function BannedWords() {
 			<div className="border-t border-border bg-gray-50 p-3 px-4 sm:px-6 rounded-b-2xl">
 				<Button
 					size="sm"
-					disabled={settingsQuery.isPending || updateSettings.isPending}
+					disabled={areSettingsPending || updateSettings.isPending}
 					onClick={() => void handleSave()}>
 					{updateSettings.isPending ? "Saving..." : "Save changes"}
 				</Button>

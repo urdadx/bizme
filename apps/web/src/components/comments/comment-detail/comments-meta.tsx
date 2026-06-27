@@ -55,12 +55,14 @@ function cleanLocationPart(value: string | null | undefined) {
 	}
 }
 
+const regionDisplayNames = new Intl.DisplayNames(["en"], { type: "region" });
+
 function getCountryDisplayName(countryCode: string | null) {
 	const code = cleanLocationPart(countryCode);
 
 	if (!code || code.length !== 2) return undefined;
 
-	return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase());
+	return regionDisplayNames.of(code.toUpperCase());
 }
 
 function formatLocation(comment: CommentsMetaProps["comment"]) {

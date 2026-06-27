@@ -29,7 +29,7 @@ const EMPTY_PAGES_DATA = [
 export function PagesOverview({ pagesData }: PagesOverviewProps) {
   const navigate = useNavigate();
   const trpc = useTRPC();
-  const commentsQuery = useQuery({
+  const { data: commentsData } = useQuery({
     ...trpc.comments.list.queryOptions(),
     enabled: !pagesData,
   });
@@ -42,7 +42,7 @@ export function PagesOverview({ pagesData }: PagesOverviewProps) {
       { id: string; pageName: string; url: string | null; comments: number }
     >();
 
-    for (const comment of commentsQuery.data ?? []) {
+    for (const comment of commentsData ?? []) {
       const pageKey = comment.pageUrl ?? comment.page;
       const page = pages.get(pageKey) ?? {
         id: pageKey,
@@ -57,7 +57,7 @@ export function PagesOverview({ pagesData }: PagesOverviewProps) {
     return Array.from(pages.values()).sort(
       (a, b) => b.comments - a.comments || a.pageName.localeCompare(b.pageName),
     );
-  }, [commentsQuery.data, pagesData]);
+  }, [commentsData, pagesData]);
 
   const mapPages = useMemo(() => {
     return commentPages.map((page) => {

@@ -5,7 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ExpandIcon } from "lucide-react";
 import { useState } from "react";
 import BarList from "./bar-list";
-import { Africa, Asia, Europe, NorthAmerica, Oceania, SouthAmerica } from "../continents";
+import { Africa } from "../continents/af";
+import { Asia } from "../continents/as";
+import { Europe } from "../continents/eu";
+import { NorthAmerica } from "../continents/na";
+import { Oceania } from "../continents/oc";
+import { SouthAmerica } from "../continents/sa";
 import { ViewAllStats } from "./view-stats";
 
 type TimeRange = "24h" | "7d" | "30d" | "90d";
@@ -40,8 +45,10 @@ export function TopCountries({ timeRange }: { timeRange: TimeRange }) {
 	const [citiesDialogOpen, setCitiesDialogOpen] = useState(false);
 	const [continentsDialogOpen, setContinentsDialogOpen] = useState(false);
 	const trpc = useTRPC();
-	const locationsQuery = useQuery(trpc.analytics.locations.queryOptions({ timeRange }));
-	const locations = locationsQuery.data ?? { countries: [], cities: [], continents: [] };
+	const { data: locationsData } = useQuery(
+		trpc.analytics.locations.queryOptions({ timeRange })
+	);
+	const locations = locationsData ?? { countries: [], cities: [], continents: [] };
 
 	const mapCountries = locations.countries.map((country) => ({
 		icon: getFlagIcon(country.countryCode, country.title),

@@ -70,8 +70,10 @@ type TechnologyCardProps = {
 
 export function TopTechnology({ type, timeRange }: TechnologyCardProps) {
 	const trpc = useTRPC();
-	const technologyQuery = useQuery(trpc.analytics.technology.queryOptions({ timeRange }));
-	const technology = technologyQuery.data ?? {
+	const { data: technologyData } = useQuery(
+		trpc.analytics.technology.queryOptions({ timeRange })
+	);
+	const technology = technologyData ?? {
 		browsers: [],
 		operatingSystems: [],
 		devices: [],

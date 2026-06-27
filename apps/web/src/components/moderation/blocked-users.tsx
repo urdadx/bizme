@@ -12,9 +12,11 @@ export const BlockedUsers = () => {
 	const trpc = useTRPC();
 	const queryClient = useQueryClient();
 	const [blockUserOpen, setBlockUserOpen] = useState(false);
-	const blockedUsersQuery = useQuery(trpc.blockedUsers.list.queryOptions());
+	const { data: blockedUsersData, isPending: areBlockedUsersPending } = useQuery(
+		trpc.blockedUsers.list.queryOptions()
+	);
 	const unblockUser = useMutation(trpc.blockedUsers.unblock.mutationOptions());
-	const blockedUsers = blockedUsersQuery.data ?? [];
+	const blockedUsers = blockedUsersData ?? [];
 
 	async function handleUnblock(email: string) {
 		await unblockUser.mutateAsync({ email });
@@ -41,7 +43,7 @@ export const BlockedUsers = () => {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{blockedUsersQuery.isPending ? (
+					{areBlockedUsersPending ? (
 						<TableRow>
 							<TableCell colSpan={3} className="h-20 text-center text-sm text-muted-foreground">
 								Loading blocked users...

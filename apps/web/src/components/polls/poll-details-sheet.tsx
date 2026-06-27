@@ -40,7 +40,11 @@ export function PollDetailsSheet({
 	isMutating: boolean;
 }) {
 	const trpc = useTRPC();
-	const pollQuery = useQuery({
+	const {
+		data: pollData,
+		error: pollError,
+		isLoading: isPollLoading,
+	} = useQuery({
 		...trpc.polls.detail.queryOptions({ id: poll?.id ?? "" }),
 		enabled: !!poll?.id && open,
 	});
@@ -105,19 +109,19 @@ export function PollDetailsSheet({
 							</SheetDescription>
 						</SheetHeader>
 
-						{pollQuery.isLoading ? (
+						{isPollLoading ? (
 							<div className="flex h-48 items-center justify-center">
 								<Loader />
 							</div>
-						) : pollQuery.error || !pollQuery.data ? (
+						) : pollError || !pollData ? (
 							<div className="p-5 text-sm text-destructive">
-								{pollQuery.error?.message ?? "Poll not found."}
+								{pollError?.message ?? "Poll not found."}
 							</div>
 						) : (
 							<PollDetailsSheetContent
 								pollRow={poll}
-								poll={pollQuery.data.poll}
-								options={pollQuery.data.options}
+								poll={pollData.poll}
+								options={pollData.options}
 							/>
 						)}
 					</>
@@ -149,7 +153,10 @@ function PollDetailsSheetContent({
 		percentage: number;
 	}[];
 }) {
-	const winningOption = [...options].sort((a, b) => b.votes - a.votes)[0];
+	const winningOption = options.reduce<(typeof options)[number] | undefined>(
+		(current, option) => (!current || option.votes > current.votes ? option : current),
+		undefined,
+	);
 	const metaCards = [
 		{ label: "Total votes", value: poll.totalVotes, icon: ChartLinear },
 		{ label: "Unique voters", value: poll.uniqueVisitors, icon: UsersIcon },

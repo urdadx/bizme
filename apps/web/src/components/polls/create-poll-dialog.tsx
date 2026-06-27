@@ -106,7 +106,10 @@ export const CreatePollDialog = () => {
 	};
 
 	const handleCreate = async () => {
-		const labels = choices.map((choice) => choice.value.trim()).filter(Boolean);
+		const labels = choices.flatMap((choice) => {
+			const label = choice.value.trim();
+			return label ? [label] : [];
+		});
 
 		if (!question.trim()) {
 			setError("Add a poll question.");
@@ -124,9 +127,7 @@ export const CreatePollDialog = () => {
 				question,
 				status: "draft",
 				closesAt: getClosesAt(),
-				options: choices
-					.filter((choice) => choice.value.trim())
-					.map((choice) => ({ label: choice.value.trim() })),
+				options: labels.map((label) => ({ label })),
 			});
 			const choicesWithLabels = choices.filter((choice) => choice.value.trim());
 
