@@ -1399,14 +1399,17 @@ function CommentMenu({
 				}>
 				<MoreVerticalIcon className="h-4 w-4 text-foreground" />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-32 min-w-32">
+			<DropdownMenuContent
+				align="end"
+				className="w-32 min-w-32 border bg-background text-foreground shadow-lg">
 				{viewerRole === "admin" ? (
-					<DropdownMenuItem>
+					<DropdownMenuItem className="focus:bg-muted focus:text-foreground">
 						<PinIcon className="size-4" />
 						Pin
 					</DropdownMenuItem>
 				) : (
 					<DropdownMenuItem
+						className="focus:bg-muted focus:text-foreground"
 						onClick={onEdit}
 						onMouseDown={(event) => runMenuAction(event, onEdit)}>
 						<PencilIcon className="size-4" />
@@ -1414,7 +1417,7 @@ function CommentMenu({
 					</DropdownMenuItem>
 				)}
 				<DropdownMenuItem
-					className="text-destructive"
+					className="text-destructive focus:bg-muted focus:text-destructive"
 					onClick={onDelete}
 					onMouseDown={(event) => runMenuAction(event, onDelete)}>
 					<TrashBinLinear color="red" className="size-4" />

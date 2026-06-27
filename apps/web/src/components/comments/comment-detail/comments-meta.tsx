@@ -43,6 +43,30 @@ function ClassificationBadge({ classification }: { classification: CommentClassi
 	);
 }
 
+function cleanLocationPart(value: string | null | undefined) {
+	const trimmed = value?.trim();
+
+	if (!trimmed || trimmed.toLowerCase() === "unknown") return undefined;
+
+	return trimmed;
+}
+
+function getCountryDisplayName(countryCode: string | null) {
+	const code = cleanLocationPart(countryCode);
+
+	if (!code || code.length !== 2) return undefined;
+
+	return new Intl.DisplayNames(["en"], { type: "region" }).of(code.toUpperCase());
+}
+
+function formatLocation(comment: CommentsMetaProps["comment"]) {
+	const city = cleanLocationPart(comment.locationCity);
+	const country = cleanLocationPart(comment.locationCountry) ??
+		getCountryDisplayName(comment.locationCountryCode);
+
+	return [city, country].filter(Boolean).join(", ") || "Unknown";
+}
+
 type CommentsMetaProps = {
 	comment: {
 		author: string;
@@ -101,10 +125,7 @@ export const CommentsMeta = ({
 		},
 		{
 			label: "Location",
-			value:
-				[comment.locationCity, comment.locationCountry]
-					.filter(Boolean)
-					.join(", ") || "Unknown",
+			value: formatLocation(comment),
 			icon: LocationLinear,
 		},
 		{
@@ -249,16 +270,16 @@ export const CommentsMeta = ({
 						return (
 							<div
 								key={item.label}
-								className="flex items-center justify-between gap-4">
+								className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] items-center gap-4">
 								<div className="flex min-w-0 items-center gap-3">
 									<div className="flex size-8 shrink-0 items-center justify-center text-muted-foreground">
 										<Icon className="size-4" />
 									</div>
-									<p className="text-sm text-muted-foreground">
+									<p className="truncate text-sm text-muted-foreground">
 										{item.label}
 									</p>
 								</div>
-								<p className="truncate text-right text-sm font-medium">
+								<p className="min-w-0 truncate text-right text-sm font-medium">
 									{item.value}
 								</p>
 							</div>
