@@ -107,7 +107,7 @@ export const HeroHeader = () => {
                     className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
                   >
                     <Link to="/register">
-                      <span>Get Started</span>
+                      <span>Get started</span>
                     </Link>
                   </Button>
                 </>
