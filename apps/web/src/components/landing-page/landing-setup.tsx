@@ -101,8 +101,8 @@ export function Setup() {
                     </div>
 
                     <div className="flex justify-start items-center space-x-2">
-                      <div className="bg-blue-100 rounded-md px-2 py-1 flex items-center gap-1.5">
-                        <span className="text-xs text-blue-700 px-3 py-1">
+                      <div className="bg-blue-400 rounded-md px-2 py-1 flex items-center gap-1.5">
+                        <span className="text-xs text-white px-3 py-1">
                           Let me know what you think
                         </span>
                       </div>

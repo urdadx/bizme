@@ -5,6 +5,7 @@ import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanst
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
 import favicon from "@/assets/bizme-logo.png";
+import ogImage from "@/assets/og-image.png";
 import appCss from "../index.css?url";
 export interface RouterAppContext {
 	trpc: TRPCOptionsProxy<AppRouter>;
@@ -12,8 +13,11 @@ export interface RouterAppContext {
 }
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
-	head: () => ({
+		head: () => ({
 		meta: [
+			{
+				title: "Bizme | Better audience engagement for your content.",
+			},
 			{
 				charSet: "utf-8",
 			},
@@ -22,7 +26,51 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "Bizme | Better audience engagement for your content.",
+				name: "description",
+				content:
+					"Bizme helps creators drive meaningful engagement through comments and polls fostering a vibrant community.",
+			},
+			{
+				property: "og:title",
+				content: "Bizme | Better audience engagement for your content.",
+			},
+			{
+				property: "og:description",
+				content:
+					"Bizme helps creators drive meaningful engagement through comments and polls fostering a vibrant community.",
+			},
+			{
+				property: "og:type",
+				content: "website",
+			},
+			{
+				property: "og:image",
+				content: ogImage,
+			},
+			{
+				property: "og:image:width",
+				content: "1334",
+			},
+			{
+				property: "og:image:height",
+				content: "644",
+			},
+			{
+				name: "twitter:card",
+				content: "summary_large_image",
+			},
+			{
+				name: "twitter:title",
+				content: "Bizme | Better audience engagement for your content.",
+			},
+			{
+				name: "twitter:description",
+				content:
+					"Bizme helps creators drive meaningful engagement through comments and polls fostering a vibrant community.",
+			},
+			{
+				name: "twitter:image",
+				content: ogImage,
 			},
 		],
 		links: [

@@ -24,14 +24,14 @@ export default function Features() {
           <div className="contents divide-neutral-200 max-sm:divide-y sm:divide-x">
             <FeatureCard
               title="Live comments from your audience"
-              description="Receive real-time comments from your audience and with engage them"
+              description="Receive real-time comments from your audience and engage with them."
             >
               <SampleChat />
             </FeatureCard>
 
             <FeatureCard
               title="Analytics and insights"
-              description="Gain valuable insights into customer interactions and bot performance with our analytics tools."
+              description="Gain valuable insights into customer interactions and content performance."
             >
               <AnalyticsCard />
             </FeatureCard>
@@ -46,7 +46,7 @@ export default function Features() {
             </FeatureCard>
             <FeatureCard
               title="Embed everywhere"
-              description="Share via an embed widget on any website"
+              description="Embed the widget on any website and start engaging."
             >
               <LandingShare />
             </FeatureCard>
