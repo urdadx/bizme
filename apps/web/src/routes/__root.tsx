@@ -1,10 +1,10 @@
 import type { AppRouter } from "@better-comments/api/routers/index";
 import { Toaster } from "@/components/ui/sonner";
 import type { QueryClient } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
+import favicon from "@/assets/bizme-logo.png";
 import appCss from "../index.css?url";
 export interface RouterAppContext {
 	trpc: TRPCOptionsProxy<AppRouter>;
@@ -27,6 +27,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 		],
 		links: [
 			{
+				rel: "icon",
+				type: "image/png",
+				href: favicon,
+			},
+			{
 				rel: "stylesheet",
 				href: appCss,
 			},
@@ -48,7 +53,7 @@ function RootDocument() {
 				</div>
 				<Toaster theme="light" />
 				{/* <TanStackRouterDevtools position="bottom-left" /> */}
-				<ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+				{/* <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" /> */}
 				<Scripts />
 			</body>
 		</html>

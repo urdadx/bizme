@@ -11,7 +11,6 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { LogoutLinear } from "@/assets/icons/logout-icon";
 import { UserLinear } from "@/assets/icons/user-icon";
-import { CardLinear } from "@/assets/icons/card";
 import { useNavigate } from "@tanstack/react-router";
 import { LetterLinear } from "@/assets/icons/letter";
 import { authClient } from "@/lib/auth-client";
@@ -91,21 +90,7 @@ export function NavUser() {
 								<UserLinear />
 								My Account
 							</DropdownMenuItem>
-							<DropdownMenuItem
-								onClick={() =>
-									navigate({
-										to: "/settings",
-										search: { tab: "billing" },
-									})
-								}
-								className="text-sm">
-								<CardLinear />
-								Manage Subscriptions
-							</DropdownMenuItem>
-							{/* <DropdownMenuItem onClick={() => setShowTeamSwitcher(true)} className="text-sm">
-                <SwitchLinear />
-                Switch Teams
-              </DropdownMenuItem> */}
+
 							<DropdownMenuItem
 								onClick={() => setIsInviteDialogOpen(true)}
 								className="text-sm">
