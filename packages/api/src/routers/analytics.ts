@@ -17,6 +17,16 @@ type ChartStat = {
   votes: number;
 };
 
+const CONTINENT_NAMES: Record<string, string> = {
+  AF: "Africa",
+  AN: "Antarctica",
+  AS: "Asia",
+  EU: "Europe",
+  NA: "North America",
+  OC: "Oceania",
+  SA: "South America",
+};
+
 const timeRangeSchema = z.object({
   timeRange: z.enum(["24h", "7d", "30d", "90d"]).default("24h"),
 }).optional();
@@ -94,6 +104,14 @@ function incrementStat(map: Map<string, LocationStat>, title: string | null, cou
     value: 1,
     countryCode: countryCode ?? undefined,
   });
+}
+
+function getContinentName(continent: string | null) {
+  const code = continent?.trim().toUpperCase();
+
+  if (!code) return null;
+
+  return CONTINENT_NAMES[code] ?? continent;
 }
 
 function toSortedStats(map: Map<string, LocationStat>) {
@@ -339,7 +357,7 @@ export const analyticsRouter = router({
     for (const row of rows) {
       incrementStat(countries, row.locationCountry, row.locationCountryCode);
       incrementStat(cities, row.locationCity, row.locationCountryCode);
-      incrementStat(continents, row.locationContinent);
+      incrementStat(continents, getContinentName(row.locationContinent));
     }
 
     return {

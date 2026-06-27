@@ -1,4 +1,5 @@
 import { GalleryLinear } from "@/assets/icons/gallery-icon";
+import LoadingDots from "@/components/loading-dots";
 import { Button } from "@/components/ui/button";
 import {
 	PromptInput,
@@ -180,10 +181,10 @@ export function CommentComposer({
 					<Button
 						variant="default"
 						size="sm"
-						className="text-white hover:text-white"
+						className="min-w-14 text-white hover:text-white"
 						disabled={isSubmitting || input.trim().length === 0}
 						onClick={handleSubmit}>
-						{isSubmitting ? "Replying..." : "Reply"}
+						{isSubmitting ? <LoadingDots color="#fff" /> : "Reply"}
 					</Button>
 				</PromptInputAction>
 			</PromptInputActions>

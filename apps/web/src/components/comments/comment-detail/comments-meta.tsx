@@ -48,7 +48,11 @@ function cleanLocationPart(value: string | null | undefined) {
 
 	if (!trimmed || trimmed.toLowerCase() === "unknown") return undefined;
 
-	return trimmed;
+	try {
+		return decodeURIComponent(trimmed);
+	} catch {
+		return trimmed;
+	}
 }
 
 function getCountryDisplayName(countryCode: string | null) {

@@ -149,6 +149,16 @@ function getHeaderValue(headers: Headers, name: string) {
   return value ? value : undefined;
 }
 
+function decodeCloudflareHeader(value: string | undefined) {
+  if (!value) return undefined;
+
+  try {
+    return decodeURIComponent(value).trim() || undefined;
+  } catch {
+    return value.trim() || undefined;
+  }
+}
+
 function getCloudflareCountryCode(request: RequestWithCloudflare) {
   const country = getHeaderValue(request.headers, "cf-ipcountry") ??
     (typeof request.cf?.country === "string" ? request.cf.country : undefined);
@@ -162,7 +172,17 @@ function getCloudflareValue(
   headerName: string,
   cfValue: unknown,
 ) {
-  return getHeaderValue(request.headers, headerName) ?? (typeof cfValue === "string" ? cfValue : undefined);
+  return decodeCloudflareHeader(
+    getHeaderValue(request.headers, headerName) ?? (typeof cfValue === "string" ? cfValue : undefined),
+  );
+}
+
+function getContinentName(continent: string | undefined) {
+  const code = continent?.trim().toUpperCase();
+
+  if (!code) return undefined;
+
+  return CONTINENT_NAMES[code] ?? continent;
 }
 
 function getBrowser(userAgent: string) {
@@ -205,7 +225,7 @@ function getCommentMetadata(request: RequestWithCloudflare) {
     locationCity: city ?? (isLocalhost ? "Accra" : undefined),
     locationCountry: getCountryName(countryCode),
     locationCountryCode: countryCode,
-    locationContinent: continentCode ? CONTINENT_NAMES[continentCode] ?? continentCode : isLocalhost ? "Africa" : undefined,
+    locationContinent: continentCode ? getContinentName(continentCode) : isLocalhost ? "Africa" : undefined,
     deviceType: getDeviceType(userAgent),
     browser: getBrowser(userAgent),
     os: getOS(userAgent),
