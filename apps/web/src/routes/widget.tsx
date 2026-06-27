@@ -560,6 +560,8 @@ function WidgetRoute() {
     resolvedColorScheme === "dark" && textColor === DEFAULT_TEXT_COLOR
       ? DEFAULT_DARK_TEXT_COLOR
       : textColor;
+  const widgetBackgroundColor =
+    resolvedColorScheme === "dark" ? "oklch(0.145 0 0)" : "oklch(1 0 0)";
 
   const ensureAnonymousVisitor = async () => {
     if (visitorIdRef.current) {
@@ -945,11 +947,16 @@ function WidgetRoute() {
   return (
     <div
       className={cn(
-        "min-h-dvh bg-background p-0 text-sm",
+        "min-h-dvh w-full bg-background p-0 text-sm",
         resolvedColorScheme === "dark" && "dark",
       )}
-      style={{ color: effectiveTextColor, colorScheme: resolvedColorScheme }}
+      style={{
+        backgroundColor: widgetBackgroundColor,
+        color: effectiveTextColor,
+        colorScheme: resolvedColorScheme,
+      }}
     >
+      <style>{`html,body{margin:0;min-height:100%;background:${widgetBackgroundColor};color-scheme:${resolvedColorScheme};}`}</style>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-1">
         <PromptInput
           value={input}
