@@ -9,28 +9,28 @@ export default function FAQs() {
 	const faqItems = [
 		{
 			id: "item-1",
-			question: "How does the AI customer support bot work?",
-			answer: "The bot is trained on your knowledge base (files, youtube videos etc) and support documentation, allowing it to instantly answer customer questions 24/7 across all supported channels.",
+			question: "How do I add Bizme comments to my website?",
+			answer: "Create a site in the Bizme dashboard, copy your Site ID, and install the script tag or framework integration on your website.",
 		},
 		{
 			id: "item-2",
-			question: "What integrations does the platform support?",
-			answer: "We integrate with major communication channels including WhatsApp, Calendly, Cal.com and Slack. More integrations coming soon.",
+			question: "Can I moderate comments before they appear?",
+			answer: "Yes. You can review, approve, hide, and manage conversations from the Bizme dashboard so your comment section stays on topic.",
 		},
 		{
 			id: "item-3",
-			question: "Can I customize the responses of the AI?",
-			answer: "Yes. You can customize your bot's personality, language and tone in the dashboard's playground.",
+			question: "Will Bizme work with my existing website or framework?",
+			answer: "Yes. Bizme can be added with a single script tag, and official integrations are available for supported frameworks.",
 		},
 		{
 			id: "item-4",
-			question: "Do I need any technical experience to set up the bot?",
-			answer: "No. You can easily set up and deploy the bot easily in just a few minutes",
+			question: "Can I customize how the comment section looks?",
+			answer: "Yes. You can adjust the comment section to match your site's design and branding from the dashboard.",
 		},
 		{
 			id: "item-5",
-			question: "Do I need to pay for the service?",
-			answer: "No - the service is completely free to use and opensource. You can also self-host on your own server if you prefer.",
+			question: "Is Bizme free to use?",
+			answer: "Yes. Bizme is free and open source. You can use the hosted version or self-host it on your own infrastructure.",
 		},
 	];
 
@@ -45,8 +45,8 @@ export default function FAQs() {
 						</span>{" "}
 					</h2>
 					<p className="text-muted-foreground text-lg mt-4 text-balance">
-						Discover quick and comprehensive answers to common questions
-						about our platform, services, and features.
+						Find quick answers about installing, customizing, and moderating
+						comments with Bizme.
 					</p>
 				</div>
 
