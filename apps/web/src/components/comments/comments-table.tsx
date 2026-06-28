@@ -64,13 +64,14 @@ type CommentRow = {
 	lastActivity: string;
 };
 
-type CommenterFilter = "all" | "github" | "google" | "anonymous";
+type CommenterFilter = "all" | CommentRow["authorProvider"];
 type CommentPageFilter = "all" | CommentRow["page"];
 
 const commenterFilterItems = [
 	{ label: "All commenters", value: "all" },
 	{ label: "GitHub", value: "github" },
 	{ label: "Google", value: "google" },
+	{ label: "Email", value: "email" },
 	{ label: "Anonymous", value: "anonymous" },
 ] satisfies { label: string; value: CommenterFilter }[];
 
@@ -85,7 +86,8 @@ function getColumns({
 		{
 			accessorKey: "commenter",
 			header: "Commenter",
-			filterFn: (row, filterValue) => row.original.authorProvider === filterValue,
+			filterFn: (row, _columnId, filterValue) =>
+				row.original.authorProvider === filterValue,
 			cell: ({ row }) => (
 				<div className="flex items-center gap-2">
 					<Avatar size="sm">

@@ -265,7 +265,7 @@ Do not change the install key or API URL.`
         ? wordpressCode
         : type === "agent"
           ? agentPrompt
-        : embedCode;
+          : embedCode;
   const selectedLanguage =
     type === "frameworks"
       ? "tsx"
@@ -280,8 +280,8 @@ Do not change the install key or API URL.`
       : type === "wordpress"
         ? "functions.php"
         : type === "agent"
-          ? "bizme-agent-prompt.md"
-        : "widget.html";
+          ? "prompt.md"
+          : "widget.html";
   const selectedIcon =
     type === "frameworks" ? (
       <ReactIcon className="size-5" />
@@ -299,15 +299,15 @@ Do not change the install key or API URL.`
         ? "Install on WordPress"
         : type === "agent"
           ? "Instructions for AI agent"
-        : "Install the widget";
+          : "Install the widget";
   const description =
     type === "frameworks"
       ? "Mount the Bizme comments widget from React, Vue, or Svelte."
       : type === "wordpress"
         ? "Add Bizme comments to your WordPress theme without a plugin."
         : type === "agent"
-          ? "Copy this prompt and give it to your coding agent to install Bizme comments in your codebase."
-        : "Get the Bizme comments widget running on your website in under a minute";
+          ? "Copy this prompt and give it to your coding agent to install Bizme"
+          : "Get the Bizme comments widget running on your website in under a minute";
   const platformLabel =
     type === "frameworks"
       ? "React app"
@@ -315,7 +315,7 @@ Do not change the install key or API URL.`
         ? "WordPress theme"
         : type === "agent"
           ? "AI coding agent prompt"
-        : "Standard HTML website";
+          : "Standard HTML website";
 
   const handleCopy = (code: string, block: string) => {
     if (code) {
@@ -372,7 +372,7 @@ Do not change the install key or API URL.`
                 ) : type === "wordpress" ? (
                   "Paste this snippet into your active theme's functions.php file, or a small site-specific plugin."
                 ) : type === "agent" ? (
-                  "Copy the full prompt below and paste it into your coding agent, Cursor, Claude Code, OpenCode, or GitHub Copilot Chat."
+                  "Copy the full prompt below and paste it into your coding agent"
                 ) : (
                   <>
                     Add this code to your HTML, just before the closing{" "}

@@ -135,7 +135,10 @@ type EmbedAuthProvider = "google" | "github";
 
 type RequestWithCloudflare = Request & {
   cf?: {
+    city?: unknown;
+    country?: unknown;
     continent?: unknown;
+    timezone?: unknown;
   };
 };
 
@@ -227,24 +230,38 @@ function detectDeviceFromUserAgent(userAgent: string): DeviceInfo {
 }
 
 export const getUserMetadataFromRequest = (c: any) => {
+  const request = c.req.raw as RequestWithCloudflare;
   const userAgent = c.req.header("user-agent") || "";
   const hostname = new URL(c.req.raw.url).hostname;
   const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
-  const rawCountryCode = c.req.header("cf-ipcountry")?.toUpperCase();
+  const rawCountryCode = (
+    getHeaderValue(c, "cf-ipcountry") ??
+    (typeof request.cf?.country === "string" ? request.cf.country : undefined)
+  )?.toUpperCase();
   const country = rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) && rawCountryCode !== "XX"
     ? new Intl.DisplayNames(["en"], { type: "region" }).of(rawCountryCode) ?? undefined
     : isLocalhost
       ? "Ghana"
-      : undefined;
-  const timeZone = c.req.header("x-timezone") || Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const city = c.req.header("cf-ipcity") || (isLocalhost ? "Accra" : undefined);
+    : undefined;
+  const timeZone =
+    getHeaderValue(c, "x-timezone") ??
+    getCloudflareValue(c, "cf-timezone", request.cf?.timezone) ??
+    Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const city = getCloudflareValue(c, "cf-ipcity", request.cf?.city) || (isLocalhost ? "Accra" : undefined);
+  const continentCode = getCloudflareValue(c, "cf-ipcontinent", request.cf?.continent);
   const deviceInfo = detectDeviceFromUserAgent(userAgent);
 
   return {
     userAgent,
+    countryCode: rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) && rawCountryCode !== "XX"
+      ? rawCountryCode
+      : isLocalhost
+        ? "GH"
+        : undefined,
     country,
     timeZone,
     city,
+    continent: continentCode ? getContinentName(continentCode) : isLocalhost ? "Africa" : undefined,
     deviceInfo,
   };
 };
@@ -272,30 +289,13 @@ function containsBannedWord(body: string, bannedWords: string[]) {
 }
 
 function getCommentMetadata(c: Context) {
-  const request = c.req.raw as RequestWithCloudflare;
-  const requestUrl = new URL(request.url);
-  const host = c.req.header("host") ?? requestUrl.host;
-  const isLocalhost =
-    ["localhost", "127.0.0.1", "::1"].includes(requestUrl.hostname) ||
-    host.startsWith("localhost:") ||
-    host.startsWith("127.0.0.1:");
   const userMetadata = getUserMetadataFromRequest(c);
-  const countryCode = c.req.header("cf-ipcountry")?.toUpperCase();
-  const continentCode = getCloudflareValue(c, "cf-ipcontinent", request.cf?.continent);
 
   return {
     locationCity: userMetadata.city,
     locationCountry: userMetadata.country,
-    locationCountryCode: countryCode && /^[A-Z]{2}$/.test(countryCode) && countryCode !== "XX"
-      ? countryCode
-      : isLocalhost
-        ? "GH"
-        : undefined,
-    locationContinent: continentCode
-      ? getContinentName(continentCode)
-      : isLocalhost
-        ? "Africa"
-        : undefined,
+    locationCountryCode: userMetadata.countryCode,
+    locationContinent: userMetadata.continent,
     deviceType: userMetadata.deviceInfo.type,
     browser: userMetadata.deviceInfo.browser,
     os: userMetadata.deviceInfo.os,
