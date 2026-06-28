@@ -11,9 +11,19 @@ import {
 import { organization } from "./auth";
 
 export const workspaceDomainStatuses = ["pending", "active", "failed"] as const;
-export const commentStatuses = ["visible", "pending", "hidden", "deleted"] as const;
+export const commentStatuses = [
+  "visible",
+  "pending",
+  "hidden",
+  "deleted",
+] as const;
 export const commentClassifications = ["legitimate", "spam"] as const;
-export const commentAuthorProviders = ["anonymous", "google", "github", "email"] as const;
+export const commentAuthorProviders = [
+  "anonymous",
+  "google",
+  "github",
+  "email",
+] as const;
 export const notificationTypes = ["comment_created", "reply_created"] as const;
 export const pollStatuses = ["draft", "active", "closed"] as const;
 export const DEFAULT_BANNED_WORDS = ["fuck", "nude", "crap"];
@@ -22,10 +32,14 @@ export const workspaceSettings = sqliteTable("workspace_settings", {
   workspaceId: text("workspace_id")
     .primaryKey()
     .references(() => organization.id, { onDelete: "cascade" }),
-  allowAnonymousComments: integer("allow_anonymous_comments", { mode: "boolean" })
-    .default(false)
+  allowAnonymousComments: integer("allow_anonymous_comments", {
+    mode: "boolean",
+  })
+    .default(true)
     .notNull(),
-  allowImageUploads: integer("allow_image_uploads", { mode: "boolean" }).default(true).notNull(),
+  allowImageUploads: integer("allow_image_uploads", { mode: "boolean" })
+    .default(true)
+    .notNull(),
   bannedWords: text("banned_words", { mode: "json" })
     .$type<string[]>()
     .default(sql`'[]'`)
@@ -50,7 +64,9 @@ export const workspaceCustomization = sqliteTable("workspace_customization", {
     .notNull(),
   brandColor: text("brand_color").default("#6170F8").notNull(),
   textColor: text("text_color").default("#1F2937").notNull(),
-  hidePoweredBy: integer("hide_powered_by", { mode: "boolean" }).default(false).notNull(),
+  hidePoweredBy: integer("hide_powered_by", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   allowedDomains: text("allowed_domains", { mode: "json" })
     .$type<string[]>()
     .default(sql`'[]'`)
@@ -72,7 +88,9 @@ export const workspaceDomain = sqliteTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     domain: text("domain").notNull(),
-    status: text("status", { enum: workspaceDomainStatuses }).default("pending").notNull(),
+    status: text("status", { enum: workspaceDomainStatuses })
+      .default("pending")
+      .notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
@@ -102,7 +120,10 @@ export const blockedUser = sqliteTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("blocked_user_workspaceId_email_unique").on(table.workspaceId, table.email),
+    uniqueIndex("blocked_user_workspaceId_email_unique").on(
+      table.workspaceId,
+      table.email,
+    ),
     index("blocked_user_workspaceId_idx").on(table.workspaceId),
   ],
 );
@@ -129,7 +150,10 @@ export const notification = sqliteTable(
   },
   (table) => [
     index("notification_workspaceId_idx").on(table.workspaceId),
-    index("notification_workspaceId_readAt_idx").on(table.workspaceId, table.readAt),
+    index("notification_workspaceId_readAt_idx").on(
+      table.workspaceId,
+      table.readAt,
+    ),
   ],
 );
 
@@ -152,7 +176,10 @@ export const page = sqliteTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("page_workspaceId_path_unique").on(table.workspaceId, table.path),
+    uniqueIndex("page_workspaceId_path_unique").on(
+      table.workspaceId,
+      table.path,
+    ),
     index("page_workspaceId_idx").on(table.workspaceId),
   ],
 );
@@ -187,11 +214,15 @@ export const comment = sqliteTable(
     browser: text("browser"),
     os: text("os"),
     body: text("body").notNull(),
-    status: text("status", { enum: commentStatuses }).default("visible").notNull(),
+    status: text("status", { enum: commentStatuses })
+      .default("visible")
+      .notNull(),
     classification: text("classification", { enum: commentClassifications })
       .default("legitimate")
       .notNull(),
-    isPinned: integer("is_pinned", { mode: "boolean" }).default(false).notNull(),
+    isPinned: integer("is_pinned", { mode: "boolean" })
+      .default(false)
+      .notNull(),
     likesCount: integer("likes_count").default(0).notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
@@ -206,7 +237,10 @@ export const comment = sqliteTable(
     index("comment_pageId_idx").on(table.pageId),
     index("comment_parentId_idx").on(table.parentId),
     index("comment_status_idx").on(table.status),
-    uniqueIndex("comment_pageId_commentNumber_unique").on(table.pageId, table.commentNumber),
+    uniqueIndex("comment_pageId_commentNumber_unique").on(
+      table.pageId,
+      table.commentNumber,
+    ),
   ],
 );
 
@@ -316,32 +350,44 @@ export const pollVote = sqliteTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("poll_vote_pollId_visitorId_unique").on(table.pollId, table.visitorId),
+    uniqueIndex("poll_vote_pollId_visitorId_unique").on(
+      table.pollId,
+      table.visitorId,
+    ),
     index("poll_vote_pollId_idx").on(table.pollId),
     index("poll_vote_optionId_idx").on(table.optionId),
   ],
 );
 
-export const workspaceSettingsRelations = relations(workspaceSettings, ({ one }) => ({
-  workspace: one(organization, {
-    fields: [workspaceSettings.workspaceId],
-    references: [organization.id],
+export const workspaceSettingsRelations = relations(
+  workspaceSettings,
+  ({ one }) => ({
+    workspace: one(organization, {
+      fields: [workspaceSettings.workspaceId],
+      references: [organization.id],
+    }),
   }),
-}));
+);
 
-export const workspaceCustomizationRelations = relations(workspaceCustomization, ({ one }) => ({
-  workspace: one(organization, {
-    fields: [workspaceCustomization.workspaceId],
-    references: [organization.id],
+export const workspaceCustomizationRelations = relations(
+  workspaceCustomization,
+  ({ one }) => ({
+    workspace: one(organization, {
+      fields: [workspaceCustomization.workspaceId],
+      references: [organization.id],
+    }),
   }),
-}));
+);
 
-export const workspaceDomainRelations = relations(workspaceDomain, ({ one }) => ({
-  workspace: one(organization, {
-    fields: [workspaceDomain.workspaceId],
-    references: [organization.id],
+export const workspaceDomainRelations = relations(
+  workspaceDomain,
+  ({ one }) => ({
+    workspace: one(organization, {
+      fields: [workspaceDomain.workspaceId],
+      references: [organization.id],
+    }),
   }),
-}));
+);
 
 export const blockedUserRelations = relations(blockedUser, ({ one }) => ({
   workspace: one(organization, {
@@ -385,19 +431,25 @@ export const commentRelations = relations(comment, ({ one, many }) => ({
   attachments: many(commentAttachment),
 }));
 
-export const commentReactionRelations = relations(commentReaction, ({ one }) => ({
-  comment: one(comment, {
-    fields: [commentReaction.commentId],
-    references: [comment.id],
+export const commentReactionRelations = relations(
+  commentReaction,
+  ({ one }) => ({
+    comment: one(comment, {
+      fields: [commentReaction.commentId],
+      references: [comment.id],
+    }),
   }),
-}));
+);
 
-export const commentAttachmentRelations = relations(commentAttachment, ({ one }) => ({
-  comment: one(comment, {
-    fields: [commentAttachment.commentId],
-    references: [comment.id],
+export const commentAttachmentRelations = relations(
+  commentAttachment,
+  ({ one }) => ({
+    comment: one(comment, {
+      fields: [commentAttachment.commentId],
+      references: [comment.id],
+    }),
   }),
-}));
+);
 
 export const pollRelations = relations(poll, ({ one, many }) => ({
   workspace: one(organization, {

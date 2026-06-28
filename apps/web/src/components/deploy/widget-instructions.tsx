@@ -4,9 +4,11 @@ import { ReactIcon } from "@/assets/icons/react-icon";
 import { VueIcon } from "@/assets/icons/vue-icon";
 import { SvelteIcon } from "@/assets/icons/svelte";
 import { WordPressIcon } from "@/assets/icons/wordpress";
+import { RobotIcon } from "@/assets/icons/robot";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 import {
   BundledLanguage,
@@ -22,7 +24,7 @@ import { env } from "@better-comments/env/web";
 
 interface WidgetInstructionsProps {
   installKey: string | null;
-  type?: "widget" | "frameworks" | "wordpress";
+  type?: "widget" | "frameworks" | "wordpress" | "agent";
   onClose?: () => void;
 }
 
@@ -221,25 +223,72 @@ add_action('wp_footer', function () { ?>
   </script>
 <?php });`
     : "";
+  const agentPrompt = installKey
+    ? `You are implementing the Bizme comments widget in this codebase.
+
+Goal:
+Add the Bizme comments widget to the public website so visitors can leave comments on pages. Use the provided SDK snippet exactly, but adapt placement to the app framework and routing structure.
+
+Implementation requirements:
+1. Add the widget once near the public app shell, root layout, document footer, or equivalent location that runs on normal public pages.
+2. Do not render or initialize the widget inside iframes.
+3. Do not initialize the widget on the widget route itself if the app has a /widget path.
+4. Load the SDK asynchronously from ${sdkUrl}.
+5. Initialize Bizme with installKey "${installKey}" and apiUrl "${apiUrl}".
+6. Preserve existing app behavior, routing, styles, analytics, and hydration behavior.
+7. If this is a React, Vue, Svelte, Next.js, Nuxt, Astro, Remix, or similar app, place the integration in the smallest appropriate client-side component or script hook.
+8. If this is a static HTML site, paste the snippet before the closing </body> tag.
+9. If this is a server-rendered framework, make sure any direct window/document access only runs in the browser.
+10. Avoid loading the SDK more than once. If the app already has a Bizme integration, update it instead of adding a duplicate.
+11. Add cleanup on unmount when the framework supports it by calling window.Bizme?.("destroy").
+12. After implementing, verify that the SDK script is present in the browser, window.Bizme is initialized, and the comments widget appears on public pages.
+
+SDK snippet to implement:
+
+\`\`\`html
+${embedCode}
+\`\`\`
+
+Suggested framework guidance:
+- React/Next.js/Remix: create a small client component such as BizmeComments and mount it in the root layout or app shell.
+- Vue/Nuxt: initialize from onMounted and clean up from onUnmounted.
+- Svelte/SvelteKit: initialize from onMount and return a cleanup function.
+- Astro/static HTML: inject the script near the end of the body.
+- WordPress/PHP: enqueue or print the snippet in the footer.
+
+Do not change the install key or API URL.`
+    : "Sign in to a workspace first, then copy this prompt with your workspace install key.";
   const selectedCode =
     type === "frameworks"
       ? reactCode
       : type === "wordpress"
         ? wordpressCode
+        : type === "agent"
+          ? agentPrompt
         : embedCode;
   const selectedLanguage =
-    type === "frameworks" ? "tsx" : type === "wordpress" ? "php" : "html";
+    type === "frameworks"
+      ? "tsx"
+      : type === "wordpress"
+        ? "php"
+        : type === "agent"
+          ? "markdown"
+          : "html";
   const selectedFilename =
     type === "frameworks"
       ? "BizmeComments.tsx"
       : type === "wordpress"
         ? "functions.php"
+        : type === "agent"
+          ? "bizme-agent-prompt.md"
         : "widget.html";
   const selectedIcon =
     type === "frameworks" ? (
       <ReactIcon className="size-5" />
     ) : type === "wordpress" ? (
       <WordPressIcon className="size-5 text-sky-600" />
+    ) : type === "agent" ? (
+      <RobotIcon className="size-5 text-red-600" />
     ) : (
       <WidgetIcon color="purple" />
     );
@@ -248,18 +297,24 @@ add_action('wp_footer', function () { ?>
       ? "Install with frameworks"
       : type === "wordpress"
         ? "Install on WordPress"
+        : type === "agent"
+          ? "Instructions for AI agent"
         : "Install the widget";
   const description =
     type === "frameworks"
       ? "Mount the Bizme comments widget from React, Vue, or Svelte."
       : type === "wordpress"
         ? "Add Bizme comments to your WordPress theme without a plugin."
+        : type === "agent"
+          ? "Copy this prompt and give it to your coding agent to install Bizme comments in your codebase."
         : "Get the Bizme comments widget running on your website in under a minute";
   const platformLabel =
     type === "frameworks"
       ? "React app"
       : type === "wordpress"
         ? "WordPress theme"
+        : type === "agent"
+          ? "AI coding agent prompt"
         : "Standard HTML website";
 
   const handleCopy = (code: string, block: string) => {
@@ -316,6 +371,8 @@ add_action('wp_footer', function () { ?>
                   "Add this component near your app shell or root layout."
                 ) : type === "wordpress" ? (
                   "Paste this snippet into your active theme's functions.php file, or a small site-specific plugin."
+                ) : type === "agent" ? (
+                  "Copy the full prompt below and paste it into your coding agent, Cursor, Claude Code, OpenCode, or GitHub Copilot Chat."
                 ) : (
                   <>
                     Add this code to your HTML, just before the closing{" "}
@@ -351,7 +408,12 @@ add_action('wp_footer', function () { ?>
                     )}
                   </CodeBlockFiles>
                 </CodeBlockHeader>
-                <CodeBlockBody className="h-32 overflow-y-auto hide-scrollbar">
+                <CodeBlockBody
+                  className={cn(
+                    type === "agent" ? "h-80" : "h-32",
+                    "overflow-y-auto hide-scrollbar",
+                  )}
+                >
                   {(item) => (
                     <CodeBlockItem key={item.language} value={item.language}>
                       <CodeBlockContent
