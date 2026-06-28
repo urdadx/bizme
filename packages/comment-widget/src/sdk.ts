@@ -20,11 +20,14 @@ type BizmeGlobal = {
 
 const ROOT_ID = "bizme-comments-root";
 const IFRAME_ID = "bizme-comments-iframe";
-const DEFAULT_HEIGHT = 520;
 
 let root: HTMLDivElement | null = null;
 let iframe: HTMLIFrameElement | null = null;
 let onMessage: ((event: MessageEvent) => void) | null = null;
+let onViewportChange: (() => void) | null = null;
+let themeObserver: MutationObserver | null = null;
+let themeMediaQuery: MediaQueryList | null = null;
+let themeMediaListener: (() => void) | null = null;
 
 function inferDefaultServerUrl() {
   const currentScript = document.currentScript as HTMLScriptElement | null;
@@ -64,8 +67,14 @@ function getHostColorScheme(initOptions: BizmeInitOptions) {
   }
 
   const root = document.documentElement;
+  const body = document.body;
   const explicitTheme =
-    root.dataset.theme || root.dataset.colorScheme || root.getAttribute("data-mode");
+    root.dataset.theme ||
+    root.dataset.colorScheme ||
+    root.getAttribute("data-mode") ||
+    body?.dataset.theme ||
+    body?.dataset.colorScheme ||
+    body?.getAttribute("data-mode");
 
   if (explicitTheme === "light" || explicitTheme === "dark") {
     return explicitTheme;
@@ -73,6 +82,8 @@ function getHostColorScheme(initOptions: BizmeInitOptions) {
 
   if (root.classList.contains("dark")) return "dark";
   if (root.classList.contains("light")) return "light";
+  if (body?.classList.contains("dark")) return "dark";
+  if (body?.classList.contains("light")) return "light";
 
   const cssColorScheme = window.getComputedStyle(root).colorScheme;
 
@@ -80,6 +91,57 @@ function getHostColorScheme(initOptions: BizmeInitOptions) {
   if (cssColorScheme.includes("light") && !cssColorScheme.includes("dark")) return "light";
 
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function postTheme(initOptions: BizmeInitOptions) {
+  iframe?.contentWindow?.postMessage(
+    { type: "bizme:theme", colorScheme: getHostColorScheme(initOptions) },
+    "*",
+  );
+}
+
+function postViewport() {
+  if (!iframe) return;
+
+  const rect = iframe.getBoundingClientRect();
+  iframe.contentWindow?.postMessage(
+    {
+      type: "bizme:viewport",
+      iframeTop: rect.top,
+      viewportHeight: window.innerHeight,
+    },
+    "*",
+  );
+}
+
+function watchHostEnvironment(initOptions: BizmeInitOptions) {
+  const notify = () => {
+    postTheme(initOptions);
+    postViewport();
+  };
+
+  onViewportChange = () => window.requestAnimationFrame(notify);
+  window.addEventListener("scroll", onViewportChange, { passive: true });
+  window.addEventListener("resize", onViewportChange);
+
+  themeObserver = new MutationObserver(notify);
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class", "data-theme", "data-color-scheme", "data-mode", "style"],
+  });
+
+  if (document.body) {
+    themeObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme", "data-color-scheme", "data-mode", "style"],
+    });
+  }
+
+  themeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  themeMediaListener = notify;
+  themeMediaQuery.addEventListener("change", themeMediaListener);
+
+  notify();
 }
 
 function buildWidgetUrl(initOptions: BizmeInitOptions) {
@@ -112,9 +174,10 @@ function createIframe(initOptions: BizmeInitOptions) {
   nextIframe.referrerPolicy = "strict-origin-when-cross-origin";
   nextIframe.style.display = "block";
   nextIframe.style.width = "100%";
-  nextIframe.style.height = `${DEFAULT_HEIGHT}px`;
+  nextIframe.style.height = "1px";
   nextIframe.style.border = "0";
   nextIframe.style.overflow = "hidden";
+  nextIframe.style.background = "transparent";
 
   nextRoot.appendChild(nextIframe);
   getTarget(initOptions).appendChild(nextRoot);
@@ -141,11 +204,13 @@ function init(initOptions: BizmeInitOptions) {
     const data = event.data as { type?: string; height?: number } | null;
 
     if (data?.type === "bizme:resize" && typeof data.height === "number") {
-      iframe.style.height = `${Math.max(DEFAULT_HEIGHT, Math.ceil(data.height))}px`;
+      iframe.style.height = `${Math.max(1, Math.ceil(data.height))}px`;
+      postViewport();
     }
   };
 
   window.addEventListener("message", onMessage);
+  iframe.addEventListener("load", () => watchHostEnvironment(initOptions), { once: true });
 }
 
 function destroy() {
@@ -153,6 +218,22 @@ function destroy() {
     window.removeEventListener("message", onMessage);
     onMessage = null;
   }
+
+  if (onViewportChange) {
+    window.removeEventListener("scroll", onViewportChange);
+    window.removeEventListener("resize", onViewportChange);
+    onViewportChange = null;
+  }
+
+  themeObserver?.disconnect();
+  themeObserver = null;
+
+  if (themeMediaQuery && themeMediaListener) {
+    themeMediaQuery.removeEventListener("change", themeMediaListener);
+  }
+
+  themeMediaQuery = null;
+  themeMediaListener = null;
 
   root?.remove();
   root = null;

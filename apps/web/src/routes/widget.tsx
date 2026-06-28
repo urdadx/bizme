@@ -167,11 +167,15 @@ function resolveColorScheme(
   return "light";
 }
 
-function postHeight() {
+function postHeight(target?: HTMLElement | null) {
+  const height = target
+    ? target.getBoundingClientRect().height
+    : document.documentElement.scrollHeight;
+
   window.parent.postMessage(
     {
       type: "bizme:resize",
-      height: document.documentElement.scrollHeight,
+      height,
     },
     "*",
   );
@@ -342,10 +346,13 @@ function WidgetRoute() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_COLOR);
   const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
+  const [colorSchemePreference, setColorSchemePreference] = useState<ColorScheme>("system");
   const [resolvedColorScheme, setResolvedColorScheme] = useState<
     "light" | "dark"
   >(() => search.hostColorScheme ?? "light");
+  const [dialogTop, setDialogTop] = useState("50vh");
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const widgetRootRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const loadAuthSession = useEffectEvent(async () => {
@@ -360,12 +367,18 @@ function WidgetRoute() {
   });
 
   useEffect(() => {
-    postHeight();
+    const target = widgetRootRef.current;
+
+    postHeight(target);
+
+    if (!target) {
+      return;
+    }
 
     const observer = new ResizeObserver(() => {
-      postHeight();
+      postHeight(target);
     });
-    observer.observe(document.documentElement);
+    observer.observe(target);
 
     return () => observer.disconnect();
   }, []);
@@ -380,7 +393,30 @@ function WidgetRoute() {
         type?: string;
         ok?: boolean;
         message?: string;
+        colorScheme?: "light" | "dark";
+        iframeTop?: number;
+        viewportHeight?: number;
       } | null;
+
+      if (data?.type === "bizme:theme") {
+        if (
+          colorSchemePreference === "system" &&
+          (data.colorScheme === "light" || data.colorScheme === "dark")
+        ) {
+          setResolvedColorScheme(data.colorScheme);
+        }
+        return;
+      }
+
+      if (data?.type === "bizme:viewport") {
+        if (
+          typeof data.iframeTop === "number" &&
+          typeof data.viewportHeight === "number"
+        ) {
+          setDialogTop(`${Math.max(24, data.viewportHeight / 2 - data.iframeTop)}px`);
+        }
+        return;
+      }
 
       if (data?.type !== "bizme:auth") return;
 
@@ -408,7 +444,7 @@ function WidgetRoute() {
 
     window.addEventListener("message", handleAuthMessage);
     return () => window.removeEventListener("message", handleAuthMessage);
-  }, [apiUrl]);
+  }, [apiUrl, colorSchemePreference]);
 
   useEffect(() => {
     let cancelled = false;
@@ -437,12 +473,9 @@ function WidgetRoute() {
         setTextColor(
           configResponse.customization?.textColor ?? DEFAULT_TEXT_COLOR,
         );
-        setResolvedColorScheme(
-          resolveColorScheme(
-            configResponse.customization?.colorScheme,
-            search.hostColorScheme,
-          ),
-        );
+        const nextColorScheme = configResponse.customization?.colorScheme ?? "system";
+        setColorSchemePreference(nextColorScheme);
+        setResolvedColorScheme(resolveColorScheme(nextColorScheme, search.hostColorScheme));
       } catch (error) {
         if (cancelled) return;
 
@@ -946,6 +979,7 @@ function WidgetRoute() {
 
   return (
     <div
+      ref={widgetRootRef}
       className={cn(
         "w-full bg-background p-0 text-sm",
         resolvedColorScheme === "dark" && "dark",
@@ -957,6 +991,7 @@ function WidgetRoute() {
       }}
     >
       <style>{`html,body{margin:0;min-height:0;overflow:hidden;background:${widgetBackgroundColor};color-scheme:${resolvedColorScheme};}`}</style>
+      <style>{`[data-slot="dialog-content"]{top:${dialogTop};}`}</style>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-1">
         <PromptInput
           value={input}
