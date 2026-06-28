@@ -947,7 +947,7 @@ function WidgetRoute() {
   return (
     <div
       className={cn(
-        "min-h-dvh w-full bg-background p-0 text-sm",
+        "w-full bg-background p-0 text-sm",
         resolvedColorScheme === "dark" && "dark",
       )}
       style={{
@@ -956,7 +956,7 @@ function WidgetRoute() {
         colorScheme: resolvedColorScheme,
       }}
     >
-      <style>{`html,body{margin:0;min-height:100%;background:${widgetBackgroundColor};color-scheme:${resolvedColorScheme};}`}</style>
+      <style>{`html,body{margin:0;min-height:0;overflow:hidden;background:${widgetBackgroundColor};color-scheme:${resolvedColorScheme};}`}</style>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-1">
         <PromptInput
           value={input}
