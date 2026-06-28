@@ -16,6 +16,7 @@ import { MoreHorizontal } from "lucide-react";
 
 import { SearchLinear } from "@/assets/icons/search-icon";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import Loader from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import {
@@ -186,6 +187,7 @@ export function CommentsTable() {
 	} = useQuery(trpc.comments.list.queryOptions());
 	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
 	const [error, setError] = useState<string | null>(null);
+	const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 	const [pagination, setPagination] = useState<PaginationState>({
 		pageIndex: 0,
 		pageSize: 10,
@@ -203,6 +205,7 @@ export function CommentsTable() {
 		try {
 			setError(null);
 			await deleteComment.mutateAsync({ id });
+			setDeleteTargetId(null);
 			await queryClient.invalidateQueries({
 				queryKey: trpc.comments.list.queryOptions().queryKey,
 			});
@@ -221,7 +224,7 @@ export function CommentsTable() {
 	] satisfies { label: string; value: CommentPageFilter }[];
 
 	const columns = getColumns({
-		onDelete: (id) => void handleDelete(id),
+		onDelete: setDeleteTargetId,
 		isDeleting: deleteComment.isPending,
 	});
 
@@ -260,6 +263,13 @@ export function CommentsTable() {
 
 	return (
 		<div className="space-y-4">
+			<DeleteConfirmationDialog
+				open={Boolean(deleteTargetId)}
+				onOpenChange={(open) => !open && setDeleteTargetId(null)}
+				onConfirm={() => deleteTargetId && void handleDelete(deleteTargetId)}
+				isDeleting={deleteComment.isPending}
+				disabled={!deleteTargetId}
+			/>
 			{error ? <p className="text-sm text-destructive">{error}</p> : null}
 			{commentsError ? (
 				<p className="text-sm text-destructive">{commentsError.message}</p>

@@ -11,7 +11,6 @@ import { GithubSVG } from "@/assets/icons/github-svg";
 import { GoogleSVG } from "@/assets/icons/google-svg";
 import { LikeIcon } from "@/assets/icons/like-icon";
 import { TrashBinLinear } from "@/assets/icons/trash-icon";
-import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialog";
 import LoadingDots from "@/components/loading-dots";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,6 @@ import { uploadCommentImages } from "@/lib/comment-attachments";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -289,7 +286,11 @@ function applyLocalCommentState(
     return sortPinnedComments(next);
   }
 
-  return applyItems([...state.created, ...items]);
+  const createdIds = new Set(state.created.map((item) => item.id));
+  return applyItems([
+    ...state.created,
+    ...items.filter((item) => !createdIds.has(item.id)),
+  ]);
 }
 
 function useObjectUrls(files: File[]) {
@@ -325,13 +326,11 @@ function WidgetRoute() {
   );
   const [provider, setProvider] = useState<AuthProvider | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
-  const [bannedOpen, setBannedOpen] = useState(false);
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const visitorIdRef = useRef<string | null>(getStoredVisitorId());
   const [isConfigLoading, setIsConfigLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [loadingRepliesCommentId, setLoadingRepliesCommentId] = useState<
     string | null
@@ -342,7 +341,6 @@ function WidgetRoute() {
     null,
   );
   const [replyBody, setReplyBody] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_COLOR);
   const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
@@ -595,6 +593,10 @@ function WidgetRoute() {
       : textColor;
   const widgetBackgroundColor =
     resolvedColorScheme === "dark" ? "oklch(0.145 0 0)" : "oklch(1 0 0)";
+  const widgetThemeVariables =
+    resolvedColorScheme === "dark"
+      ? "--background:oklch(0.145 0 0);--foreground:oklch(0.985 0 0);--popover:oklch(0.145 0 0);--popover-foreground:oklch(0.985 0 0);--muted:oklch(0.269 0 0);--muted-foreground:oklch(0.708 0 0);--accent:oklch(0.371 0 0);--accent-foreground:oklch(0.985 0 0);--border:oklch(1 0 0 / 10%);--ring:oklch(0.556 0 0);"
+      : "--background:oklch(1 0 0);--foreground:oklch(0.141 0.005 285.823);--popover:oklch(1 0 0);--popover-foreground:oklch(0.141 0.005 285.823);--muted:oklch(0.97 0 0);--muted-foreground:oklch(0.556 0 0);--accent:oklch(0.97 0 0);--accent-foreground:oklch(0.6089 0.1675 249.01);--border:oklch(0.922 0 0);--ring:oklch(0.6089 0.1675 249.01);";
 
   const ensureAnonymousVisitor = async () => {
     if (visitorIdRef.current) {
@@ -724,7 +726,7 @@ function WidgetRoute() {
       }
     } catch (error) {
       if (isBlockedCommenterError(error)) {
-        setBannedOpen(true);
+        setStatusMessage("You can no longer comment on this site.");
         return;
       }
 
@@ -850,7 +852,6 @@ function WidgetRoute() {
 
   const handleDeleteComment = async (comment: CommentItem) => {
     setStatusMessage(null);
-    setIsDeleting(true);
 
     try {
       const payload = await getCommentActionPayload();
@@ -865,13 +866,10 @@ function WidgetRoute() {
           ? current.deletedIds
           : [...current.deletedIds, comment.id],
       }));
-      setDeleteTarget(null);
     } catch (error) {
       setStatusMessage(
         error instanceof Error ? error.message : "Unable to delete comment.",
       );
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -944,7 +942,7 @@ function WidgetRoute() {
       cancelReply();
     } catch (error) {
       if (isBlockedCommenterError(error)) {
-        setBannedOpen(true);
+        setStatusMessage("You can no longer comment on this site.");
         return;
       }
 
@@ -990,7 +988,7 @@ function WidgetRoute() {
         colorScheme: resolvedColorScheme,
       }}
     >
-      <style>{`html,body{margin:0;min-height:0;overflow:hidden;background:${widgetBackgroundColor};color-scheme:${resolvedColorScheme};}`}</style>
+      <style>{`html,body{${widgetThemeVariables}margin:0;min-height:0;overflow:hidden;background:${widgetBackgroundColor};color-scheme:${resolvedColorScheme};}`}</style>
       <style>{`[data-slot="dialog-content"]{top:${dialogTop};}`}</style>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-1">
         <PromptInput
@@ -1078,7 +1076,16 @@ function WidgetRoute() {
         </PromptInput>
 
         {visibleStatusMessage ? (
-          <p className="text-xs text-muted-foreground">{visibleStatusMessage}</p>
+          <p
+            className={cn(
+              "text-xs",
+              visibleStatusMessage === "You can no longer comment on this site."
+                ? "font-medium text-red-600"
+                : "text-muted-foreground",
+            )}
+          >
+            {visibleStatusMessage}
+          </p>
         ) : null}
 
         <div className="flex flex-col rounded-lg border bg-background p-4">
@@ -1109,7 +1116,7 @@ function WidgetRoute() {
                   onEdit={startEditingComment}
                   onCancelEdit={cancelEditingComment}
                   onSaveEdit={handleUpdateComment}
-                  onDelete={setDeleteTarget}
+                  onDelete={(comment) => void handleDeleteComment(comment)}
                   onLike={handleLikeComment}
                   onReply={startReplyingToComment}
                   onCancelReply={cancelReply}
@@ -1159,33 +1166,6 @@ function WidgetRoute() {
           </div>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={bannedOpen} onOpenChange={setBannedOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              You have been banned
-            </DialogTitle>
-            <DialogDescription>
-              You can no longer comment on this site. If you think this is a
-              mistake, contact the site owner.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setBannedOpen(false)}>
-              Ok, I understand
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <DeleteConfirmationDialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        onConfirm={() => deleteTarget && handleDeleteComment(deleteTarget)}
-        isDeleting={isDeleting}
-        disabled={!deleteTarget}
-      />
     </div>
   );
 }
@@ -1302,7 +1282,6 @@ function CommentCard({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-white hover:text-white"
                         onClick={onCancelEdit}
                       >
                         Cancel

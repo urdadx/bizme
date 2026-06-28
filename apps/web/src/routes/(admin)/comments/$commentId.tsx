@@ -220,6 +220,7 @@ function RouteComponent() {
 										<CommentImageDialog
 											key={attachment.id}
 											image={attachment}
+											mode="dialog"
 										/>
 									))}
 								</div>

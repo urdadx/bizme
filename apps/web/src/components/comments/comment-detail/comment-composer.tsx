@@ -125,7 +125,7 @@ export function CommentComposer({
 			onValueChange={setInput}
 			isLoading={isSubmitting}
 			onSubmit={handleSubmit}
-			className="flex w-full min-h-25 min-w-0 flex-col rounded-xl shadow-none ">
+			className="flex w-full min-h-25 min-w-0 flex-col rounded-xl text-foreground shadow-none">
 			{images.length > 0 && (
 				<div className="grid max-h-44 w-full min-w-0 grid-cols-2 gap-2 overflow-y-auto pb-2 sm:grid-cols-3">
 					{images.map((image, index) => (
@@ -154,7 +154,7 @@ export function CommentComposer({
 			)}
 			{fileError ? <p className="pb-2 text-xs text-destructive">{fileError}</p> : null}
 
-			<PromptInputTextarea placeholder="Write a reply..." className="flex-1" />
+			<PromptInputTextarea placeholder="Write a reply..." className="flex-1 text-foreground" />
 
 			<PromptInputActions className="flex items-center justify-between gap-2 pt-2">
 				<PromptInputAction tooltip="Attach files">

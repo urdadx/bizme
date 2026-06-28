@@ -69,10 +69,14 @@ export type CommentTreeItem = {
 
 type RequestWithCloudflare = Request & {
   cf?: {
-    city?: unknown;
-    country?: unknown;
     continent?: unknown;
   };
+};
+
+type DeviceInfo = {
+  type: "mobile" | "tablet" | "desktop" | "unknown";
+  os: string;
+  browser: string;
 };
 
 const CONTINENT_NAMES: Record<string, string> = {
@@ -136,14 +140,6 @@ function getAvatar(row: CommentRow) {
   return `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(getAuthorName(row))}`;
 }
 
-function getCountryName(country: string | undefined) {
-  if (!country) return undefined;
-
-  if (country.length !== 2) return country;
-
-  return new Intl.DisplayNames(["en"], { type: "region" }).of(country.toUpperCase()) ?? country;
-}
-
 function getHeaderValue(headers: Headers, name: string) {
   const value = headers.get(name)?.trim();
   return value ? value : undefined;
@@ -157,14 +153,6 @@ function decodeCloudflareHeader(value: string | undefined) {
   } catch {
     return value.trim() || undefined;
   }
-}
-
-function getCloudflareCountryCode(request: RequestWithCloudflare) {
-  const country = getHeaderValue(request.headers, "cf-ipcountry") ??
-    (typeof request.cf?.country === "string" ? request.cf.country : undefined);
-  const countryCode = country?.toUpperCase();
-
-  return countryCode && countryCode !== "XX" ? countryCode : undefined;
 }
 
 function getCloudflareValue(
@@ -185,30 +173,63 @@ function getContinentName(continent: string | undefined) {
   return CONTINENT_NAMES[code] ?? continent;
 }
 
-function getBrowser(userAgent: string) {
-  if (/Edg\//.test(userAgent)) return "Edge";
-  if (/OPR\//.test(userAgent)) return "Opera";
-  if (/Chrome\//.test(userAgent) && !/Chromium\//.test(userAgent)) return "Chrome";
-  if (/Firefox\//.test(userAgent)) return "Firefox";
-  if (/Safari\//.test(userAgent) && !/Chrome\//.test(userAgent)) return "Safari";
-  if (/Chromium\//.test(userAgent)) return "Chromium";
-  return userAgent ? "Unknown" : undefined;
+function detectDeviceFromUserAgent(userAgent: string): DeviceInfo {
+  const ua = userAgent.toLowerCase();
+  const type = /tablet|ipad|playbook|silk|android(?!.*mobile)/i.test(userAgent)
+    ? "tablet"
+    : /mobi|android|iphone|ipod|blackberry|phone/i.test(userAgent)
+      ? "mobile"
+      : userAgent
+        ? "desktop"
+        : "unknown";
+  const os = /iphone|ipad|ipod/.test(ua)
+    ? "iOS"
+    : /android/.test(ua)
+      ? "Android"
+      : /macintosh|mac os x/.test(ua)
+        ? "macOS"
+        : /windows|win32|win64|wow64/.test(ua)
+          ? "Windows"
+          : /linux/.test(ua)
+            ? "Linux"
+            : "unknown";
+  const browser = /edg/.test(ua)
+    ? "Edge"
+    : /chrome/.test(ua) && !/chromium|edg/.test(ua)
+      ? "Chrome"
+      : /firefox/.test(ua)
+        ? "Firefox"
+        : /safari/.test(ua) && !/chrome|chromium|edg/.test(ua)
+          ? "Safari"
+          : /opera|opr\//.test(ua)
+            ? "Opera"
+            : "unknown";
+
+  return { type, os, browser };
 }
 
-function getOS(userAgent: string) {
-  if (/Windows NT/i.test(userAgent)) return "Windows";
-  if (/iPhone|iPad|iPod/i.test(userAgent)) return "iOS";
-  if (/Android/i.test(userAgent)) return "Android";
-  if (/Mac OS X|Macintosh/i.test(userAgent)) return "macOS";
-  if (/Linux/i.test(userAgent)) return "Linux";
-  return userAgent ? "Unknown" : undefined;
-}
+export const getUserMetadataFromRequest = (request: Request) => {
+  const userAgent = request.headers.get("user-agent") || "";
+  const hostname = new URL(request.url).hostname;
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1";
+  const rawCountryCode = request.headers.get("cf-ipcountry")?.toUpperCase();
+  const country = rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) && rawCountryCode !== "XX"
+    ? new Intl.DisplayNames(["en"], { type: "region" }).of(rawCountryCode) ?? undefined
+    : isLocalhost
+      ? "Ghana"
+      : undefined;
+  const timeZone = request.headers.get("x-timezone") || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const city = request.headers.get("cf-ipcity") || (isLocalhost ? "Accra" : undefined);
+  const deviceInfo = detectDeviceFromUserAgent(userAgent);
 
-function getDeviceType(userAgent: string) {
-  if (/tablet|ipad|playbook|silk/i.test(userAgent)) return "Tablet";
-  if (/mobi|android|iphone|ipod|blackberry|phone/i.test(userAgent)) return "Mobile";
-  return userAgent ? "Desktop" : undefined;
-}
+  return {
+    userAgent,
+    country,
+    timeZone,
+    city,
+    deviceInfo,
+  };
+};
 
 function getCommentMetadata(request: RequestWithCloudflare) {
   const requestUrl = new URL(request.url);
@@ -216,19 +237,22 @@ function getCommentMetadata(request: RequestWithCloudflare) {
   const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(requestUrl.hostname) ||
     host.startsWith("localhost:") ||
     host.startsWith("127.0.0.1:");
-  const userAgent = request.headers.get("user-agent") ?? "";
-  const countryCode = getCloudflareCountryCode(request) ?? (isLocalhost ? "GH" : undefined);
+  const userMetadata = getUserMetadataFromRequest(request);
+  const countryCode = request.headers.get("cf-ipcountry")?.toUpperCase();
   const continentCode = getCloudflareValue(request, "cf-ipcontinent", request.cf?.continent);
-  const city = getCloudflareValue(request, "cf-ipcity", request.cf?.city);
 
   return {
-    locationCity: city ?? (isLocalhost ? "Accra" : undefined),
-    locationCountry: getCountryName(countryCode),
-    locationCountryCode: countryCode,
+    locationCity: userMetadata.city,
+    locationCountry: userMetadata.country,
+    locationCountryCode: countryCode && /^[A-Z]{2}$/.test(countryCode) && countryCode !== "XX"
+      ? countryCode
+      : isLocalhost
+        ? "GH"
+        : undefined,
     locationContinent: continentCode ? getContinentName(continentCode) : isLocalhost ? "Africa" : undefined,
-    deviceType: getDeviceType(userAgent),
-    browser: getBrowser(userAgent),
-    os: getOS(userAgent),
+    deviceType: userMetadata.deviceInfo.type,
+    browser: userMetadata.deviceInfo.browser,
+    os: userMetadata.deviceInfo.os,
   };
 }
 
