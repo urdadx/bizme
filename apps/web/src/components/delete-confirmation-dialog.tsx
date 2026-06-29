@@ -52,7 +52,10 @@ export function DeleteConfirmationDialog({
             disabled={isDeleting || disabled}
             onClick={onConfirm}
           >
-            {isDeleting ? <LoadingDots color="#fff" /> : confirmLabel}
+            <span className="inline-grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1">
+              <span className={isDeleting ? "invisible" : ""}>{confirmLabel}</span>
+              {isDeleting && <LoadingDots color="#fff" />}
+            </span>
           </Button>
         </DialogFooter>
       </DialogContent>

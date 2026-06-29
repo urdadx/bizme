@@ -41,6 +41,8 @@ const commentsQuerySchema = z.object({
   parentId: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).optional(),
   offset: z.coerce.number().int().min(0).default(0),
+  visitorId: z.string().min(1).optional(),
+  authorProvider: z.enum(["anonymous", "google", "github"]).optional(),
 });
 
 const pollsQuerySchema = z.object({
@@ -109,6 +111,7 @@ type EmbedComment = {
   date: string;
   content: string;
   likes: number;
+  liked: boolean;
   replies: number;
   isPinned: boolean;
   avatar: string | null;
@@ -238,26 +241,29 @@ export const getUserMetadataFromRequest = (c: any) => {
     getHeaderValue(c, "cf-ipcountry") ??
     (typeof request.cf?.country === "string" ? request.cf.country : undefined)
   )?.toUpperCase();
-  const country = rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) && rawCountryCode !== "XX"
-    ? new Intl.DisplayNames(["en"], { type: "region" }).of(rawCountryCode) ?? undefined
-    : isLocalhost
-      ? "Ghana"
-    : undefined;
+  const country =
+    rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) && rawCountryCode !== "XX"
+      ? (new Intl.DisplayNames(["en"], { type: "region" }).of(rawCountryCode) ?? undefined)
+      : isLocalhost
+        ? "Ghana"
+        : undefined;
   const timeZone =
     getHeaderValue(c, "x-timezone") ??
     getCloudflareValue(c, "cf-timezone", request.cf?.timezone) ??
     Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const city = getCloudflareValue(c, "cf-ipcity", request.cf?.city) || (isLocalhost ? "Accra" : undefined);
+  const city =
+    getCloudflareValue(c, "cf-ipcity", request.cf?.city) || (isLocalhost ? "Accra" : undefined);
   const continentCode = getCloudflareValue(c, "cf-ipcontinent", request.cf?.continent);
   const deviceInfo = detectDeviceFromUserAgent(userAgent);
 
   return {
     userAgent,
-    countryCode: rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) && rawCountryCode !== "XX"
-      ? rawCountryCode
-      : isLocalhost
-        ? "GH"
-        : undefined,
+    countryCode:
+      rawCountryCode && /^[A-Z]{2}$/.test(rawCountryCode) && rawCountryCode !== "XX"
+        ? rawCountryCode
+        : isLocalhost
+          ? "GH"
+          : undefined,
     country,
     timeZone,
     city,
@@ -555,6 +561,7 @@ function toEmbedAttachment(row: CommentAttachmentRow): EmbedCommentAttachment {
 function toEmbedComment(
   row: CommentRow,
   attachmentsByCommentId: Map<string, EmbedCommentAttachment[]> = new Map(),
+  likedCommentIds: Set<string> = new Set(),
 ): EmbedComment {
   return {
     id: row.id,
@@ -564,6 +571,7 @@ function toEmbedComment(
     date: formatRelativeDate(row.createdAt),
     content: row.body,
     likes: row.likesCount,
+    liked: likedCommentIds.has(row.id),
     replies: 0,
     isPinned: row.isPinned,
     avatar: getCommentAvatar(row),
@@ -1050,6 +1058,7 @@ function getCommentLevel(
   parentId?: string,
   attachmentsByCommentId: Map<string, EmbedCommentAttachment[]> = new Map(),
   countRows = rows,
+  likedCommentIds: Set<string> = new Set(),
 ) {
   const replyCounts = new Map<string, number>();
 
@@ -1062,7 +1071,7 @@ function getCommentLevel(
   return rows
     .filter((row) => (parentId ? row.parentId === parentId : !row.parentId))
     .map((row) => ({
-      ...toEmbedComment(row, attachmentsByCommentId),
+      ...toEmbedComment(row, attachmentsByCommentId, likedCommentIds),
       replies: replyCounts.get(row.id) ?? 0,
       children: [],
     }));
@@ -1104,6 +1113,8 @@ export const embedRoutes = new Hono()
       parentId: c.req.query("parentId") || undefined,
       limit: c.req.query("limit") || undefined,
       offset: c.req.query("offset") || undefined,
+      visitorId: c.req.query("visitorId") || undefined,
+      authorProvider: c.req.query("authorProvider") || undefined,
     });
 
     if (!result.success) {
@@ -1154,6 +1165,34 @@ export const embedRoutes = new Hono()
           })
         : allVisibleRows;
     const attachmentsByCommentId = await getAttachmentsByCommentId(rows.map((row) => row.id));
+    let likedCommentIds = new Set<string>();
+
+    if (result.data.authorProvider && allVisibleRows.length > 0) {
+      const visitor = await getEmbedVisitorKey({
+        authorProvider: result.data.authorProvider,
+        headers: c.req.raw.headers,
+        visitorId: result.data.visitorId,
+      });
+
+      if (!("error" in visitor)) {
+        const reactions = await db.query.commentReaction.findMany({
+          columns: {
+            commentId: true,
+          },
+          where: (table, { and, eq, inArray }) =>
+            and(
+              inArray(
+                table.commentId,
+                allVisibleRows.map((row) => row.id),
+              ),
+              eq(table.visitorId, visitor.visitorKey),
+              eq(table.type, "like"),
+            ),
+        });
+        likedCommentIds = new Set(reactions.map((reaction) => reaction.commentId));
+      }
+    }
+
     const nextOffset =
       result.data.limit && !result.data.parentId && rows.length === result.data.limit
         ? result.data.offset + result.data.limit
@@ -1165,6 +1204,7 @@ export const embedRoutes = new Hono()
         result.data.parentId,
         attachmentsByCommentId,
         allVisibleRows,
+        likedCommentIds,
       ),
       nextOffset,
     });

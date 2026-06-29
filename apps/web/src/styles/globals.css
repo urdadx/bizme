@@ -75,6 +75,54 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.bizme-widget,
+html:has(.bizme-widget),
+body:has(.bizme-widget) {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.6089 0.1675 249.01);
+  --border: oklch(0.922 0 0);
+  --ring: oklch(0.6089 0.1675 249.01);
+}
+
+.bizme-widget.dark,
+html:has(.bizme-widget.dark),
+body:has(.bizme-widget.dark) {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.371 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --ring: oklch(0.556 0 0);
+}
+
+html:has(.bizme-widget),
+body:has(.bizme-widget) {
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--background);
+}
+
+html:has(.bizme-widget:not(.dark)),
+body:has(.bizme-widget:not(.dark)) {
+  color-scheme: light;
+}
+
+html:has(.bizme-widget.dark),
+body:has(.bizme-widget.dark) {
+  color-scheme: dark;
+}
+
 @theme inline {
   --font-sans: "Inter", sans-serif;
   --font-display: "Erode", serif;

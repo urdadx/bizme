@@ -1,5 +1,12 @@
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { MoreVerticalIcon, PencilIcon, PinIcon, X } from "lucide-react";
 import z from "zod";
@@ -15,6 +22,25 @@ import LoadingDots from "@/components/loading-dots";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CommentImageDialog } from "@/components/widget/comment-image-dialog";
+import {
+  createEmbedApi,
+  FetchJsonError,
+  type ColorScheme,
+} from "@/components/widget/embed-api";
+import {
+  useWidgetCommentContext,
+  WidgetCommentProvider,
+} from "@/components/widget/widget-context";
+import {
+  createCommentListKey,
+  prependComment,
+  syncFetchedCommentList,
+  useComment,
+  useCommentIds,
+  type AuthProvider,
+  type CommentItem,
+} from "@/components/widget/comment-store";
+import { useCommentActions } from "@/components/widget/use-comment-actions";
 import { uploadCommentImages } from "@/lib/comment-attachments";
 import {
   Dialog,
@@ -36,71 +62,6 @@ import {
 } from "@/components/ui/prompt-input";
 import { cn } from "@/lib/utils";
 
-type AuthProvider = "anonymous" | "google" | "github";
-
-type CommentItem = {
-  id: string;
-  author: string;
-  authorProvider: AuthProvider | "email";
-  date: string;
-  content: string;
-  likes: number;
-  replies: number;
-  isPinned: boolean;
-  avatar: string | null;
-  attachments: {
-    id: string;
-    url: string;
-    filename: string;
-    mimeType: string;
-    size: number;
-  }[];
-  children: CommentItem[];
-};
-
-type EmbedConfigResponse = {
-  customization?: {
-    brandColor?: string;
-    textColor?: string;
-    colorScheme?: ColorScheme;
-  };
-};
-
-type ColorScheme = "system" | "light" | "dark";
-
-type EmbedCommentsResponse = {
-  comments?: CommentItem[];
-  nextOffset?: number | null;
-};
-
-type EmbedCommentResponse = {
-  comment?: CommentItem;
-};
-
-type AnonymousAuthResponse = {
-  visitorId?: string;
-};
-
-type EmbedAuthSession = {
-  provider: Exclude<AuthProvider, "anonymous">;
-  name: string;
-  email: string | null;
-  avatar: string | null;
-  expiresAt: number;
-};
-
-type EmbedAuthSessionResponse = {
-  session: EmbedAuthSession | null;
-};
-
-type LocalCommentState = {
-  key: string;
-  created: CommentItem[];
-  deletedIds: string[];
-  loadedReplies: Record<string, CommentItem[]>;
-  updated: Record<string, Partial<Pick<CommentItem, "content" | "likes">>>;
-};
-
 const widgetSearchSchema = z.object({
   installKey: z.string().optional(),
   apiUrl: z.string().optional(),
@@ -121,16 +82,6 @@ export const Route = createFileRoute("/widget")({
   validateSearch: widgetSearchSchema,
   component: WidgetRoute,
 });
-
-class FetchJsonError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "FetchJsonError";
-    this.status = status;
-  }
-}
 
 function getInitials(name: string) {
   return name
@@ -190,26 +141,6 @@ function getCurrentPageTitle() {
   return typeof document === "undefined" ? "" : document.title;
 }
 
-async function fetchJson<T>(apiUrl: string, path: string, init?: RequestInit) {
-  const response = await fetch(`${apiUrl}${path}`, {
-    credentials: "include",
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    const message =
-      payload?.error?.message ?? `Request failed with ${response.status}`;
-    throw new FetchJsonError(message, response.status);
-  }
-
-  return response.json() as Promise<T>;
-}
-
 function isBlockedCommenterError(error: unknown) {
   return (
     error instanceof FetchJsonError &&
@@ -243,56 +174,6 @@ function sortPinnedComments(items: CommentItem[]): CommentItem[] {
     }));
 }
 
-function createLocalCommentState(key: string): LocalCommentState {
-  return {
-    key,
-    created: [],
-    deletedIds: [],
-    loadedReplies: {},
-    updated: {},
-  };
-}
-
-function applyLocalCommentState(
-  items: CommentItem[],
-  state: LocalCommentState | null,
-) {
-  if (!state) return items;
-
-  const activeState = state;
-  const deletedIds = new Set(activeState.deletedIds);
-
-  function applyItems(nextItems: CommentItem[]): CommentItem[] {
-    const next: CommentItem[] = [];
-
-    for (const item of nextItems) {
-      if (deletedIds.has(item.id)) continue;
-
-      const replyOverride = activeState.loadedReplies[item.id];
-      const sourceChildren = replyOverride ?? item.children;
-      const children = applyItems(sourceChildren);
-      const directDeletedCount = sourceChildren.length - children.length;
-
-      next.push({
-        ...item,
-        ...activeState.updated[item.id],
-        replies: replyOverride
-          ? Math.max(item.replies, children.length)
-          : Math.max(0, item.replies - directDeletedCount),
-        children,
-      });
-    }
-
-    return sortPinnedComments(next);
-  }
-
-  const createdIds = new Set(state.created.map((item) => item.id));
-  return applyItems([
-    ...state.created,
-    ...items.filter((item) => !createdIds.has(item.id)),
-  ]);
-}
-
 function useObjectUrls(files: File[]) {
   const [urls, setUrls] = useState<string[]>([]);
 
@@ -318,36 +199,31 @@ function runMenuAction(event: React.MouseEvent, action: () => void) {
 function WidgetRoute() {
   const search = Route.useSearch();
   const apiUrl = normalizeApiUrl(search.apiUrl);
+  const embedApi = useMemo(() => createEmbedApi(apiUrl), [apiUrl]);
   const pageUrl = search.pageUrl ?? getCurrentPageUrl();
   const pageTitle = search.pageTitle ?? getCurrentPageTitle();
-  const commentsKey = `${apiUrl}\n${search.installKey ?? ""}\n${pageUrl}`;
-  const [localCommentState, setLocalCommentState] = useState<LocalCommentState>(
-    () => createLocalCommentState(commentsKey),
-  );
+  const rootListKey = createCommentListKey({
+    apiUrl,
+    installKey: search.installKey,
+    pageUrl,
+  });
+  const getReplyListKey = (parentId: string) =>
+    createCommentListKey({
+      apiUrl,
+      installKey: search.installKey,
+      pageUrl,
+      parentId,
+    });
   const [provider, setProvider] = useState<AuthProvider | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const visitorIdRef = useRef<string | null>(getStoredVisitorId());
-  const [isConfigLoading, setIsConfigLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isReplying, setIsReplying] = useState(false);
-  const [loadingRepliesCommentId, setLoadingRepliesCommentId] = useState<
-    string | null
-  >(null);
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editingBody, setEditingBody] = useState("");
-  const [replyingCommentId, setReplyingCommentId] = useState<string | null>(
-    null,
-  );
-  const [replyBody, setReplyBody] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_COLOR);
-  const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
-  const [colorSchemePreference, setColorSchemePreference] = useState<ColorScheme>("system");
-  const [resolvedColorScheme, setResolvedColorScheme] = useState<
-    "light" | "dark"
-  >(() => search.hostColorScheme ?? "light");
+  const [hostColorScheme, setHostColorScheme] = useState<"light" | "dark">(
+    () => search.hostColorScheme ?? "light",
+  );
   const [dialogTop, setDialogTop] = useState("50vh");
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const widgetRootRef = useRef<HTMLDivElement>(null);
@@ -356,13 +232,35 @@ function WidgetRoute() {
   const loadAuthSession = useEffectEvent(async () => {
     if (!apiUrl) return null;
 
-    const response = await fetchJson<EmbedAuthSessionResponse>(
-      apiUrl,
-      "/embed/auth/session",
+    const response = await embedApi.getAuthSession();
+    setProvider(
+      response.session?.provider ?? (visitorIdRef.current ? "anonymous" : null),
     );
-    setProvider(response.session?.provider ?? (visitorIdRef.current ? "anonymous" : null));
     return response.session;
   });
+
+  const missingWidgetConfig = !apiUrl || !search.installKey;
+  const configQuery = useQuery({
+    queryKey: ["embed-config", apiUrl, search.installKey],
+    enabled: !missingWidgetConfig,
+    queryFn: () => {
+      if (!search.installKey) {
+        throw new Error("Missing widget install key.");
+      }
+
+      return embedApi.getConfig(search.installKey);
+    },
+  });
+  const brandColor =
+    configQuery.data?.customization?.brandColor ?? DEFAULT_BRAND_COLOR;
+  const textColor =
+    configQuery.data?.customization?.textColor ?? DEFAULT_TEXT_COLOR;
+  const colorSchemePreference =
+    configQuery.data?.customization?.colorScheme ?? "system";
+  const resolvedColorScheme = resolveColorScheme(
+    colorSchemePreference,
+    hostColorScheme,
+  );
 
   useEffect(() => {
     const target = widgetRootRef.current;
@@ -401,7 +299,7 @@ function WidgetRoute() {
           colorSchemePreference === "system" &&
           (data.colorScheme === "light" || data.colorScheme === "dark")
         ) {
-          setResolvedColorScheme(data.colorScheme);
+          setHostColorScheme(data.colorScheme);
         }
         return;
       }
@@ -411,7 +309,9 @@ function WidgetRoute() {
           typeof data.iframeTop === "number" &&
           typeof data.viewportHeight === "number"
         ) {
-          setDialogTop(`${Math.max(24, data.viewportHeight / 2 - data.iframeTop)}px`);
+          setDialogTop(
+            `${Math.max(24, data.viewportHeight / 2 - data.iframeTop)}px`,
+          );
         }
         return;
       }
@@ -444,56 +344,6 @@ function WidgetRoute() {
     return () => window.removeEventListener("message", handleAuthMessage);
   }, [apiUrl, colorSchemePreference]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadWidgetConfig() {
-      if (!search.installKey || !apiUrl) {
-        setStatusMessage("Missing widget install key or API URL.");
-        setIsConfigLoading(false);
-        return;
-      }
-
-      setIsConfigLoading(true);
-      setStatusMessage(null);
-
-      try {
-        const configResponse = await fetchJson<EmbedConfigResponse>(
-          apiUrl,
-          `/embed/config?installKey=${encodeURIComponent(search.installKey)}`,
-        );
-
-        if (cancelled) return;
-
-        setBrandColor(
-          configResponse.customization?.brandColor ?? DEFAULT_BRAND_COLOR,
-        );
-        setTextColor(
-          configResponse.customization?.textColor ?? DEFAULT_TEXT_COLOR,
-        );
-        const nextColorScheme = configResponse.customization?.colorScheme ?? "system";
-        setColorSchemePreference(nextColorScheme);
-        setResolvedColorScheme(resolveColorScheme(nextColorScheme, search.hostColorScheme));
-      } catch (error) {
-        if (cancelled) return;
-
-        setStatusMessage(
-          error instanceof Error ? error.message : "Unable to load comments.",
-        );
-      } finally {
-        if (!cancelled) {
-          setIsConfigLoading(false);
-        }
-      }
-    }
-
-    void loadWidgetConfig();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [apiUrl, search.hostColorScheme, search.installKey]);
-
   const {
     data: commentsData,
     error: commentsError,
@@ -502,7 +352,14 @@ function WidgetRoute() {
     isFetchingNextPage,
     isLoading: isCommentsLoading,
   } = useInfiniteQuery({
-    queryKey: ["embed-comments", apiUrl, search.installKey, pageUrl],
+    queryKey: [
+      "embed-comments",
+      apiUrl,
+      search.installKey,
+      pageUrl,
+      provider,
+      provider === "anonymous" ? visitorIdRef.current : null,
+    ],
     initialPageParam: 0,
     enabled: Boolean(apiUrl && search.installKey),
     queryFn: ({ pageParam }) => {
@@ -510,24 +367,22 @@ function WidgetRoute() {
         throw new Error("Missing widget install key.");
       }
 
-      const params = new URLSearchParams({
+      return embedApi.fetchComments({
         installKey: search.installKey,
         pageUrl,
-        limit: String(COMMENTS_PAGE_SIZE),
-        offset: String(pageParam),
+        limit: COMMENTS_PAGE_SIZE,
+        offset: pageParam,
+        visitorId:
+          provider === "anonymous"
+            ? (visitorIdRef.current ?? undefined)
+            : undefined,
+        authorProvider: provider ?? undefined,
       });
-
-      return fetchJson<EmbedCommentsResponse>(
-        apiUrl,
-        `/embed/comments?${params.toString()}`,
-      );
     },
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
   });
 
-  const isLoading = isConfigLoading || isCommentsLoading;
-  const activeLocalCommentState =
-    localCommentState.key === commentsKey ? localCommentState : null;
+  const isLoading = configQuery.isLoading || isCommentsLoading;
   const fetchedComments = useMemo(() => {
     const pages = commentsData?.pages ?? [];
     const existingIds = new Set<string>();
@@ -543,27 +398,24 @@ function WidgetRoute() {
 
     return sortPinnedComments(nextComments);
   }, [commentsData]);
-  const comments = useMemo(
-    () => applyLocalCommentState(fetchedComments, activeLocalCommentState),
-    [activeLocalCommentState, fetchedComments],
-  );
+
+  useEffect(() => {
+    syncFetchedCommentList(rootListKey, fetchedComments);
+  }, [fetchedComments, rootListKey]);
+
   const visibleStatusMessage =
     statusMessage ??
+    (missingWidgetConfig ? "Missing widget install key or API URL." : null) ??
+    (configQuery.error
+      ? configQuery.error instanceof Error
+        ? configQuery.error.message
+        : "Unable to load comments."
+      : null) ??
     (commentsError
       ? commentsError instanceof Error
         ? commentsError.message
         : "Unable to load comments."
       : null);
-
-  const updateLocalComments = (
-    updater: (state: LocalCommentState) => LocalCommentState,
-  ) => {
-    setLocalCommentState((current) =>
-      updater(
-        current.key === commentsKey ? current : createLocalCommentState(commentsKey),
-      ),
-    );
-  };
 
   useEffect(() => {
     const target = loadMoreRef.current;
@@ -581,22 +433,12 @@ function WidgetRoute() {
 
     observer.observe(target);
     return () => observer.disconnect();
-  }, [
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  ]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const effectiveTextColor =
     resolvedColorScheme === "dark" && textColor === DEFAULT_TEXT_COLOR
       ? DEFAULT_DARK_TEXT_COLOR
       : textColor;
-  const widgetBackgroundColor =
-    resolvedColorScheme === "dark" ? "oklch(0.145 0 0)" : "oklch(1 0 0)";
-  const widgetThemeVariables =
-    resolvedColorScheme === "dark"
-      ? "--background:oklch(0.145 0 0);--foreground:oklch(0.985 0 0);--popover:oklch(0.145 0 0);--popover-foreground:oklch(0.985 0 0);--muted:oklch(0.269 0 0);--muted-foreground:oklch(0.708 0 0);--accent:oklch(0.371 0 0);--accent-foreground:oklch(0.985 0 0);--border:oklch(1 0 0 / 10%);--ring:oklch(0.556 0 0);"
-      : "--background:oklch(1 0 0);--foreground:oklch(0.141 0.005 285.823);--popover:oklch(1 0 0);--popover-foreground:oklch(0.141 0.005 285.823);--muted:oklch(0.97 0 0);--muted-foreground:oklch(0.556 0 0);--accent:oklch(0.97 0 0);--accent-foreground:oklch(0.6089 0.1675 249.01);--border:oklch(0.922 0 0);--ring:oklch(0.6089 0.1675 249.01);";
 
   const ensureAnonymousVisitor = async () => {
     if (visitorIdRef.current) {
@@ -607,14 +449,7 @@ function WidgetRoute() {
       throw new Error("Missing API URL.");
     }
 
-    const response = await fetchJson<AnonymousAuthResponse>(
-      apiUrl,
-      "/embed/auth/anonymous",
-      {
-        method: "POST",
-        body: JSON.stringify({}),
-      },
-    );
+    const response = await embedApi.createAnonymousVisitor();
 
     if (!response.visitorId) {
       throw new Error("Anonymous auth did not return a visitor id.");
@@ -682,21 +517,16 @@ function WidgetRoute() {
       const selectedFiles = files;
       const anonymousVisitorId =
         provider === "anonymous" ? await ensureAnonymousVisitor() : undefined;
-      const response = await fetchJson<EmbedCommentResponse>(
-        apiUrl,
-        "/embed/comments",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            installKey: search.installKey,
-            pageUrl,
-            pageTitle,
-            body,
-            visitorId: anonymousVisitorId,
-            authorProvider: provider,
-          }),
+      const response = await embedApi.createComment({
+        payload: {
+          installKey: search.installKey,
+          pageUrl,
+          visitorId: anonymousVisitorId,
+          authorProvider: provider,
         },
-      );
+        pageTitle,
+        body,
+      });
 
       if (!response.comment) {
         throw new Error("Comment endpoint did not return a comment.");
@@ -714,10 +544,7 @@ function WidgetRoute() {
         attachments,
       } as CommentItem;
 
-      updateLocalComments((current) => ({
-        ...current,
-        created: [createdComment, ...current.created],
-      }));
+      prependComment(rootListKey, createdComment);
       setInput("");
       setFiles([]);
 
@@ -735,222 +562,6 @@ function WidgetRoute() {
       );
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const fetchComments = async (parentId?: string) => {
-    if (!apiUrl || !search.installKey) return;
-
-    const params = new URLSearchParams({
-      installKey: search.installKey,
-      pageUrl,
-    });
-
-    if (parentId) {
-      params.set("parentId", parentId);
-    }
-
-    const response = await fetchJson<EmbedCommentsResponse>(
-      apiUrl,
-      `/embed/comments?${params.toString()}`,
-    );
-    return sortPinnedComments(response.comments ?? []);
-  };
-
-  const loadReplies = async (commentId: string) => {
-    setLoadingRepliesCommentId(commentId);
-    setStatusMessage(null);
-
-    try {
-      const replies = await fetchComments(commentId);
-
-      if (replies) {
-        updateLocalComments((current) => ({
-          ...current,
-          loadedReplies: {
-            ...current.loadedReplies,
-            [commentId]: replies,
-          },
-        }));
-      }
-    } catch (error) {
-      setStatusMessage(
-        error instanceof Error ? error.message : "Unable to load replies.",
-      );
-    } finally {
-      setLoadingRepliesCommentId(null);
-    }
-  };
-
-  const getCommentActionPayload = async () => {
-    if (!provider) {
-      setAuthOpen(true);
-      throw new Error("Login to continue.");
-    }
-
-    if (!apiUrl || !search.installKey) {
-      throw new Error("Missing widget install key or API URL.");
-    }
-
-    return {
-      installKey: search.installKey,
-      pageUrl,
-      visitorId:
-        provider === "anonymous" ? await ensureAnonymousVisitor() : undefined,
-      authorProvider: provider,
-    };
-  };
-
-  const startEditingComment = (comment: CommentItem) => {
-    setEditingCommentId(comment.id);
-    setEditingBody(comment.content);
-    setStatusMessage(null);
-  };
-
-  const cancelEditingComment = () => {
-    setEditingCommentId(null);
-    setEditingBody("");
-  };
-
-  const handleUpdateComment = async (comment: CommentItem) => {
-    const body = editingBody.trim();
-
-    if (!body || body === comment.content) {
-      cancelEditingComment();
-      return;
-    }
-
-    setStatusMessage(null);
-
-    try {
-      const payload = await getCommentActionPayload();
-      await fetchJson<EmbedCommentResponse>(
-        apiUrl,
-        `/embed/comments/${comment.id}`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ ...payload, body }),
-        },
-      );
-      updateLocalComments((current) => ({
-        ...current,
-        updated: {
-          ...current.updated,
-          [comment.id]: {
-            ...current.updated[comment.id],
-            content: body,
-          },
-        },
-      }));
-      cancelEditingComment();
-    } catch (error) {
-      setStatusMessage(
-        error instanceof Error ? error.message : "Unable to update comment.",
-      );
-    }
-  };
-
-  const handleDeleteComment = async (comment: CommentItem) => {
-    setStatusMessage(null);
-
-    try {
-      const payload = await getCommentActionPayload();
-      await fetchJson<{ id: string }>(apiUrl, `/embed/comments/${comment.id}`, {
-        method: "DELETE",
-        body: JSON.stringify(payload),
-      });
-      updateLocalComments((current) => ({
-        ...current,
-        created: current.created.filter((item) => item.id !== comment.id),
-        deletedIds: current.deletedIds.includes(comment.id)
-          ? current.deletedIds
-          : [...current.deletedIds, comment.id],
-      }));
-    } catch (error) {
-      setStatusMessage(
-        error instanceof Error ? error.message : "Unable to delete comment.",
-      );
-    }
-  };
-
-  const handleLikeComment = async (comment: CommentItem) => {
-    setStatusMessage(null);
-
-    try {
-      const payload = await getCommentActionPayload();
-      const result = await fetchJson<{ liked: boolean; likes: number }>(
-        apiUrl,
-        `/embed/comments/${comment.id}/like`,
-        {
-          method: "POST",
-          body: JSON.stringify(payload),
-        },
-      );
-      updateLocalComments((current) => ({
-        ...current,
-        updated: {
-          ...current.updated,
-          [comment.id]: {
-            ...current.updated[comment.id],
-            likes: result.likes,
-          },
-        },
-      }));
-    } catch (error) {
-      setStatusMessage(
-        error instanceof Error ? error.message : "Unable to update like.",
-      );
-    }
-  };
-
-  const startReplyingToComment = (comment: CommentItem) => {
-    if (!provider) {
-      setAuthOpen(true);
-      return;
-    }
-
-    setReplyingCommentId(comment.id);
-    setReplyBody("");
-    setStatusMessage(null);
-  };
-
-  const cancelReply = () => {
-    setReplyingCommentId(null);
-    setReplyBody("");
-  };
-
-  const handleSubmitReply = async (comment: CommentItem) => {
-    const body = replyBody.trim();
-
-    if (!body) return;
-
-    setIsReplying(true);
-    setStatusMessage(null);
-
-    try {
-      const payload = await getCommentActionPayload();
-      await fetchJson<EmbedCommentResponse>(apiUrl, "/embed/comments", {
-        method: "POST",
-        body: JSON.stringify({
-          ...payload,
-          pageTitle,
-          body,
-          parentId: comment.id,
-        }),
-      });
-      await loadReplies(comment.id);
-      cancelReply();
-    } catch (error) {
-      if (isBlockedCommenterError(error)) {
-        setStatusMessage("You can no longer comment on this site.");
-        return;
-      }
-
-      setStatusMessage(
-        error instanceof Error ? error.message : "Unable to submit reply.",
-      );
-    } finally {
-      setIsReplying(false);
     }
   };
 
@@ -975,20 +586,32 @@ function WidgetRoute() {
     }
   };
 
+  const commentActions = useCommentActions({
+    apiUrl,
+    embedApi,
+    installKey: search.installKey,
+    pageUrl,
+    pageTitle,
+    provider,
+    ensureAnonymousVisitor,
+    getCurrentVisitorId: () => visitorIdRef.current,
+    openAuthDialog: () => setAuthOpen(true),
+    setStatusMessage,
+    getReplyListKey,
+  });
+
   return (
     <div
       ref={widgetRootRef}
       className={cn(
-        "w-full bg-background p-0 text-sm",
+        "bizme-widget w-full bg-background p-0 text-sm",
         resolvedColorScheme === "dark" && "dark",
       )}
       style={{
-        backgroundColor: widgetBackgroundColor,
         color: effectiveTextColor,
         colorScheme: resolvedColorScheme,
       }}
     >
-      <style>{`html,body{${widgetThemeVariables}margin:0;min-height:0;overflow:hidden;background:${widgetBackgroundColor};color-scheme:${resolvedColorScheme};}`}</style>
       <style>{`[data-slot="dialog-content"]{top:${dialogTop};}`}</style>
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4 p-1">
         <PromptInput
@@ -1088,56 +711,21 @@ function WidgetRoute() {
           </p>
         ) : null}
 
-        <div className="flex flex-col rounded-lg border bg-background p-4">
-          {isLoading ? (
-            <div className="py-4 text-sm text-center text-muted-foreground">
-              Loading comments...
-            </div>
-          ) : null}
-          {!isLoading && comments.length === 0 ? (
-            <div className="py-4 text-sm text-muted-foreground">
-              No comments yet. Start the conversation.
-            </div>
-          ) : null}
-          {!isLoading
-            ? comments.map((comment) => (
-                <CommentCard
-                  key={comment.id}
-                  comment={comment}
-                  brandColor={brandColor}
-                  editingCommentId={editingCommentId}
-                  editingBody={editingBody}
-                  replyingCommentId={replyingCommentId}
-                  replyBody={replyBody}
-                  isReplying={isReplying}
-                  loadingRepliesCommentId={loadingRepliesCommentId}
-                  onEditingBodyChange={setEditingBody}
-                  onReplyBodyChange={setReplyBody}
-                  onEdit={startEditingComment}
-                  onCancelEdit={cancelEditingComment}
-                  onSaveEdit={handleUpdateComment}
-                  onDelete={(comment) => void handleDeleteComment(comment)}
-                  onLike={handleLikeComment}
-                  onReply={startReplyingToComment}
-                  onCancelReply={cancelReply}
-                  onSubmitReply={handleSubmitReply}
-                  onLoadReplies={loadReplies}
-                />
-              ))
-            : null}
-          {!isLoading && comments.length > 0 ? (
-            <div
-              ref={loadMoreRef}
-              className="py-3 text-center text-xs text-muted-foreground"
-            >
-              {isFetchingNextPage
-                ? "Loading more comments..."
-                : hasNextPage
-                  ? ""
-                  : "You're all caught up."}
-            </div>
-          ) : null}
-        </div>
+        <WidgetCommentProvider
+          value={{
+            brandColor,
+            getReplyListKey,
+            ...commentActions,
+          }}
+        >
+          <CommentList
+            listKey={rootListKey}
+            isLoading={isLoading}
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage}
+            loadMoreRef={loadMoreRef}
+          />
+        </WidgetCommentProvider>
       </div>
 
       <Dialog open={authOpen} onOpenChange={setAuthOpen}>
@@ -1170,55 +758,103 @@ function WidgetRoute() {
   );
 }
 
+function CommentList({
+  listKey,
+  isLoading,
+  isFetchingNextPage,
+  hasNextPage,
+  loadMoreRef,
+  isChildList = false,
+}: {
+  listKey: string;
+  isLoading?: boolean;
+  isFetchingNextPage?: boolean;
+  hasNextPage?: boolean;
+  loadMoreRef?: RefObject<HTMLDivElement | null>;
+  isChildList?: boolean;
+}) {
+  const commentIds = useCommentIds(listKey);
+
+  return (
+    <div
+      className={
+        isChildList
+          ? "mt-4 flex flex-col gap-4"
+          : "flex flex-col rounded-lg border bg-background p-4"
+      }
+    >
+      {isLoading ? (
+        <div className="py-4 text-sm text-center text-muted-foreground">
+          Loading comments...
+        </div>
+      ) : null}
+      {!isChildList && !isLoading && commentIds.length === 0 ? (
+        <div className="py-4 text-sm text-muted-foreground">
+          No comments yet. Start the conversation.
+        </div>
+      ) : null}
+      {!isLoading
+        ? commentIds.map((commentId) => (
+            <CommentCard
+              key={commentId}
+              commentId={commentId}
+              isChild={isChildList}
+            />
+          ))
+        : null}
+      {!isChildList && !isLoading && commentIds.length > 0 ? (
+        <div
+          ref={loadMoreRef}
+          className="py-3 text-center text-xs text-muted-foreground"
+        >
+          {isFetchingNextPage
+            ? "Loading more comments..."
+            : hasNextPage
+              ? ""
+              : "You're all caught up."}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function CommentCard({
-  comment,
-  brandColor,
-  editingCommentId,
-  editingBody,
-  replyingCommentId,
-  replyBody,
-  isReplying,
-  loadingRepliesCommentId,
-  onEditingBodyChange,
-  onReplyBodyChange,
-  onEdit,
-  onCancelEdit,
-  onSaveEdit,
-  onDelete,
-  onLike,
-  onReply,
-  onCancelReply,
-  onSubmitReply,
-  onLoadReplies,
+  commentId,
   isChild = false,
 }: {
-  comment: CommentItem;
-  brandColor: string;
-  editingCommentId: string | null;
-  editingBody: string;
-  replyingCommentId: string | null;
-  replyBody: string;
-  isReplying: boolean;
-  loadingRepliesCommentId: string | null;
-  onEditingBodyChange: (body: string) => void;
-  onReplyBodyChange: (body: string) => void;
-  onEdit: (comment: CommentItem) => void;
-  onCancelEdit: () => void;
-  onSaveEdit: (comment: CommentItem) => void;
-  onDelete: (comment: CommentItem) => void;
-  onLike: (comment: CommentItem) => void;
-  onReply: (comment: CommentItem) => void;
-  onCancelReply: () => void;
-  onSubmitReply: (comment: CommentItem) => void;
-  onLoadReplies: (commentId: string) => void;
+  commentId: string;
   isChild?: boolean;
 }) {
+  const comment = useComment(commentId);
+  const {
+    brandColor,
+    getReplyListKey,
+    editingCommentId,
+    editingBody,
+    replyingCommentId,
+    replyBody,
+    isReplying,
+    loadingRepliesCommentId,
+    onEditingBodyChange,
+    onReplyBodyChange,
+    onEdit,
+    onCancelEdit,
+    onSaveEdit,
+    onDelete,
+    onLike,
+    onReply,
+    onCancelReply,
+    onSubmitReply,
+    onLoadReplies,
+  } = useWidgetCommentContext();
+  const replyListKey = getReplyListKey(commentId);
+  const replyIds = useCommentIds(replyListKey);
+
+  if (!comment) return null;
+
   const isEditing = editingCommentId === comment.id;
   const isReplyingToComment = replyingCommentId === comment.id;
-  const hiddenRepliesCount = Math.max(
-    0,
-    comment.replies - comment.children.length,
-  );
+  const hiddenRepliesCount = Math.max(0, comment.replies - replyIds.length);
   const isLoadingReplies = loadingRepliesCommentId === comment.id;
 
   return (
@@ -1230,7 +866,7 @@ function CommentCard({
       }
     >
       <div className="relative w-full">
-        {comment.children.length > 0 ? (
+        {replyIds.length > 0 ? (
           <div className="absolute top-10 bottom-5 left-5 w-px bg-border" />
         ) : null}
 
@@ -1376,34 +1012,8 @@ function CommentCard({
           </div>
         </div>
 
-        {comment.children.length > 0 ? (
-          <div className="mt-4 flex flex-col gap-4">
-            {comment.children.map((child) => (
-              <CommentCard
-                key={child.id}
-                comment={child}
-                brandColor={brandColor}
-                editingCommentId={editingCommentId}
-                editingBody={editingBody}
-                replyingCommentId={replyingCommentId}
-                replyBody={replyBody}
-                isReplying={isReplying}
-                loadingRepliesCommentId={loadingRepliesCommentId}
-                onEditingBodyChange={onEditingBodyChange}
-                onReplyBodyChange={onReplyBodyChange}
-                onEdit={onEdit}
-                onCancelEdit={onCancelEdit}
-                onSaveEdit={onSaveEdit}
-                onDelete={onDelete}
-                onLike={onLike}
-                onReply={onReply}
-                onCancelReply={onCancelReply}
-                onSubmitReply={onSubmitReply}
-                onLoadReplies={onLoadReplies}
-                isChild
-              />
-            ))}
-          </div>
+        {replyIds.length > 0 ? (
+          <CommentList listKey={replyListKey} isChildList />
         ) : null}
       </div>
     </div>

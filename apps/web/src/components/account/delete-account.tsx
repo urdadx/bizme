@@ -76,7 +76,10 @@ export function DeleteAccount() {
               disabled={isDeleting}
               onClick={handleDeleteAccount}
             >
-              {isDeleting ? "Deleting..." : "Yes, delete"}
+              <span className="inline-grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1">
+                <span className={isDeleting ? "invisible" : ""}>Yes, delete</span>
+                {isDeleting && "Deleting..."}
+              </span>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
