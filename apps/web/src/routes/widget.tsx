@@ -789,7 +789,7 @@ function CommentList({
         </div>
       ) : null}
       {!isChildList && !isLoading && commentIds.length === 0 ? (
-        <div className="py-4 text-sm text-muted-foreground">
+        <div className="py-4 text-sm text-center text-muted-foreground">
           No comments yet. Start the conversation.
         </div>
       ) : null}
