@@ -1,5 +1,5 @@
 import LandingImage from "@/assets/landing-showcase.png";
-import { Play, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -34,19 +34,7 @@ export default function HeroVideoDialog({
             height={1080}
             className="w-full rounded-md shadow-lg transition-all duration-200 ease-out group-hover:brightness-[0.99]"
           />
-          <div className="absolute inset-0 flex scale-[0.9] items-center justify-center rounded-2xl transition-all duration-200 ease-out group-hover:scale-100">
-            <div className="flex size-28 items-center justify-center rounded-full bg-primary/10 backdrop-blur-md">
-              <div className="relative flex size-20 scale-100 items-center justify-center rounded-full bg-linear-to-b from-primary/30 to-primary shadow-md transition-all duration-200 ease-out group-hover:scale-[1.2]">
-                <Play
-                  className="size-8 scale-100 fill-white text-white transition-transform duration-200 ease-out group-hover:scale-105"
-                  style={{
-                    filter:
-                      "drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+
         </button>
       </div>
 
