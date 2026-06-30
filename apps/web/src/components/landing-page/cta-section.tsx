@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "../ui/button";
-import { StarIcon } from "lucide-react";
 import StarSVG from "@/assets/icons/star-svg";
 
 export const CTASession = () => {
@@ -18,8 +17,8 @@ export const CTASession = () => {
               </h1>
 
               <p className="mx-auto mt-8 hidden max-w-xl text-wrap text-lg sm:block">
-                Bizme helps creators drive meaningful engagement through
-                comments and polls fostering a vibrant community
+                Bizme helps you create engaged communities by artfully promoting
+                your best content and carefully fueling the best conversations.
               </p>
               <p className="mx-auto mt-6 block max-w-xl text-wrap text-lg sm:hidden"></p>
             </div>
