@@ -35,7 +35,7 @@ export const workspaceSettings = sqliteTable("workspace_settings", {
   allowAnonymousComments: integer("allow_anonymous_comments", {
     mode: "boolean",
   })
-    .default(true)
+    .default(false)
     .notNull(),
   allowImageUploads: integer("allow_image_uploads", { mode: "boolean" })
     .default(true)

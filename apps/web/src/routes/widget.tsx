@@ -5,16 +5,15 @@ import {
   useRef,
   useState,
   type RefObject,
+  type SVGProps,
 } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { MoreVerticalIcon, PencilIcon, PinIcon, X } from "lucide-react";
 import z from "zod";
 
-import { AnonymousIcon } from "@/assets/icons/anonymous";
 import { ChatLinear } from "@/assets/icons/chat-icon";
 import { GalleryLinear } from "@/assets/icons/gallery-icon";
-import { GithubSVG } from "@/assets/icons/github-svg";
 import { GoogleSVG } from "@/assets/icons/google-svg";
 import { LikeIcon } from "@/assets/icons/like-icon";
 import { TrashBinLinear } from "@/assets/icons/trash-icon";
@@ -42,12 +41,6 @@ import {
 } from "@/components/widget/comment-store";
 import { useCommentActions } from "@/components/widget/use-comment-actions";
 import { uploadCommentImages } from "@/lib/comment-attachments";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -191,6 +184,30 @@ function useObjectUrls(files: File[]) {
   return urls;
 }
 
+function SolarInboxUnreadLinear(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="1em"
+      height="1em"
+      viewBox="0 0 24 24"
+      {...props}
+    >
+      <g fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path
+          strokeLinecap="round"
+          d="M14 2.005Q13.079 2 12 2C7.286 2 4.929 2 3.464 3.464C2 4.93 2 7.286 2 12s0 7.071 1.464 8.535C4.93 22 7.286 22 12 22s7.071 0 8.535-1.465C22 19.072 22 16.714 22 12q.001-1.079-.005-2"
+        />
+        <circle cx="19" cy="5" r="3" />
+        <path
+          strokeLinecap="round"
+          d="M2 13h3.16c.905 0 1.358 0 1.756.183s.692.527 1.281 1.214l.606.706c.589.687.883 1.031 1.281 1.214s.85.183 1.756.183h.32c.905 0 1.358 0 1.756-.183s.692-.527 1.281-1.214l.606-.706c.589-.687.883-1.031 1.281-1.214S17.934 13 18.84 13H22"
+        />
+      </g>
+    </svg>
+  );
+}
+
 function runMenuAction(event: React.MouseEvent, action: () => void) {
   event.preventDefault();
   action();
@@ -215,7 +232,6 @@ function WidgetRoute() {
       parentId,
     });
   const [provider, setProvider] = useState<AuthProvider | null>(null);
-  const [authOpen, setAuthOpen] = useState(false);
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const visitorIdRef = useRef<string | null>(getStoredVisitorId());
@@ -233,9 +249,7 @@ function WidgetRoute() {
     if (!apiUrl) return null;
 
     const response = await embedApi.getAuthSession();
-    setProvider(
-      response.session?.provider ?? (visitorIdRef.current ? "anonymous" : null),
-    );
+    setProvider(response.session?.provider ?? null);
     return response.session;
   });
 
@@ -257,6 +271,10 @@ function WidgetRoute() {
     configQuery.data?.customization?.textColor ?? DEFAULT_TEXT_COLOR;
   const colorSchemePreference =
     configQuery.data?.customization?.colorScheme ?? "system";
+  const allowAnonymousComments =
+    configQuery.data?.settings?.allowAnonymousComments ?? false;
+  const activeProvider: AuthProvider | null =
+    provider ?? (allowAnonymousComments ? "anonymous" : null);
   const resolvedColorScheme = resolveColorScheme(
     colorSchemePreference,
     hostColorScheme,
@@ -281,7 +299,7 @@ function WidgetRoute() {
 
   useEffect(() => {
     void loadAuthSession().catch(() => {
-      setProvider(visitorIdRef.current ? "anonymous" : null);
+      setProvider(null);
     });
 
     function handleAuthMessage(event: MessageEvent) {
@@ -357,8 +375,8 @@ function WidgetRoute() {
       apiUrl,
       search.installKey,
       pageUrl,
-      provider,
-      provider === "anonymous" ? visitorIdRef.current : null,
+      activeProvider,
+      activeProvider === "anonymous" ? visitorIdRef.current : null,
     ],
     initialPageParam: 0,
     enabled: Boolean(apiUrl && search.installKey),
@@ -373,10 +391,10 @@ function WidgetRoute() {
         limit: COMMENTS_PAGE_SIZE,
         offset: pageParam,
         visitorId:
-          provider === "anonymous"
+          activeProvider === "anonymous"
             ? (visitorIdRef.current ?? undefined)
             : undefined,
-        authorProvider: provider ?? undefined,
+        authorProvider: activeProvider ?? undefined,
       });
     },
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
@@ -460,45 +478,28 @@ function WidgetRoute() {
     return response.visitorId;
   };
 
-  const handleProvider = async (nextProvider: AuthProvider) => {
-    setAuthOpen(false);
+  const startGoogleAuth = () => {
     setStatusMessage(null);
 
-    if (nextProvider === "anonymous") {
-      setProvider(nextProvider);
-
-      try {
-        await ensureAnonymousVisitor();
-        setStatusMessage("Commenting anonymously.");
-      } catch (error) {
-        setProvider(null);
-        setStatusMessage(
-          error instanceof Error
-            ? error.message
-            : "Unable to start anonymous session.",
-        );
-      }
-
+    if (!search.apiUrl) {
+      setStatusMessage("Missing API URL.");
       return;
     }
 
-    if (search.apiUrl) {
-      const url = new URL(`/embed/auth/${nextProvider}/start`, search.apiUrl);
-      if (search.installKey)
-        url.searchParams.set("installKey", search.installKey);
-      if (search.pageUrl) url.searchParams.set("pageUrl", search.pageUrl);
-      window.open(
-        url.toString(),
-        "bizme-auth",
-        "popup=yes,width=520,height=640",
-      );
-      setStatusMessage("Complete login in the popup to comment.");
-    }
+    const url = new URL("/embed/auth/google/start", search.apiUrl);
+    if (search.installKey) url.searchParams.set("installKey", search.installKey);
+    url.searchParams.set("pageUrl", pageUrl);
+
+    window.open(
+      url.toString(),
+      "bizme-auth",
+      "popup=yes,width=520,height=640",
+    );
   };
 
   const handleSubmit = async () => {
-    if (!provider) {
-      setAuthOpen(true);
+    if (!activeProvider) {
+      startGoogleAuth();
       return;
     }
 
@@ -516,13 +517,13 @@ function WidgetRoute() {
     try {
       const selectedFiles = files;
       const anonymousVisitorId =
-        provider === "anonymous" ? await ensureAnonymousVisitor() : undefined;
+        activeProvider === "anonymous" ? await ensureAnonymousVisitor() : undefined;
       const response = await embedApi.createComment({
         payload: {
           installKey: search.installKey,
           pageUrl,
           visitorId: anonymousVisitorId,
-          authorProvider: provider,
+          authorProvider: activeProvider,
         },
         pageTitle,
         body,
@@ -592,10 +593,10 @@ function WidgetRoute() {
     installKey: search.installKey,
     pageUrl,
     pageTitle,
-    provider,
+    provider: activeProvider,
     ensureAnonymousVisitor,
     getCurrentVisitorId: () => visitorIdRef.current,
-    openAuthDialog: () => setAuthOpen(true),
+    openAuthDialog: startGoogleAuth,
     setStatusMessage,
     getReplyListKey,
   });
@@ -674,7 +675,7 @@ function WidgetRoute() {
             </PromptInputAction>
 
             <PromptInputAction
-              tooltip={provider ? "Submit comment" : "Login to comment"}
+              tooltip={activeProvider ? "Submit comment" : "Login to comment"}
             >
               <Button
                 variant="default"
@@ -683,15 +684,18 @@ function WidgetRoute() {
                 style={{ backgroundColor: brandColor }}
                 onClick={handleSubmit}
                 disabled={
-                  isSubmitting || Boolean(provider && input.trim().length === 0)
+                  isSubmitting || Boolean(activeProvider && input.trim().length === 0)
                 }
               >
                 {isSubmitting ? (
                   <LoadingDots color="#fff" />
-                ) : provider ? (
+                ) : activeProvider ? (
                   "Comment"
                 ) : (
-                  "Login to comment"
+                  <>
+                    <GoogleSVG />
+                    Login to comment
+                  </>
                 )}
               </Button>
             </PromptInputAction>
@@ -728,32 +732,6 @@ function WidgetRoute() {
         </WidgetCommentProvider>
       </div>
 
-      <Dialog open={authOpen} onOpenChange={setAuthOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">
-              Login to comment
-            </DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-2">
-            <Button variant="outline" onClick={() => handleProvider("google")}>
-              <GoogleSVG />
-              Continue with Google
-            </Button>
-            <Button variant="outline" onClick={() => handleProvider("github")}>
-              <GithubSVG />
-              Continue with Github
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => handleProvider("anonymous")}
-            >
-              <AnonymousIcon />
-              Comment as a guest
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -789,8 +767,9 @@ function CommentList({
         </div>
       ) : null}
       {!isChildList && !isLoading && commentIds.length === 0 ? (
-        <div className="py-4 text-sm text-center text-muted-foreground">
-          No comments yet. Start the conversation.
+        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center text-muted-foreground">
+          <SolarInboxUnreadLinear className="size-10" />
+          <p className="text-sm">No comments yet. Start the conversation.</p>
         </div>
       ) : null}
       {!isLoading

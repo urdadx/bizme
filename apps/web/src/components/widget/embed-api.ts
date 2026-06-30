@@ -3,6 +3,9 @@ import type { AuthProvider, CommentItem } from "./comment-store";
 export type ColorScheme = "system" | "light" | "dark";
 
 export type EmbedConfigResponse = {
+  settings?: {
+    allowAnonymousComments?: boolean;
+  };
   customization?: {
     brandColor?: string;
     textColor?: string;
