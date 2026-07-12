@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import LoadingDots from "@/components/loading-dots";
-import { authClient } from "@/lib/auth-client";
 import { getWebsiteFaviconUrl, normalizeWebsiteUrl } from "@/lib/utils";
+import { useTRPC } from "@/utils/trpc";
 
 export const Route = createFileRoute("/onboarding/")({
 	component: RouteComponent,
@@ -15,6 +16,9 @@ export const Route = createFileRoute("/onboarding/")({
 
 function RouteComponent() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
+	const trpc = useTRPC();
+	const createSite = useMutation(trpc.sites.create.mutationOptions());
 	const [error, setError] = useState<string | null>(null);
 	const [isPending, setIsPending] = useState(false);
 
@@ -30,19 +34,19 @@ function RouteComponent() {
 		setIsPending(true);
 
 		try {
-			const { error } = await authClient.organization.create({
+			await createSite.mutateAsync({
 				name,
-				slug: createWorkspaceSlug(name),
 				logo: logo || undefined,
 				websiteUrl,
 			});
 
-			if (error) {
-				setError(
-					error.message ?? "Unable to create your workspace. Please try again.",
-				);
-				return;
-			}
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ["auth", "session"] }),
+				queryClient.invalidateQueries({ queryKey: ["auth", "organizations"] }),
+				queryClient.invalidateQueries({
+					queryKey: trpc.getSession.queryOptions().queryKey,
+				}),
+			]);
 
 			await navigate({ to: "/overview" });
 		} catch (error) {
@@ -107,14 +111,4 @@ function RouteComponent() {
 			</Card>
 		</main>
 	);
-}
-
-function createWorkspaceSlug(name: string) {
-	const slug = name
-		.toLowerCase()
-		.trim()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-
-	return slug || `workspace-${Date.now()}`;
 }
