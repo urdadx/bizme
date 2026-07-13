@@ -19,7 +19,7 @@ const previewComments: PreviewComment[] = [
 		id: "maya",
 		author: "Jack Maaye",
 		date: "2 min ago",
-		content: "This is exactly what I wanted for my blog. Looks good and easy to integrate.",
+		content: "This is exactly what I wanted for my blog. Looks good, easily customizable and integrates seamlessly.",
 		likes: 18,
 		avatar: "https://avatars.githubusercontent.com/u/70736338?v=4",
 		replies: [
@@ -51,24 +51,26 @@ export const CTASession = () => {
 
 						<p className="mx-auto mt-8 hidden max-w-xl text-wrap text-lg sm:block">
 							Bizme gives you a complete engagement infrastructure for
-							building and deploying beautiful comment and polls for
-							your blog.
+							building and deploying beautiful comment sections for your
+							blog.
 						</p>
 						<p className="mx-auto mt-6 block max-w-xl text-wrap text-lg sm:hidden"></p>
 					</div>
 				</div>
 
-				<div className=" my-12 w-full mx-auto max-w-4xl px-3 sm:px-6">
-					<div className="rounded-lg border bg-white/90 p-4 sm:p-6">
-						<div className="flex flex-col gap-6">
-							<CommentComposer uploadId="landing-comment-file-upload" />
-							<div className="flex flex-col">
-								{previewComments.map((comment) => (
-									<PreviewCommentItem
-										key={comment.id}
-										comment={comment}
-									/>
-								))}
+				<div className=" my-12 w-full mx-auto max-w-5xl px-3 sm:px-6">
+					<div className="relative overflow-visible rounded-xl border bg-gray-50 p-2 shadow-sm ring-muted ">
+						<div className="rounded-lg border bg-white p-4 sm:p-6">
+							<div className="flex flex-col gap-6">
+								<CommentComposer uploadId="landing-comment-file-upload" />
+								<div className="flex flex-col">
+									{previewComments.map((comment) => (
+										<PreviewCommentItem
+											key={comment.id}
+											comment={comment}
+										/>
+									))}
+								</div>
 							</div>
 						</div>
 					</div>
