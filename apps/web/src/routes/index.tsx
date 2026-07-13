@@ -19,13 +19,13 @@ function HomeComponent() {
 			<HeroHeader />
 			<div className="relative z-10 space-y-12">
 				<CTASession />
-				<div className="max-w-6xl px-3 sm:px-0 mx-auto relative flex justify-center items-center sm:flex-col sm:items-center">
+				{/* <div className="max-w-6xl px-3 sm:px-0 mx-auto relative flex justify-center items-center sm:flex-col sm:items-center">
 					<HeroVideoDialog
 						className="block"
 						videoSrc="https://www.youtube.com/embed/WZ7hLRLdTIw?si=q7T9MsErVoRWKTgj"
 						thumbnailAlt="Hero Video"
 					/>
-				</div>
+				</div> */}
 				<Features />
 				<Setup />
 
