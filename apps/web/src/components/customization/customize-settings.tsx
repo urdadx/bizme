@@ -1,5 +1,5 @@
 import type { Dispatch, FocusEvent, SetStateAction } from "react";
-import { HexColorPicker } from "react-colorful";
+import { HexColorInput, HexColorPicker } from "react-colorful";
 import { CircleAlertIcon, PlusIcon } from "lucide-react";
 
 import { TrashBinLinear } from "@/assets/icons/trash-icon";
@@ -231,8 +231,14 @@ function ColorPickerField({
             />
             <span className="text-sm text-gray-600">{color}</span>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto p-3" onBlur={commitOnBlur}>
-            <HexColorPicker color={color} onChange={onChange} />
+          <PopoverContent align="start" className="w-[270px] p-3" onBlur={commitOnBlur}>
+            <HexColorPicker color={color} onChange={onChange} style={{ width: "100%" }} />
+            <HexColorInput
+              color={color}
+              onChange={onChange}
+              prefixed
+              className="mt-3 h-9 w-full rounded-md border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
           </PopoverContent>
         </Popover>
       )}

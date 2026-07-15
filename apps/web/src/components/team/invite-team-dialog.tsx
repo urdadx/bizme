@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { FormEvent } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -23,16 +22,15 @@ type InviteRole = "member" | "admin";
 type InviteTeamDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger?: ReactElement;
 };
 
-export function InviteTeamDialog({ open, onOpenChange, trigger }: InviteTeamDialogProps) {
+export function InviteTeamDialog({ open, onOpenChange }: InviteTeamDialogProps) {
   const { data: organization } = authClient.useActiveOrganization();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteRole>("member");
   const [isInviting, setIsInviting] = useState(false);
 
-  const handleInviteMember = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleInviteMember = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!organization || !email.trim()) {
@@ -65,7 +63,6 @@ export function InviteTeamDialog({ open, onOpenChange, trigger }: InviteTeamDial
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger ? <DialogTrigger render={trigger} /> : null}
       <DialogContent>
         <form className="space-y-5" onSubmit={handleInviteMember}>
           <DialogHeader>
