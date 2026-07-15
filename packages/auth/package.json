@@ -16,10 +16,12 @@
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
+    "nodemailer": "^9.0.3",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@better-comments/config": "workspace:*",
+    "@types/nodemailer": "^8.0.1",
     "typescript": "catalog:"
   }
 }

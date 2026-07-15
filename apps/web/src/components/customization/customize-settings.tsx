@@ -3,7 +3,6 @@ import { HexColorPicker } from "react-colorful";
 import { CircleAlertIcon, PlusIcon } from "lucide-react";
 
 import { TrashBinLinear } from "@/assets/icons/trash-icon";
-import { COLOR_THEMES, getColorTheme } from "@/lib/customization-themes";
 
 import ColorScheme, { type ColorSchemeValue } from "../colorscheme";
 import { Button } from "../ui/button";
@@ -23,7 +22,6 @@ const FONT_FAMILIES = [
 
 export type CustomizationSettingsValue = {
   fontFamily: string;
-  theme: string;
   colorScheme: ColorSchemeValue;
   brandColor: string;
   textColor: string;
@@ -55,18 +53,6 @@ function withOccurrenceKeys(values: string[]) {
 
 export const CustomizeSettings = ({ form, setForm, save, isLoading }: CustomizeSettingsProps) => {
   const allowedDomainItems = withOccurrenceKeys(form.allowedDomains);
-
-  const updateTheme = (theme: string) => {
-    const colorTheme = getColorTheme(theme);
-    const updates = {
-      theme: colorTheme.value,
-      brandColor: colorTheme.brandColor,
-      textColor: colorTheme.textColor,
-    };
-
-    setForm((previous) => ({ ...previous, ...updates }));
-    save(updates);
-  };
 
   return (
     <div className="flex flex-col gap-5 pb-6">
@@ -105,41 +91,6 @@ export const CustomizeSettings = ({ form, setForm, save, isLoading }: CustomizeS
               {FONT_FAMILIES.map((font) => (
                 <SelectItem key={font.value} value={font.value}>
                   {font.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <Label className="text-muted-foreground font-medium flex items-center gap-1.5">Theme</Label>
-        {isLoading ? (
-          <Skeleton className="h-9 w-full rounded-md" />
-        ) : (
-          <Select value={form.theme} onValueChange={(theme) => updateTheme(String(theme))}>
-            <SelectTrigger className="w-full">
-              <SelectValue>
-                {(theme) => COLOR_THEMES.find((t) => t.value === theme)?.label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {COLOR_THEMES.map((theme) => (
-                <SelectItem key={theme.value} value={theme.value}>
-                  <span className="flex items-center gap-2">
-                    <span className="flex overflow-hidden rounded-full border">
-                      {[theme.textColor, theme.brandColor].map((color) => (
-                        <span
-                          key={color}
-                          className="h-2 w-2"
-                          style={{
-                            backgroundColor: color,
-                          }}
-                        />
-                      ))}
-                    </span>
-                    {theme.label}
-                  </span>
                 </SelectItem>
               ))}
             </SelectContent>

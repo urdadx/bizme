@@ -58,7 +58,6 @@ export const workspaceCustomization = sqliteTable("workspace_customization", {
     .primaryKey()
     .references(() => organization.id, { onDelete: "cascade" }),
   fontFamily: text("font_family").default("inter").notNull(),
-  theme: text("theme").default("light").notNull(),
   colorScheme: text("color_scheme", { enum: ["system", "light", "dark"] })
     .default("system")
     .notNull(),

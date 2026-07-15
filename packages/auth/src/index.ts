@@ -6,6 +6,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 
+import { sendWorkspaceInvitationEmail } from "./email";
+
 export function createAuth() {
   const db = createDb();
 
@@ -79,6 +81,17 @@ export function createAuth() {
     },
     plugins: [
       organization({
+        async sendInvitationEmail(data) {
+          const inviteLink = `${env.CORS_ORIGIN.replace(/\/$/, "")}/accept-invitation/${data.id}`;
+
+          await sendWorkspaceInvitationEmail({
+            email: data.email,
+            invitedByEmail: data.inviter.user.email,
+            invitedByUsername: data.inviter.user.name,
+            inviteLink,
+            workspaceName: data.organization.name,
+          });
+        },
         organizationHooks: {
           afterCreateOrganization: async ({ organization, user }) => {
             await Promise.all([
@@ -98,6 +111,16 @@ export function createAuth() {
                 })
                 .onConflictDoNothing(),
             ]);
+          },
+          afterAcceptInvitation: async ({ organization, user }) => {
+            await db
+              .update(schema.session)
+              .set({
+                activeOrganizationId: organization.id,
+                isOnboarded: true,
+                updatedAt: new Date(),
+              })
+              .where(eq(schema.session.userId, user.id));
           },
         },
         schema: {

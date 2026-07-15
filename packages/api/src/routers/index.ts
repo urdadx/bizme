@@ -2,6 +2,7 @@ import { protectedProcedure, publicProcedure, router } from "../index";
 import { analyticsRouter } from "./analytics";
 import { blockedUsersRouter } from "./blocked-users";
 import { commentsRouter } from "./comments";
+import { invitationsRouter } from "./invitations";
 import { notificationsRouter } from "./notifications";
 import { pollsRouter } from "./polls";
 import { sitesRouter } from "./sites";
@@ -25,6 +26,7 @@ export const appRouter = router({
   polls: pollsRouter,
   sites: sitesRouter,
   analytics: analyticsRouter,
+  invitations: invitationsRouter,
   getSession: publicProcedure.query(({ ctx }) => {
     return ctx.session ?? null;
   }),

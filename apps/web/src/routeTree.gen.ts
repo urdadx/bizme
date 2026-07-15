@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as adminRouteRouteImport } from './routes/(admin)/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
+import { Route as AcceptInvitationInvitationIdRouteImport } from './routes/accept-invitation/$invitationId'
 import { Route as adminSettingsRouteImport } from './routes/(admin)/settings'
 import { Route as adminPollsRouteImport } from './routes/(admin)/polls'
 import { Route as adminPagesRouteImport } from './routes/(admin)/pages'
@@ -64,6 +65,12 @@ const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
   path: '/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcceptInvitationInvitationIdRoute =
+  AcceptInvitationInvitationIdRouteImport.update({
+    id: '/accept-invitation/$invitationId',
+    path: '/accept-invitation/$invitationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const adminSettingsRoute = adminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -145,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/pages': typeof adminPagesRoute
   '/polls': typeof adminPollsRouteWithChildren
   '/settings': typeof adminSettingsRoute
+  '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/comments/$commentId': typeof adminCommentsCommentIdRoute
   '/polls/$pollId': typeof adminPollsPollIdRoute
@@ -165,6 +173,7 @@ export interface FileRoutesByTo {
   '/overview': typeof adminOverviewRoute
   '/pages': typeof adminPagesRoute
   '/settings': typeof adminSettingsRoute
+  '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/comments/$commentId': typeof adminCommentsCommentIdRoute
   '/polls/$pollId': typeof adminPollsPollIdRoute
@@ -188,6 +197,7 @@ export interface FileRoutesById {
   '/(admin)/pages': typeof adminPagesRoute
   '/(admin)/polls': typeof adminPollsRouteWithChildren
   '/(admin)/settings': typeof adminSettingsRoute
+  '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/(admin)/comments/$commentId': typeof adminCommentsCommentIdRoute
   '/(admin)/polls/$pollId': typeof adminPollsPollIdRoute
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/pages'
     | '/polls'
     | '/settings'
+    | '/accept-invitation/$invitationId'
     | '/onboarding/'
     | '/comments/$commentId'
     | '/polls/$pollId'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
     | '/overview'
     | '/pages'
     | '/settings'
+    | '/accept-invitation/$invitationId'
     | '/onboarding'
     | '/comments/$commentId'
     | '/polls/$pollId'
@@ -253,6 +265,7 @@ export interface FileRouteTypes {
     | '/(admin)/pages'
     | '/(admin)/polls'
     | '/(admin)/settings'
+    | '/accept-invitation/$invitationId'
     | '/onboarding/'
     | '/(admin)/comments/$commentId'
     | '/(admin)/polls/$pollId'
@@ -267,6 +280,7 @@ export interface RootRouteChildren {
   PollWidgetRoute: typeof PollWidgetRoute
   RegisterRoute: typeof RegisterRoute
   WidgetRoute: typeof WidgetRoute
+  AcceptInvitationInvitationIdRoute: typeof AcceptInvitationInvitationIdRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
 }
 
@@ -319,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding/'
       preLoaderRoute: typeof OnboardingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accept-invitation/$invitationId': {
+      id: '/accept-invitation/$invitationId'
+      path: '/accept-invitation/$invitationId'
+      fullPath: '/accept-invitation/$invitationId'
+      preLoaderRoute: typeof AcceptInvitationInvitationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(admin)/settings': {
@@ -468,6 +489,7 @@ const rootRouteChildren: RootRouteChildren = {
   PollWidgetRoute: PollWidgetRoute,
   RegisterRoute: RegisterRoute,
   WidgetRoute: WidgetRoute,
+  AcceptInvitationInvitationIdRoute: AcceptInvitationInvitationIdRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
 }
 export const routeTree = rootRouteImport

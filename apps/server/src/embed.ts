@@ -16,7 +16,6 @@ import { z } from "zod";
 
 const DEFAULT_CUSTOMIZATION = {
   fontFamily: "inter",
-  theme: "light",
   colorScheme: "system",
   brandColor: "#6170F8",
   textColor: "#1F2937",

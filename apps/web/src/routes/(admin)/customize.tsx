@@ -6,20 +6,16 @@ import {
 import { CommentsPreview } from "@/components/comments-preview";
 import { PollPreview } from "@/components/poll-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getColorTheme } from "@/lib/customization-themes";
 import { useTRPC } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
-const defaultColorTheme = getColorTheme("light");
-
 const defaultCustomization: CustomizationSettingsValue = {
   fontFamily: "inter",
-  theme: defaultColorTheme.value,
   colorScheme: "system",
-  brandColor: defaultColorTheme.brandColor,
-  textColor: defaultColorTheme.textColor,
+  brandColor: "#6170F8",
+  textColor: "#1F2937",
   hidePoweredBy: false,
   allowedDomains: [],
 };
@@ -142,7 +138,6 @@ function getFormState(
 ): CustomizationSettingsValue {
   return {
     fontFamily: customization?.fontFamily || defaultCustomization.fontFamily,
-    theme: customization?.theme || defaultCustomization.theme,
     colorScheme: customization?.colorScheme || defaultCustomization.colorScheme,
     brandColor: customization?.brandColor || defaultCustomization.brandColor,
     textColor: customization?.textColor || defaultCustomization.textColor,
