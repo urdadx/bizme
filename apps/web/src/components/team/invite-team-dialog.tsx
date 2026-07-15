@@ -127,11 +127,11 @@ export function InviteTeamDialog({ open, onOpenChange }: InviteTeamDialogProps) 
 							type="submit"
 							disabled={isInviting || !organization}
 							className="min-w-32">
-							{isInviting ? (
-								<LoadingDots color="#fffff" />
-							) : (
-								"Send invitation"
-							)}
+              {isInviting ? (
+                <LoadingDots color="#ffffff" />
+              ) : (
+                "Send invitation"
+              )}
 						</Button>
 					</DialogFooter>
 				</form>
