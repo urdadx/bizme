@@ -12,12 +12,15 @@ type WorkspaceInvitationEmail = {
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
   auth: {
     user: env.GOOGLE_EMAIL,
     pass: env.GOOGLE_APP_PASSWORD,
   },
+  connectionTimeout: 10_000,
+  greetingTimeout: 10_000,
+  socketTimeout: 15_000,
 });
 
 function escapeHtml(value: string) {
