@@ -30,24 +30,17 @@ const chartConfig = {
     label: "Comments",
     color: "var(--chart-4)",
   },
-  votes: {
-    label: "Votes",
-    color: "var(--chart-1)",
-  },
 } satisfies ChartConfig;
 
 export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
   const [showComments, setShowComments] = React.useState(true);
-  const [showVotes, setShowVotes] = React.useState(true);
   const trpc = useTRPC();
   const { data: overviewData } = useSuspenseQuery(
     trpc.analytics.overview.queryOptions({ timeRange })
   );
   const chartData = overviewData.chartData;
   const hasData =
-    overviewData.metrics.totalComments > 0 ||
-    overviewData.metrics.totalVotes > 0 ||
-    chartData.some((item) => item.comments > 0 || item.votes > 0);
+    overviewData.metrics.totalComments > 0 || chartData.some((item) => item.comments > 0);
   const navigate = useNavigate({ from: "/analytics" });
 
   return (
@@ -104,22 +97,6 @@ export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
           <div className="flex flex-col gap-1 text-left min-w-24">
             <CardTitle className="flex items-center gap-3 text-muted-foreground text-xs">
               <div className="flex items-center gap-1">
-                <div className="inset-0 size-2 items-center justify-center rounded-full bg-purple-500" />
-                <span>Total votes</span>
-              </div>
-              <Checkbox
-                checked={showVotes}
-                onCheckedChange={(checked) => setShowVotes(checked === true)}
-              />
-            </CardTitle>
-            <CardDescription className="text-xl md:text-2xl font-semibold text-black">
-              <NumberFlow value={overviewData.metrics.totalVotes} />
-            </CardDescription>
-          </div>
-
-          <div className="flex flex-col gap-1 text-left min-w-24">
-            <CardTitle className="flex items-center gap-3 text-muted-foreground text-xs">
-              <div className="flex items-center gap-1">
                 <div className="inset-0 size-2 items-center justify-center rounded-full bg-gray-500" />
                 <span>Engagement rate</span>
               </div>
@@ -149,7 +126,6 @@ export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
             hasData={hasData}
             className="h-75"
             showComments={showComments}
-            showVotes={showVotes}
           />
         </CardContent>
       </div>

@@ -21,7 +21,6 @@ function RouteComponent() {
 			<Metrics
 				totalComments={overviewData.metrics.totalComments}
 				spamComments={overviewData.metrics.spamComments}
-				totalVotes={overviewData.metrics.totalVotes}
 				engagementRate={overviewData.metrics.engagementRate}
 				uniqueUsers={overviewData.metrics.uniqueUsers}
 				totalReactions={overviewData.metrics.totalReactions}

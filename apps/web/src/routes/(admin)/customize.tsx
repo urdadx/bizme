@@ -4,7 +4,6 @@ import {
   type CustomizationSettingsValue,
 } from "@/components/customization/customize-settings";
 import { CommentsPreview } from "@/components/comments-preview";
-import { PollPreview } from "@/components/poll-preview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTRPC } from "@/utils/trpc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -159,9 +158,6 @@ function PreviewTabs({ customization }: { customization: CustomizationSettingsVa
         <TabsTrigger className="rounded-3xl" value="comments">
           Comments
         </TabsTrigger>
-        <TabsTrigger className="rounded-3xl" value="poll">
-          Polls
-        </TabsTrigger>
       </TabsList>
 
       <div
@@ -173,9 +169,6 @@ function PreviewTabs({ customization }: { customization: CustomizationSettingsVa
         </TabsContent>
         <TabsContent value="comments" className="mt-0 flex w-full justify-center">
           <CommentsPreview customization={customization} />
-        </TabsContent>
-        <TabsContent value="poll" className="mt-0 flex w-full justify-center">
-          <PollPreview customization={customization} />
         </TabsContent>
       </div>
     </Tabs>

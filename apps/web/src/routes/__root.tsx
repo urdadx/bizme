@@ -28,7 +28,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{
 				name: "description",
 				content:
-					"Bizme helps creators drive meaningful engagement through comments and polls fostering a vibrant community.",
+					"Bizme helps creators drive meaningful engagement through comments, fostering a vibrant community.",
 			},
 			{
 				property: "og:title",
@@ -37,7 +37,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{
 				property: "og:description",
 				content:
-					"Bizme helps creators drive meaningful engagement through comments and polls fostering a vibrant community.",
+					"Bizme helps creators drive meaningful engagement through comments, fostering a vibrant community.",
 			},
 			{
 				property: "og:type",
@@ -66,7 +66,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			{
 				name: "twitter:description",
 				content:
-					"Bizme helps creators drive meaningful engagement through comments and polls fostering a vibrant community.",
+					"Bizme helps creators drive meaningful engagement through comments, fostering a vibrant community.",
 			},
 			{
 				name: "twitter:image",

@@ -2,7 +2,7 @@ import { createContext } from "@better-comments/api/context";
 import { appRouter } from "@better-comments/api/routers/index";
 import { auth } from "@better-comments/auth";
 import { db } from "@better-comments/db";
-import { comment, commentAttachment, pollOption } from "@better-comments/db/schema/index";
+import { comment, commentAttachment } from "@better-comments/db/schema/index";
 import { env } from "@better-comments/env/server";
 import { trpcServer } from "@hono/trpc-server";
 import { and, eq } from "drizzle-orm";
@@ -17,7 +17,6 @@ import { canManageEmbedComment, embedRoutes, getEmbedSession } from "./embed";
 const app = new Hono();
 const MAX_COMMENT_IMAGE_SIZE = 2 * 1024 * 1024;
 const COMMENT_IMAGE_UPLOAD_DIR = join(process.cwd(), "uploads", "comment-images");
-const POLL_OPTION_IMAGE_UPLOAD_DIR = join(process.cwd(), "uploads", "poll-option-images");
 const COMMENT_IMAGE_MIME_TYPES = new Map([
   ["image/jpeg", "jpg"],
   ["image/png", "png"],
@@ -78,22 +77,6 @@ app.get("/uploads/comment-images/:filename", async (c) => {
   }
 
   const file = Bun.file(join(COMMENT_IMAGE_UPLOAD_DIR, filename));
-
-  if (!(await file.exists())) {
-    return c.text("Not found", 404);
-  }
-
-  return new Response(file);
-});
-
-app.get("/uploads/poll-option-images/:filename", async (c) => {
-  const filename = c.req.param("filename");
-
-  if (!/^[a-f0-9-]+\.(jpg|png|webp|gif)$/.test(filename)) {
-    return c.text("Not found", 404);
-  }
-
-  const file = Bun.file(join(POLL_OPTION_IMAGE_UPLOAD_DIR, filename));
 
   if (!(await file.exists())) {
     return c.text("Not found", 404);
@@ -180,57 +163,6 @@ app.post("/comment-attachments", async (c) => {
     .where(and(eq(comment.id, commentId), eq(comment.workspaceId, targetComment.workspaceId)));
 
   return c.json({ attachments }, 201);
-});
-
-app.post("/poll-option-images", async (c) => {
-  const formData = await c.req.formData().catch(() => null);
-  const optionId = formData?.get("optionId");
-  const file = formData?.get("image");
-
-  if (!formData || typeof optionId !== "string" || !optionId || !(file instanceof File)) {
-    return c.json({ error: { message: "Invalid poll option image payload" } }, 400);
-  }
-
-  const targetOption = await db.query.pollOption.findFirst({
-    where: (table, { eq }) => eq(table.id, optionId),
-  });
-
-  if (!targetOption) {
-    return c.json({ error: { message: "Poll option not found" } }, 404);
-  }
-
-  const targetPoll = await db.query.poll.findFirst({
-    where: (table, { eq }) => eq(table.id, targetOption.pollId),
-  });
-
-  if (!targetPoll) {
-    return c.json({ error: { message: "Poll not found" } }, 404);
-  }
-
-  if (!(await requireWorkspaceAdmin(c.req.raw.headers, targetPoll.workspaceId))) {
-    return c.json({ error: { message: "Admin permission required" } }, 403);
-  }
-
-  const extension = COMMENT_IMAGE_MIME_TYPES.get(file.type);
-
-  if (!extension) {
-    return c.json({ error: { message: `${file.name} is not a supported image.` } }, 400);
-  }
-
-  if (file.size > MAX_COMMENT_IMAGE_SIZE) {
-    return c.json({ error: { message: `${file.name} is larger than 2 MB.` } }, 400);
-  }
-
-  await mkdir(POLL_OPTION_IMAGE_UPLOAD_DIR, { recursive: true });
-
-  const id = crypto.randomUUID();
-  const filename = `${id}.${extension}`;
-  const url = getPublicUploadUrl(c.req.url, "poll-option-images", filename);
-
-  await Bun.write(join(POLL_OPTION_IMAGE_UPLOAD_DIR, filename), file);
-  await db.update(pollOption).set({ imageUrl: url }).where(eq(pollOption.id, optionId));
-
-  return c.json({ url }, 201);
 });
 
 app.use(

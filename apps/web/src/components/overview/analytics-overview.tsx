@@ -7,14 +7,12 @@ interface AnalyticsOverviewProps {
 	overviewQuery?: {
 		data?: {
 			totalComments?: number;
-			totalVotes?: number;
 		};
 	};
 	chartQuery?: {
 		data?: Array<{
 			date: string;
 			comments: number;
-			votes: number;
 		}>;
 	};
 }
@@ -24,19 +22,13 @@ const chartConfig = {
 		label: "Comments",
 		color: "var(--chart-4)",
 	},
-	votes: {
-		label: "Votes",
-		color: "var(--chart-1)",
-	},
 } satisfies ChartConfig;
 
 export function AnalyticsOverview({ overviewQuery, chartQuery }: AnalyticsOverviewProps) {
 	const overview = overviewQuery?.data;
 	const chartData = chartQuery?.data ?? [];
 	const hasData =
-		(overview?.totalComments ?? 0) > 0 ||
-		(overview?.totalVotes ?? 0) > 0 ||
-		chartData.some((item) => item.comments > 0 || item.votes > 0);
+		(overview?.totalComments ?? 0) > 0 || chartData.some((item) => item.comments > 0);
 
 	const firstDate = chartData[0]?.date;
 	const lastDate = chartData[chartData.length - 1]?.date;
@@ -64,18 +56,6 @@ export function AnalyticsOverview({ overviewQuery, chartQuery }: AnalyticsOvervi
 						</CardTitle>
 						<CardDescription className="text-xl md:text-xl font-semibold text-black">
 							<NumberFlow value={overview?.totalComments ?? 0} />
-						</CardDescription>
-					</div>
-
-					<div className="flex flex-col gap-1 text-left min-w-24">
-						<CardTitle className="flex items-center gap-3 text-muted-foreground text-xs">
-							<div className="flex items-center gap-1">
-								<div className="inset-0 size-2 items-center justify-center rounded-full bg-purple-500" />
-								<span>Total votes</span>
-							</div>
-						</CardTitle>
-						<CardDescription className="text-xl md:text-xl font-semibold text-black">
-							<NumberFlow value={overview?.totalVotes ?? 0} />
 						</CardDescription>
 					</div>
 				</div>

@@ -14,7 +14,6 @@ type LocationStat = {
 type ChartStat = {
   date: string;
   comments: number;
-  votes: number;
 };
 
 const CONTINENT_NAMES: Record<string, string> = {
@@ -57,7 +56,7 @@ function getChartBuckets(timeRange: TimeRange) {
       const date = new Date(currentHour);
       date.setHours(currentHour.getHours() - (23 - index));
       const key = toHourKey(date);
-      return [key, { date: key, comments: 0, votes: 0 }] as [string, ChartStat];
+      return [key, { date: key, comments: 0 }] as [string, ChartStat];
     });
   }
 
@@ -69,7 +68,7 @@ function getChartBuckets(timeRange: TimeRange) {
     const date = new Date(today);
     date.setDate(today.getDate() - (daysCount - 1 - index));
     const key = toDateKey(date);
-    return [key, { date: key, comments: 0, votes: 0 }] as [string, ChartStat];
+    return [key, { date: key, comments: 0 }] as [string, ChartStat];
   });
 }
 
@@ -124,7 +123,7 @@ export const analyticsRouter = router({
     const timeRange = input?.timeRange;
     const chartTimeRange = timeRange ?? "7d";
     const rangeStart = timeRange ? getRangeStart(timeRange) : undefined;
-    const [comments, pages, polls] = await Promise.all([
+    const [comments, pages] = await Promise.all([
       db.query.comment.findMany({
         columns: {
           id: true,
@@ -157,46 +156,23 @@ export const analyticsRouter = router({
         },
         where: (table, { eq }) => eq(table.workspaceId, workspaceId),
       }),
-      db.query.poll.findMany({
-        columns: {
-          id: true,
-        },
-        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
-      }),
     ]);
 
-    const pollIds = polls.map((item) => item.id);
     const rootComments = comments.filter((comment) => !comment.parentId);
     const rootCommentIds = rootComments.map((item) => item.id);
-    const [votes, reactions] = await Promise.all([
-      pollIds.length > 0
-        ? db.query.pollVote.findMany({
-          columns: {
-            createdAt: true,
-            visitorId: true,
-          },
-          where: (table) => and(inArray(table.pollId, pollIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
-        })
-        : [],
-      rootCommentIds.length > 0
-        ? db.query.commentReaction.findMany({
-          columns: {
-            visitorId: true,
-          },
-          where: (table) => and(inArray(table.commentId, rootCommentIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
-        })
-        : [],
-    ]);
+    const reactions = rootCommentIds.length > 0
+      ? await db.query.commentReaction.findMany({
+        columns: {
+          visitorId: true,
+        },
+        where: (table) => and(inArray(table.commentId, rootCommentIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
+      })
+      : [];
     const dayStats = new Map(getChartBuckets(chartTimeRange));
 
     for (const item of rootComments) {
       const stat = dayStats.get(getChartKey(item.createdAt, chartTimeRange));
       if (stat) stat.comments += 1;
-    }
-
-    for (const item of votes) {
-      const stat = dayStats.get(getChartKey(item.createdAt, chartTimeRange));
-      if (stat) stat.votes += 1;
     }
 
     const users = new Set<string>();
@@ -212,12 +188,7 @@ export const analyticsRouter = router({
       addUser(item.visitorId);
     }
 
-    for (const item of votes) {
-      addUser(item.visitorId);
-    }
-
     const totalComments = rootComments.length;
-    const totalVotes = votes.length;
     const totalReactions = reactions.length;
     const chartData = Array.from(dayStats.values());
     const recentComments = rootComments
@@ -238,7 +209,6 @@ export const analyticsRouter = router({
       metrics: {
         totalComments,
         spamComments: rootComments.filter((item) => item.classification === "spam").length,
-        totalVotes,
         engagementRate: totalComments > 0
           ? Math.round((totalReactions / totalComments) * 1000) / 10
           : 0,
@@ -247,7 +217,6 @@ export const analyticsRouter = router({
       },
       overview: {
         totalComments: chartData.reduce((total, item) => total + item.comments, 0),
-        totalVotes: chartData.reduce((total, item) => total + item.votes, 0),
       },
       chartData,
       pagesData: pages
@@ -264,8 +233,7 @@ export const analyticsRouter = router({
   }),
   metrics: protectedProcedure.query(async ({ ctx }) => {
     const workspaceId = getActiveWorkspaceId(ctx.session);
-    const [comments, polls] = await Promise.all([
-      db.query.comment.findMany({
+    const comments = await db.query.comment.findMany({
         columns: {
           id: true,
           authorEmail: true,
@@ -275,35 +243,17 @@ export const analyticsRouter = router({
         },
         where: (table, { and, eq, ne }) =>
           and(eq(table.workspaceId, workspaceId), ne(table.status, "deleted")),
-      }),
-      db.query.poll.findMany({
-        columns: {
-          id: true,
-        },
-        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
-      }),
-    ]);
+      });
 
     const commentIds = comments.map((item) => item.id);
-    const pollIds = polls.map((item) => item.id);
-    const [reactions, votes] = await Promise.all([
-      commentIds.length > 0
-        ? db.query.commentReaction.findMany({
+    const reactions = commentIds.length > 0
+        ? await db.query.commentReaction.findMany({
           columns: {
             visitorId: true,
           },
           where: (table) => inArray(table.commentId, commentIds),
         })
-        : [],
-      pollIds.length > 0
-        ? db.query.pollVote.findMany({
-          columns: {
-            visitorId: true,
-          },
-          where: (table) => inArray(table.pollId, pollIds),
-        })
-        : [],
-    ]);
+        : [];
 
     const users = new Set<string>();
     const addUser = (id: string | null) => {
@@ -318,12 +268,7 @@ export const analyticsRouter = router({
       addUser(item.visitorId);
     }
 
-    for (const item of votes) {
-      addUser(item.visitorId);
-    }
-
     const totalComments = comments.length;
-    const totalVotes = votes.length;
     const totalReactions = reactions.length;
     const engagementRate = totalComments > 0
       ? Math.round((totalReactions / totalComments) * 1000) / 10
@@ -332,7 +277,6 @@ export const analyticsRouter = router({
     return {
       totalComments,
       spamComments: comments.filter((item) => item.classification === "spam").length,
-      totalVotes,
       engagementRate,
       uniqueUsers: users.size,
       totalReactions,
@@ -369,8 +313,7 @@ export const analyticsRouter = router({
   technology: protectedProcedure.input(timeRangeSchema).query(async ({ ctx, input }) => {
     const workspaceId = getActiveWorkspaceId(ctx.session);
     const rangeStart = input?.timeRange ? getRangeStart(input.timeRange) : undefined;
-    const [comments, polls] = await Promise.all([
-      db.query.comment.findMany({
+    const comments = await db.query.comment.findMany({
         columns: {
           browser: true,
           deviceType: true,
@@ -382,30 +325,12 @@ export const analyticsRouter = router({
             ne(table.status, "deleted"),
             rangeStart ? gte(table.createdAt, rangeStart) : undefined,
           ),
-      }),
-      db.query.poll.findMany({
-        columns: {
-          id: true,
-        },
-        where: (table, { eq }) => eq(table.workspaceId, workspaceId),
-      }),
-    ]);
-    const pollIds = polls.map((poll) => poll.id);
-    const votes = pollIds.length > 0
-      ? await db.query.pollVote.findMany({
-        columns: {
-          browser: true,
-          deviceType: true,
-          os: true,
-        },
-        where: (table) => and(inArray(table.pollId, pollIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
-      })
-      : [];
+      });
     const browsers = new Map<string, LocationStat>();
     const operatingSystems = new Map<string, LocationStat>();
     const devices = new Map<string, LocationStat>();
 
-    for (const row of [...comments, ...votes]) {
+    for (const row of comments) {
       incrementStat(browsers, row.browser);
       incrementStat(operatingSystems, row.os);
       incrementStat(devices, row.deviceType);

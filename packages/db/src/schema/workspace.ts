@@ -25,7 +25,6 @@ export const commentAuthorProviders = [
   "email",
 ] as const;
 export const notificationTypes = ["comment_created", "reply_created"] as const;
-export const pollStatuses = ["draft", "active", "closed"] as const;
 export const DEFAULT_BANNED_WORDS = ["fuck", "nude", "crap"];
 
 export const workspaceSettings = sqliteTable("workspace_settings", {
@@ -286,78 +285,6 @@ export const commentAttachment = sqliteTable(
   (table) => [index("comment_attachment_commentId_idx").on(table.commentId)],
 );
 
-export const poll = sqliteTable(
-  "poll",
-  {
-    id: text("id").primaryKey(),
-    workspaceId: text("workspace_id")
-      .notNull()
-      .references(() => organization.id, { onDelete: "cascade" }),
-    pageId: text("page_id").references(() => page.id, { onDelete: "set null" }),
-    question: text("question").notNull(),
-    status: text("status", { enum: pollStatuses }).default("draft").notNull(),
-    closesAt: integer("closes_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-      .notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-      .$onUpdate(() => /* @__PURE__ */ new Date())
-      .notNull(),
-  },
-  (table) => [
-    index("poll_workspaceId_idx").on(table.workspaceId),
-    index("poll_pageId_idx").on(table.pageId),
-    index("poll_status_idx").on(table.status),
-  ],
-);
-
-export const pollOption = sqliteTable(
-  "poll_option",
-  {
-    id: text("id").primaryKey(),
-    pollId: text("poll_id")
-      .notNull()
-      .references(() => poll.id, { onDelete: "cascade" }),
-    label: text("label").notNull(),
-    imageUrl: text("image_url"),
-    position: integer("position").default(0).notNull(),
-  },
-  (table) => [index("poll_option_pollId_idx").on(table.pollId)],
-);
-
-export const pollVote = sqliteTable(
-  "poll_vote",
-  {
-    id: text("id").primaryKey(),
-    pollId: text("poll_id")
-      .notNull()
-      .references(() => poll.id, { onDelete: "cascade" }),
-    optionId: text("option_id")
-      .notNull()
-      .references(() => pollOption.id, { onDelete: "cascade" }),
-    visitorId: text("visitor_id").notNull(),
-    locationCity: text("location_city"),
-    locationCountry: text("location_country"),
-    locationCountryCode: text("location_country_code"),
-    locationContinent: text("location_continent"),
-    deviceType: text("device_type"),
-    browser: text("browser"),
-    os: text("os"),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-      .notNull(),
-  },
-  (table) => [
-    uniqueIndex("poll_vote_pollId_visitorId_unique").on(
-      table.pollId,
-      table.visitorId,
-    ),
-    index("poll_vote_pollId_idx").on(table.pollId),
-    index("poll_vote_optionId_idx").on(table.optionId),
-  ],
-);
-
 export const workspaceSettingsRelations = relations(
   workspaceSettings,
   ({ one }) => ({
@@ -408,7 +335,6 @@ export const pageRelations = relations(page, ({ one, many }) => ({
     references: [organization.id],
   }),
   comments: many(comment),
-  polls: many(poll),
 }));
 
 export const commentRelations = relations(comment, ({ one, many }) => ({
@@ -449,35 +375,3 @@ export const commentAttachmentRelations = relations(
     }),
   }),
 );
-
-export const pollRelations = relations(poll, ({ one, many }) => ({
-  workspace: one(organization, {
-    fields: [poll.workspaceId],
-    references: [organization.id],
-  }),
-  page: one(page, {
-    fields: [poll.pageId],
-    references: [page.id],
-  }),
-  options: many(pollOption),
-  votes: many(pollVote),
-}));
-
-export const pollOptionRelations = relations(pollOption, ({ one, many }) => ({
-  poll: one(poll, {
-    fields: [pollOption.pollId],
-    references: [poll.id],
-  }),
-  votes: many(pollVote),
-}));
-
-export const pollVoteRelations = relations(pollVote, ({ one }) => ({
-  poll: one(poll, {
-    fields: [pollVote.pollId],
-    references: [poll.id],
-  }),
-  option: one(pollOption, {
-    fields: [pollVote.optionId],
-    references: [pollOption.id],
-  }),
-}));

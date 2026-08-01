@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Area, Bar, CartesianGrid, ComposedChart, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, XAxis, YAxis } from "recharts";
 
 import { cn } from "@/lib/utils";
 import {
@@ -12,15 +12,14 @@ import {
 export type AnalyticsChartDatum = {
 	date: string;
 	comments: number;
-	votes: number;
 };
 
 export const EMPTY_ANALYTICS_CHART_DATA: AnalyticsChartDatum[] = [
-	{ date: "2026-01-03", comments: 124, votes: 120 },
-	{ date: "2026-01-04", comments: 71, votes: 175 },
-	{ date: "2026-01-05", comments: 88, votes: 100 },
-	{ date: "2026-01-06", comments: 36, votes: 35 },
-	{ date: "2026-01-07", comments: 42, votes: 98 },
+	{ date: "2026-01-03", comments: 124 },
+	{ date: "2026-01-04", comments: 71 },
+	{ date: "2026-01-05", comments: 88 },
+	{ date: "2026-01-06", comments: 36 },
+	{ date: "2026-01-07", comments: 42 },
 ];
 
 interface AnalyticsChartProps {
@@ -29,7 +28,6 @@ interface AnalyticsChartProps {
 	hasData: boolean;
 	className?: string;
 	showComments?: boolean;
-	showVotes?: boolean;
 	emptyText?: string;
 }
 
@@ -54,10 +52,8 @@ export function AnalyticsChart({
 	hasData,
 	className,
 	showComments = true,
-	showVotes = true,
 	emptyText = "No data available yet",
 }: AnalyticsChartProps) {
-	const fillVotesId = useId().replace(/:/g, "");
 	const fillCommentsId = useId().replace(/:/g, "");
 	const displayedData = hasData ? data : EMPTY_ANALYTICS_CHART_DATA;
 
@@ -72,18 +68,6 @@ export function AnalyticsChart({
 				)}>
 				<ComposedChart data={displayedData}>
 					<defs>
-						<linearGradient id={fillVotesId} x1="0" y1="0" x2="0" y2="1">
-							<stop
-								offset="5%"
-								stopColor="var(--chart-1)"
-								stopOpacity={0.8}
-							/>
-							<stop
-								offset="95%"
-								stopColor="var(--chart-1)"
-								stopOpacity={0.1}
-							/>
-						</linearGradient>
 						<linearGradient id={fillCommentsId} x1="0" y1="0" x2="0" y2="1">
 							<stop
 								offset="5%"
@@ -125,15 +109,6 @@ export function AnalyticsChart({
 							fill={`url(#${fillCommentsId})`}
 							stroke="var(--chart-4)"
 							fillOpacity={0.3}
-						/>
-					)}
-					{showVotes && (
-						<Bar
-							dataKey="votes"
-							fill="var(--chart-1)"
-							radius={[8, 8, 0, 0]}
-							barSize={24}
-							fillOpacity={0.8}
 						/>
 					)}
 				</ComposedChart>

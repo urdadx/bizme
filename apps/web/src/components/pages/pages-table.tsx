@@ -48,7 +48,6 @@ type PageRow = {
 	name: string;
 	url: string;
 	totalComments: number;
-	totalVotes: number;
 	lastActivity: string;
 };
 
@@ -58,7 +57,6 @@ const dummyPages: PageRow[] = [
 		name: "Pricing",
 		url: "/pricing",
 		totalComments: 248,
-		totalVotes: 913,
 		lastActivity: "2 minutes ago",
 	},
 	{
@@ -66,7 +64,6 @@ const dummyPages: PageRow[] = [
 		name: "Docs: Installation",
 		url: "/docs/installation",
 		totalComments: 126,
-		totalVotes: 401,
 		lastActivity: "18 minutes ago",
 	},
 	{
@@ -74,7 +71,6 @@ const dummyPages: PageRow[] = [
 		name: "Launch Week Blog Post",
 		url: "/blog/launch-week",
 		totalComments: 89,
-		totalVotes: 267,
 		lastActivity: "1 hour ago",
 	},
 	{
@@ -82,7 +78,6 @@ const dummyPages: PageRow[] = [
 		name: "Feature Overview",
 		url: "/features/comments",
 		totalComments: 174,
-		totalVotes: 622,
 		lastActivity: "3 hours ago",
 	},
 	{
@@ -90,7 +85,6 @@ const dummyPages: PageRow[] = [
 		name: "Changelog",
 		url: "/changelog",
 		totalComments: 42,
-		totalVotes: 138,
 		lastActivity: "Yesterday",
 	},
 	{
@@ -98,7 +92,6 @@ const dummyPages: PageRow[] = [
 		name: "API Reference",
 		url: "/docs/api",
 		totalComments: 61,
-		totalVotes: 205,
 		lastActivity: "2 days ago",
 	},
 ];
@@ -203,11 +196,6 @@ const columns: ColumnDef<PageRow>[] = [
 				row.getValue(columnId) as number,
 				filterValue as CommentVolumeFilter,
 			),
-	},
-	{
-		accessorKey: "totalVotes",
-		header: "Total votes",
-		cell: ({ row }) => <span>{row.getValue("totalVotes")}</span>,
 	},
 	{
 		accessorKey: "lastActivity",

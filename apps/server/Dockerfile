@@ -28,7 +28,7 @@ COPY docker/server/entrypoint.sh ./docker/server/entrypoint.sh
 COPY docker/server/start.sh ./docker/server/start.sh
 
 RUN chmod +x ./docker/server/entrypoint.sh ./docker/server/start.sh \
-	&& mkdir -p /data ./apps/server/uploads/comment-images ./apps/server/uploads/poll-option-images
+	&& mkdir -p /data ./apps/server/uploads/comment-images
 
 EXPOSE 3000
 

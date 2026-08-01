@@ -47,7 +47,6 @@ const SITE_SCOPED_QUERY_ROOTS = new Set([
   "comments",
   "getSession",
   "notifications",
-  "polls",
   "workspaceCustomization",
   "workspaceSettings",
 ]);

@@ -20,7 +20,6 @@ import { NavUser } from "./nav-user";
 import { MessageIcon } from "@/assets/icons/message-icon";
 import { NavCustomize } from "./nav-customize";
 import { NavSettings } from "./nav-settings";
-import { ChatLogsIcon } from "@/assets/icons/chatlogs-icon";
 import { NavActivity } from "./nav-activity";
 import { GlobeLinear } from "@/assets/icons/globe-icon";
 
@@ -43,11 +42,6 @@ const data = {
       title: "Comments",
       url: "/comments",
       icon: MessageIcon,
-    },
-    {
-      title: "Polls",
-      url: "/polls",
-      icon: ChatLogsIcon,
     },
   ],
   customize: [

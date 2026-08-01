@@ -3,7 +3,7 @@ set -e
 
 export DATABASE_URL="${DATABASE_URL:-file:/data/local.db}"
 
-mkdir -p /data /app/apps/server/uploads/comment-images /app/apps/server/uploads/poll-option-images
+mkdir -p /data /app/apps/server/uploads/comment-images
 
 cd /app/apps/server
 
