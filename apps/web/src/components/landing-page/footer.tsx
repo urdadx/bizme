@@ -31,7 +31,7 @@ export function FooterSection() {
     <footer className="py-16 md:py-32">
       <div className="mx-auto max-w-5xl px-6">
         <Link to="/" aria-label="go home" className="mx-auto block size-fit">
-          <BrandLogo className="size-14" />{" "}
+          <BrandLogo className="size-8" />{" "}
         </Link>
 
         <div className="my-8 flex flex-wrap justify-center gap-6 text-sm">
