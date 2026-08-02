@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import BizmeLogo from "@/assets/bizme-real-logo.png";
 import { GithubSVG } from "@/assets/icons/github-svg";
+import { BrandLogo } from "@/components/brand-logo";
 
 const links = [
   {
@@ -31,7 +31,7 @@ export function FooterSection() {
     <footer className="py-16 md:py-32">
       <div className="mx-auto max-w-5xl px-6">
         <Link to="/" aria-label="go home" className="mx-auto block size-fit">
-          <img src={BizmeLogo} alt="Bizme Logo" className="h-14 w-14" />{" "}
+          <BrandLogo className="size-14" />{" "}
         </Link>
 
         <div className="my-8 flex flex-wrap justify-center gap-6 text-sm">

@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import React from "react";
-import BizmeLogo from "@/assets/bizme-real-logo.png";
 
 const menuItems = [
   { name: "Features", href: "#features" },
@@ -42,7 +42,7 @@ export const HeroHeader = () => {
                 aria-label="home"
                 className="flex items-center space-x-2"
               >
-                <img src={BizmeLogo} alt="Bizme Logo" className="h-12 w-12" />
+                <BrandLogo className="size-12" />
               </Link>
 
               <Button

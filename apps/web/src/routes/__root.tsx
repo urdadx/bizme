@@ -4,7 +4,6 @@ import type { QueryClient } from "@tanstack/react-query";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
-import favicon from "@/assets/bizme-logo.png";
 import ogImage from "@/assets/og-image.png";
 import appCss from "../index.css?url";
 export interface RouterAppContext {
@@ -76,8 +75,8 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 		links: [
 			{
 				rel: "icon",
-				type: "image/png",
-				href: favicon,
+				type: "image/svg+xml",
+				href: "/logo.svg",
 			},
 			{
 				rel: "stylesheet",
