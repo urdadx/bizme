@@ -20,10 +20,8 @@ function RouteComponent() {
 		<div className="relative mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden p-4 md:p-6">
 			<Metrics
 				totalComments={overviewData.metrics.totalComments}
-				spamComments={overviewData.metrics.spamComments}
 				engagementRate={overviewData.metrics.engagementRate}
 				uniqueUsers={overviewData.metrics.uniqueUsers}
-				totalReactions={overviewData.metrics.totalReactions}
 			/>
 			<div className="flex flex-col lg:flex-row gap-6 w-full items-stretch">
 				<div className="w-full lg:w-[60%] flex">

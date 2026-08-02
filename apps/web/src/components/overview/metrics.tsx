@@ -1,21 +1,17 @@
-import { HeartIcon, OctagonAlertIcon, SmileIcon, StarIcon } from "lucide-react";
+import { HeartIcon, StarIcon } from "lucide-react";
 import { MetricCard } from "./metrics-card";
 import { ChatFeedback } from "@/assets/icons/chat-feedback";
 
 interface MetricsProps {
 	totalComments: number;
-	spamComments: number;
 	engagementRate: number;
 	uniqueUsers: number;
-	totalReactions: number;
 }
 
 export function Metrics({
 	totalComments,
-	spamComments,
 	engagementRate,
 	uniqueUsers,
-	totalReactions,
 }: MetricsProps) {
 	const metrics = [
 		{
@@ -23,12 +19,6 @@ export function Metrics({
 			title: "Total comments",
 			value: totalComments,
 			href: "/comments",
-		},
-		{
-			icon: OctagonAlertIcon,
-			title: "Spam comments",
-			value: spamComments,
-			href: "/moderation",
 		},
 		{
 			icon: HeartIcon,
@@ -41,12 +31,6 @@ export function Metrics({
 			icon: StarIcon,
 			title: "Unique users",
 			value: uniqueUsers,
-			href: "/analytics",
-		},
-		{
-			icon: SmileIcon,
-			title: "Total reactions",
-			value: totalReactions,
 			href: "/analytics",
 		},
 	];
