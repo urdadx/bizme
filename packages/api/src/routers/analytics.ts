@@ -14,6 +14,7 @@ type LocationStat = {
 type ChartStat = {
   date: string;
   comments: number;
+  reactions: number;
 };
 
 const CONTINENT_NAMES: Record<string, string> = {
@@ -56,7 +57,7 @@ function getChartBuckets(timeRange: TimeRange) {
       const date = new Date(currentHour);
       date.setHours(currentHour.getHours() - (23 - index));
       const key = toHourKey(date);
-      return [key, { date: key, comments: 0 }] as [string, ChartStat];
+      return [key, { date: key, comments: 0, reactions: 0 }] as [string, ChartStat];
     });
   }
 
@@ -68,7 +69,7 @@ function getChartBuckets(timeRange: TimeRange) {
     const date = new Date(today);
     date.setDate(today.getDate() - (daysCount - 1 - index));
     const key = toDateKey(date);
-    return [key, { date: key, comments: 0 }] as [string, ChartStat];
+    return [key, { date: key, comments: 0, reactions: 0 }] as [string, ChartStat];
   });
 }
 
@@ -164,6 +165,7 @@ export const analyticsRouter = router({
       ? await db.query.commentReaction.findMany({
         columns: {
           visitorId: true,
+          createdAt: true,
         },
         where: (table) => and(inArray(table.commentId, rootCommentIds), rangeStart ? gte(table.createdAt, rangeStart) : undefined),
       })
@@ -173,6 +175,11 @@ export const analyticsRouter = router({
     for (const item of rootComments) {
       const stat = dayStats.get(getChartKey(item.createdAt, chartTimeRange));
       if (stat) stat.comments += 1;
+    }
+
+    for (const item of reactions) {
+      const stat = dayStats.get(getChartKey(item.createdAt, chartTimeRange));
+      if (stat) stat.reactions += 1;
     }
 
     const users = new Set<string>();

@@ -12,14 +12,15 @@ import {
 export type AnalyticsChartDatum = {
 	date: string;
 	comments: number;
+	reactions?: number;
 };
 
 export const EMPTY_ANALYTICS_CHART_DATA: AnalyticsChartDatum[] = [
-	{ date: "2026-01-03", comments: 124 },
-	{ date: "2026-01-04", comments: 71 },
-	{ date: "2026-01-05", comments: 88 },
-	{ date: "2026-01-06", comments: 36 },
-	{ date: "2026-01-07", comments: 42 },
+	{ date: "2026-01-03", comments: 124, reactions: 82 },
+	{ date: "2026-01-04", comments: 71, reactions: 46 },
+	{ date: "2026-01-05", comments: 88, reactions: 61 },
+	{ date: "2026-01-06", comments: 36, reactions: 24 },
+	{ date: "2026-01-07", comments: 42, reactions: 31 },
 ];
 
 interface AnalyticsChartProps {
@@ -28,6 +29,7 @@ interface AnalyticsChartProps {
 	hasData: boolean;
 	className?: string;
 	showComments?: boolean;
+	showReactions?: boolean;
 	emptyText?: string;
 }
 
@@ -52,9 +54,11 @@ export function AnalyticsChart({
 	hasData,
 	className,
 	showComments = true,
+	showReactions = false,
 	emptyText = "No data available yet",
 }: AnalyticsChartProps) {
 	const fillCommentsId = useId().replace(/:/g, "");
+	const fillReactionsId = useId().replace(/:/g, "");
 	const displayedData = hasData ? data : EMPTY_ANALYTICS_CHART_DATA;
 
 	return (
@@ -79,6 +83,10 @@ export function AnalyticsChart({
 								stopColor="var(--chart-4)"
 								stopOpacity={0.1}
 							/>
+						</linearGradient>
+						<linearGradient id={fillReactionsId} x1="0" y1="0" x2="0" y2="1">
+							<stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.8} />
+							<stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0.1} />
 						</linearGradient>
 					</defs>
 					<CartesianGrid vertical={false} />
@@ -108,6 +116,15 @@ export function AnalyticsChart({
 							type="natural"
 							fill={`url(#${fillCommentsId})`}
 							stroke="var(--chart-4)"
+							fillOpacity={0.3}
+						/>
+					)}
+					{showReactions && (
+						<Area
+							dataKey="reactions"
+							type="natural"
+							fill={`url(#${fillReactionsId})`}
+							stroke="var(--chart-2)"
 							fillOpacity={0.3}
 						/>
 					)}

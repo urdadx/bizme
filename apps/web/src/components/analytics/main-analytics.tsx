@@ -30,17 +30,24 @@ const chartConfig = {
     label: "Comments",
     color: "var(--chart-4)",
   },
+  reactions: {
+    label: "Reactions",
+    color: "var(--chart-2)",
+  },
 } satisfies ChartConfig;
 
 export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
   const [showComments, setShowComments] = React.useState(true);
+  const [showReactions, setShowReactions] = React.useState(true);
   const trpc = useTRPC();
   const { data: overviewData } = useSuspenseQuery(
     trpc.analytics.overview.queryOptions({ timeRange })
   );
   const chartData = overviewData.chartData;
   const hasData =
-    overviewData.metrics.totalComments > 0 || chartData.some((item) => item.comments > 0);
+    overviewData.metrics.totalComments > 0 ||
+    overviewData.metrics.totalReactions > 0 ||
+    chartData.some((item) => item.comments > 0 || item.reactions > 0);
   const navigate = useNavigate({ from: "/analytics" });
 
   return (
@@ -78,6 +85,22 @@ export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
 
       <div className="px-1 py-5 w-full rounded-xl border bg-white">
         <CardHeader className=" flex flex-row flex-wrap justify-between gap-4">
+          <div className="flex flex-col gap-1 text-left min-w-24">
+            <CardTitle className="flex items-center gap-3 text-muted-foreground text-xs">
+              <div className="flex items-center gap-1">
+                <div className="inset-0 size-2 items-center justify-center rounded-full bg-blue-500" />
+                <span>Total reactions</span>
+              </div>
+              <Checkbox
+                checked={showReactions}
+                onCheckedChange={(checked) => setShowReactions(checked === true)}
+              />
+            </CardTitle>
+            <CardDescription className="text-xl md:text-2xl font-semibold text-black">
+              <NumberFlow value={overviewData.metrics.totalReactions} />
+            </CardDescription>
+          </div>
+
           <div className="flex flex-col gap-1 text-left min-w-24">
             <CardTitle className="flex items-center gap-3 text-muted-foreground text-xs">
               <div className="flex items-center gap-1">
@@ -126,6 +149,7 @@ export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
             hasData={hasData}
             className="h-75"
             showComments={showComments}
+            showReactions={showReactions}
           />
         </CardContent>
       </div>
