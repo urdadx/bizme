@@ -63,7 +63,7 @@ export const CTASession = () => {
 						<div className="rounded-lg border bg-white p-4 sm:p-6">
 							<div className="flex flex-col gap-6">
 								<CommentComposer uploadId="landing-comment-file-upload" />
-								<div className="flex flex-col">
+								<div className=" flex-col hidden sm:flex">
 									{previewComments.map((comment) => (
 										<PreviewCommentItem
 											key={comment.id}
