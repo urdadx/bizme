@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import RegisterBackgroundImage from "@/assets/images/register-image.png";
+import RegisterBackgroundImage from "@/assets/images/register-image.avif";
 import { SignupForm } from "@/components/sign-up-form";
 import { z } from "zod";
 

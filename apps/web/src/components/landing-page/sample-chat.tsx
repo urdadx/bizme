@@ -1,19 +1,22 @@
-import { RiHeart3Line, RiReplyLine } from "@remixicon/react";
+import { ChatLinear } from "@/assets/icons/chat-icon";
+import { LikeIcon } from "@/assets/icons/like-icon";
+import { RecordIcon } from "@/assets/icons/record-icon";
 
 export const SampleChat = () => {
   return (
     <>
       <div className="overflow-hidden border-t p-6 md:border-0 dark:bg-transparent">
+        <div className="relative overflow-visible rounded-xl border bg-gray-50 p-1 shadow-sm ring-muted ">
         <div
           aria-hidden
-          className="rounded-2xl border bg-white p-4 dark:bg-gray-950"
+          className="rounded-xl border bg-white p-4 dark:bg-gray-950"
         >
-          <div className="mb-4 flex items-center justify-between border-b pb-3">
-            <div>
+          <div className="mb-4 flex items-center justify-between pb-3">
+            <div className="flex items-center space-x-1">
+              <RecordIcon color="red" />
               <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                Comments
+                Live comments
               </div>
-              <div className="text-xs text-gray-500">3 live comments</div>
             </div>
           </div>
           <div className="flex flex-col gap-4">
@@ -63,19 +66,21 @@ export const SampleChat = () => {
                   </p>
                   <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
                     <span className="inline-flex items-center gap-1.5">
-                      <RiHeart3Line className="size-3.5" />
+                      <LikeIcon className="size-3.5" />
                       {comment.likes}
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                      <RiReplyLine className="size-3.5" />
-                      Reply
+                      <ChatLinear className="size-3.5" />
                     </span>
                   </div>
                 </div>
               </div>
+
             ))}
           </div>
+          </div>
         </div>
+
       </div>
     </>
   );

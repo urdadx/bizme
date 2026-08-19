@@ -68,14 +68,14 @@ export function LandingShare() {
           <TabsList className="bg-transparent grid w-full grid-cols-2 ">
             <TabsTrigger
               value="tab-1"
-              className="w-full data-[state=active]:bg-muted data-[state=active]:shadow-none"
+              className="w-full font-sans data-[state=active]:bg-muted data-[state=active]:shadow-none"
             >
               Frameworks
             </TabsTrigger>
 
             <TabsTrigger
               value="tab-2"
-              className="w-full data-[state=active]:bg-muted data-[state=active]:shadow-none"
+              className="w-full font-sans data-[state=active]:bg-muted data-[state=active]:shadow-none"
             >
               HTML Embed
             </TabsTrigger>

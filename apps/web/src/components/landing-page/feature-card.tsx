@@ -24,8 +24,7 @@ export function FeatureCard({
     >
       <div
         className={cn(
-          "absolute left-1/2 top-1/3 h-1/2 w-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-10 blur-[50px]",
-          "bg-[conic-gradient(from_270deg,#3B82F6,#1E40AF,transparent,transparent)]",
+          "absolute left-1/2 top-1/3 h-1/2 w-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-10 blur-[50px]"
         )}
       />
       <div

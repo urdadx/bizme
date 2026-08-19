@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import LoginBackgroundImage from "@/assets/images/login-image.png";
+import LoginBackgroundImage from "@/assets/images/login-image.avif";
 import LoginForm from "@/components/sign-in-form";
 import { z } from "zod";
 

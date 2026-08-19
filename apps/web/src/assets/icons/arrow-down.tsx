@@ -15,7 +15,7 @@ export function ArrowDownLinear(props: SVGProps<SVGSVGElement>) {
 				stroke={color}
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				strokeWidth="1.5"
+				strokeWidth="1"
 				d="m19 9l-7 6l-7-6"
 			/>
 		</svg>

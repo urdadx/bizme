@@ -59,7 +59,7 @@ export const CTASession = () => {
 				</div>
 
 				<div className=" my-12 w-full mx-auto max-w-5xl px-3 sm:px-6">
-					<div className="relative overflow-visible rounded-xl border bg-gray-50 p-2 shadow-sm ring-muted ">
+					<div className="relative overflow-visible rounded-xl border bg-gray-50 p-1 sm:p-1.5 shadow-sm ring-muted ">
 						<div className="rounded-lg border bg-white p-4 sm:p-6">
 							<div className="flex flex-col gap-6">
 								<CommentComposer uploadId="landing-comment-file-upload" />
