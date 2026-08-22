@@ -4,6 +4,13 @@ A better audience engagement backend for your content
 
 ## Features
 
+- **Live comments** - Receive comments from your audience and engage with them in real-time
+- **Analytics and insights** - Gain valuable insights into audience interactions and content performance
+- **Highly customizable** - Customize with colors that match your brand's identity
+- **Embed everywhere** - Embed the widget on any website in one line
+
+### Tech Stack
+
 - **TypeScript** - For type safety and improved developer experience
 - **TanStack Start** - SSR framework with TanStack Router
 - **TailwindCSS** - Utility-first CSS for rapid UI development
