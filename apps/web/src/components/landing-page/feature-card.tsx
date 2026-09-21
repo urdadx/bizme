@@ -16,23 +16,13 @@ export function FeatureCard({
   graphicClassName?: string;
 }>) {
   return (
-    <div
-      className={cn(
-        "relative flex flex-col gap-10 px-4 py-14 sm:px-12",
-        className,
-      )}
-    >
+    <div className={cn("relative flex flex-col gap-10 px-2 py-12 sm:px-12 sm:py-14", className)}>
       <div
         className={cn(
-          "absolute left-1/2 top-1/3 h-1/2 w-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-10 blur-[50px]"
+          "absolute left-1/2 top-1/3 h-1/2 w-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-10 blur-[50px]",
         )}
       />
-      <div
-        className={cn(
-          "relative h-64 overflow-hidden sm:h-75.5",
-          graphicClassName,
-        )}
-      >
+      <div className={cn("relative h-64 overflow-hidden sm:h-75.5", graphicClassName)}>
         {children}
       </div>
       <div className="relative flex flex-col">

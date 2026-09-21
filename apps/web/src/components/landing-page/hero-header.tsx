@@ -26,31 +26,21 @@ export const HeroHeader = () => {
 
   return (
     <header>
-      <nav
-        data-state={menuState && "active"}
-        className="fixed z-20 w-full px-2 "
-      >
+      <nav data-state={menuState && "active"} className="fixed inset-x-0 z-20 px-4 sm:px-6">
         <div
           className={cn(
-            "mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
+            "mx-auto mt-2 w-full max-w-6xl px-4 transition-all duration-300 sm:px-6 lg:px-12",
             isScrolled &&
-            "bg-background/50 max-w-4xl h-fit rounded-full border backdrop-blur-lg lg:px-5",
+              "bg-background/50 max-w-4xl h-fit rounded-full border backdrop-blur-lg lg:px-5",
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
             <div className="flex w-full justify-between lg:w-auto">
-              <Link
-                to="/"
-                aria-label="home"
-                className="flex items-center space-x-2"
-              >
+              <Link to="/" aria-label="home" className="flex items-center space-x-2">
                 <BrandLogo className="size-8" />
               </Link>
 
-              <Button
-                size="sm"
-                className={cn(isScrolled && "block", "block lg:hidden")}
-              >
+              <Button size="sm" className={cn(isScrolled && "block", "block lg:hidden")}>
                 <Link to="/login">
                   <span>Get started</span>
                 </Link>
@@ -124,10 +114,7 @@ export const HeroHeader = () => {
                       <span>Get started</span>
                     </Link>
                   </Button>
-                  <Button
-                    size="sm"
-                    className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
-                  >
+                  <Button size="sm" className={cn(isScrolled ? "lg:inline-flex" : "hidden")}>
                     <Link to="/register">
                       <span>Get started</span>
                     </Link>
