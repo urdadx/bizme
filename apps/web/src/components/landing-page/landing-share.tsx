@@ -105,7 +105,7 @@ export function LandingShare() {
               </div>
 
             </div>
-            <div className="flex flex-wrap justify-center gap-4 pt-8">
+            <div className="flex flex-wrap justify-center gap-4 pt-6">
               {frameworks.map((framework) => (
                 <div
                   key={framework.id}

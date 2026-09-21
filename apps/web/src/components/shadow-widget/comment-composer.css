@@ -1,0 +1,265 @@
+.bizme-composer,
+.bizme-composer * {
+  box-sizing: border-box;
+}
+
+.bizme-composer {
+  --bizme-composer-accent: var(--bizme-accent, #315efb);
+  --bizme-composer-accent-hover: var(--bizme-accent-hover, #244bd6);
+  --bizme-composer-surface: var(--bizme-surface, #ffffff);
+  --bizme-composer-surface-soft: var(--bizme-surface-soft, #f6f7f9);
+  --bizme-composer-text: var(--bizme-text, #191b20);
+  --bizme-composer-muted: var(--bizme-muted, #717784);
+  --bizme-composer-border: var(--bizme-border, #dfe2e7);
+  --bizme-composer-danger: var(--bizme-danger, #c9362b);
+  --bizme-composer-ring: var(
+    --bizme-ring,
+    color-mix(in srgb, var(--bizme-composer-accent) 24%, transparent)
+  );
+
+  width: 100%;
+  color: var(--bizme-composer-text);
+  font-family: var(--bizme-font, Inter, ui-sans-serif, system-ui, sans-serif);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.bizme-composer__shell {
+  position: relative;
+  display: flex;
+  min-height: 112px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bizme-composer-surface);
+  border: 1px solid color-mix(in srgb, var(--bizme-composer-border) 72%, transparent);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 4%);
+  transition: box-shadow 160ms ease;
+}
+
+.bizme-composer__shell:focus-within {
+  box-shadow: 0 0 0 2px var(--bizme-composer-ring);
+}
+
+.bizme-composer__shell--dragging {
+  background: color-mix(in srgb, var(--bizme-composer-accent) 4%, var(--bizme-composer-surface));
+  box-shadow: 0 0 0 2px var(--bizme-composer-ring);
+}
+
+.bizme-composer__textarea {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  resize: none;
+  overflow-y: auto;
+  color: var(--bizme-composer-text);
+  font: inherit;
+  line-height: 1.65;
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+
+.bizme-composer__textarea::placeholder {
+  color: var(--bizme-composer-muted);
+  opacity: 0.78;
+}
+
+.bizme-composer__attachments {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bizme-composer__attachment {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bizme-composer-surface-soft);
+  border: 1px solid var(--bizme-composer-border);
+  border-radius: 10px;
+}
+
+.bizme-composer__attachment-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.bizme-composer__attachment-name {
+  display: block;
+  padding: 7px 9px;
+  overflow: hidden;
+  color: var(--bizme-composer-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bizme-composer__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  place-items: center;
+  color: #ffffff;
+  background: rgb(17 18 22 / 76%);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+}
+
+.bizme-composer__remove:hover {
+  background: rgb(17 18 22 / 92%);
+}
+
+.bizme-composer__error {
+  margin: -4px 0 0;
+  color: var(--bizme-composer-danger);
+  font-size: 12px;
+}
+
+.bizme-composer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.bizme-composer__tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bizme-composer__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.bizme-composer__icon-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  color: var(--bizme-composer-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.bizme-composer__icon-button:hover {
+  color: var(--bizme-composer-accent);
+  background: var(--bizme-composer-surface-soft);
+}
+
+.bizme-composer__icon {
+  display: block;
+  width: 19px;
+  height: 19px;
+}
+
+.bizme-composer__submit {
+  display: inline-flex;
+  min-width: 64px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 500;
+  background: var(--bizme-composer-accent);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease,
+    opacity 140ms ease;
+}
+
+.bizme-composer__submit:hover:not(:disabled) {
+  background: var(--bizme-composer-accent-hover);
+  transform: translateY(-1px);
+}
+
+.bizme-composer__submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.bizme-composer__submit:disabled,
+.bizme-composer__icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.bizme-composer__remove:focus-visible,
+.bizme-composer__icon-button:focus-visible,
+.bizme-composer__submit:focus-visible {
+  outline: 3px solid var(--bizme-composer-ring);
+  outline-offset: 2px;
+}
+
+.bizme-composer__spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgb(255 255 255 / 42%);
+  border-top-color: #ffffff;
+  border-radius: 999px;
+  animation: bizme-composer-spin 700ms linear infinite;
+}
+
+.bizme-composer--disabled {
+  opacity: 0.64;
+}
+
+@keyframes bizme-composer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .bizme-composer__shell {
+    min-height: 104px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .bizme-composer__attachments {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bizme-composer__shell,
+  .bizme-composer__icon-button,
+  .bizme-composer__submit {
+    transition: none;
+  }
+}

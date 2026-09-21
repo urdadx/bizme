@@ -1,0 +1,113 @@
+.bizme-select {
+  position: relative;
+  display: inline-block;
+  color: var(--bizme-text, #191b20);
+  font-family: var(--bizme-font, Inter, ui-sans-serif, system-ui, sans-serif);
+}
+
+.bizme-select > summary {
+  list-style: none;
+}
+
+.bizme-select > summary::-webkit-details-marker {
+  display: none;
+}
+
+.bizme-select__trigger {
+  display: flex;
+  height: 32px;
+  min-width: 106px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  color: var(--bizme-muted, #717784);
+  font-size: 12px;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid var(--bizme-border, #dfe2e7);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.bizme-select__chevron,
+.bizme-select__check {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.bizme-select__chevron {
+  transition: transform 100ms ease;
+}
+
+.bizme-select[open] .bizme-select__chevron {
+  transform: rotate(180deg);
+}
+
+.bizme-select__content {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 144px;
+  padding: 4px;
+  overflow: hidden;
+  background: var(--bizme-surface, #ffffff);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgb(16 24 40 / 12%);
+  outline: 1px solid color-mix(in srgb, var(--bizme-text, #191b20) 10%, transparent);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+
+.bizme-select[open] .bizme-select__content {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.bizme-select__item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 32px;
+  align-items: center;
+  padding: 0 30px 0 8px;
+  color: var(--bizme-text, #191b20);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: default;
+}
+
+.bizme-select__item:hover,
+.bizme-select__item:focus-visible {
+  background: var(--bizme-surface-soft, #f6f7f9);
+  outline: 0;
+}
+
+.bizme-select__check {
+  position: absolute;
+  right: 8px;
+}
+
+.bizme-select__trigger:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--bizme-ring, rgb(49 94 251 / 22%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bizme-select__content,
+  .bizme-select__chevron {
+    transition: none;
+  }
+}

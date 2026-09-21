@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WidgetRouteImport } from './routes/widget'
+import { Route as ShadowRouteImport } from './routes/shadow'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as adminRouteRouteImport } from './routes/(admin)/route'
@@ -30,6 +31,11 @@ import { Route as adminCommentsCommentIdRouteImport } from './routes/(admin)/com
 const WidgetRoute = WidgetRouteImport.update({
   id: '/widget',
   path: '/widget',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShadowRoute = ShadowRouteImport.update({
+  id: '/shadow',
+  path: '/shadow',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/shadow': typeof ShadowRoute
   '/widget': typeof WidgetRoute
   '/analytics': typeof adminAnalyticsRoute
   '/customize': typeof adminCustomizeRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/shadow': typeof ShadowRoute
   '/widget': typeof WidgetRoute
   '/analytics': typeof adminAnalyticsRoute
   '/customize': typeof adminCustomizeRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/(admin)': typeof adminRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/shadow': typeof ShadowRoute
   '/widget': typeof WidgetRoute
   '/(admin)/analytics': typeof adminAnalyticsRoute
   '/(admin)/customize': typeof adminCustomizeRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/shadow'
     | '/widget'
     | '/analytics'
     | '/customize'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/shadow'
     | '/widget'
     | '/analytics'
     | '/customize'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/(admin)'
     | '/login'
     | '/register'
+    | '/shadow'
     | '/widget'
     | '/(admin)/analytics'
     | '/(admin)/customize'
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   adminRouteRoute: typeof adminRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ShadowRoute: typeof ShadowRoute
   WidgetRoute: typeof WidgetRoute
   AcceptInvitationInvitationIdRoute: typeof AcceptInvitationInvitationIdRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
@@ -244,6 +257,13 @@ declare module '@tanstack/react-router' {
       path: '/widget'
       fullPath: '/widget'
       preLoaderRoute: typeof WidgetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shadow': {
+      id: '/shadow'
+      path: '/shadow'
+      fullPath: '/shadow'
+      preLoaderRoute: typeof ShadowRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -396,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   adminRouteRoute: adminRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ShadowRoute: ShadowRoute,
   WidgetRoute: WidgetRoute,
   AcceptInvitationInvitationIdRoute: AcceptInvitationInvitationIdRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,

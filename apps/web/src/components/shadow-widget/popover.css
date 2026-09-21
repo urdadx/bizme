@@ -1,0 +1,107 @@
+.bizme-popover {
+  position: relative;
+  display: inline-block;
+}
+
+.bizme-popover > summary {
+  list-style: none;
+}
+
+.bizme-popover > summary::-webkit-details-marker {
+  display: none;
+}
+
+.bizme-popover__content {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  width: 288px;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  color: var(--bizme-text, #191b20);
+  font-family: var(--bizme-font, Inter, ui-sans-serif, system-ui, sans-serif);
+  font-size: 14px;
+  background: var(--bizme-surface, #ffffff);
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgb(16 24 40 / 12%);
+  outline: 1px solid color-mix(in srgb, var(--bizme-text, #191b20) 10%, transparent);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+
+.bizme-popover[open] > .bizme-popover__content {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.bizme-popover__content--compact {
+  width: 150px;
+  gap: 2px;
+  padding: 4px;
+}
+
+.bizme-popover__header {
+  display: grid;
+  gap: 4px;
+}
+
+.bizme-popover__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.bizme-popover__description {
+  margin: 0;
+  color: var(--bizme-muted, #717784);
+  font-size: 13px;
+}
+
+.bizme-popover__item {
+  display: flex;
+  width: 100%;
+  height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  color: var(--bizme-text, #191b20);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.bizme-popover__item svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.bizme-popover__item:hover,
+.bizme-popover__item:focus-visible {
+  background: var(--bizme-surface-soft, #f6f7f9);
+  outline: 0;
+}
+
+.bizme-popover__item--danger {
+  color: var(--bizme-danger, #c9362b);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bizme-popover__content {
+    transition: none;
+  }
+}

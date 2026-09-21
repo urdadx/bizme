@@ -39,7 +39,8 @@ const previewComments: PreviewComment[] = [
 ];
 
 const composerPlaceholders = [
-  "What's on your mind...",
+  "Join the conversation...",
+  "What's on your mind?",
   "Is this free and opensource?",
   "How can I get started!",
 ] as const;
