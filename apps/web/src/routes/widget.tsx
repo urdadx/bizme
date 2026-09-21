@@ -17,19 +17,13 @@ import { GalleryLinear } from "@/assets/icons/gallery-icon";
 import { GoogleSVG } from "@/assets/icons/google-svg";
 import { LikeIcon } from "@/assets/icons/like-icon";
 import { TrashBinLinear } from "@/assets/icons/trash-icon";
+import { CommentReplyThread } from "@/components/comments/comment-reply-thread";
 import LoadingDots from "@/components/loading-dots";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CommentImageDialog } from "@/components/widget/comment-image-dialog";
-import {
-  createEmbedApi,
-  FetchJsonError,
-  type ColorScheme,
-} from "@/components/widget/embed-api";
-import {
-  useWidgetCommentContext,
-  WidgetCommentProvider,
-} from "@/components/widget/widget-context";
+import { createEmbedApi, FetchJsonError, type ColorScheme } from "@/components/widget/embed-api";
+import { useWidgetCommentContext, WidgetCommentProvider } from "@/components/widget/widget-context";
 import {
   createCommentListKey,
   prependComment,
@@ -98,10 +92,7 @@ function resolveColorScheme(
     return hostColorScheme;
   }
 
-  if (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  ) {
+  if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
     return "dark";
   }
 
@@ -186,13 +177,7 @@ function useObjectUrls(files: File[]) {
 
 function SolarInboxUnreadLinear(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="1em"
-      height="1em"
-      viewBox="0 0 24 24"
-      {...props}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>
       <g fill="none" stroke="currentColor" strokeWidth="1.5">
         <path
           strokeLinecap="round"
@@ -265,20 +250,13 @@ function WidgetRoute() {
       return embedApi.getConfig(search.installKey);
     },
   });
-  const brandColor =
-    configQuery.data?.customization?.brandColor ?? DEFAULT_BRAND_COLOR;
-  const textColor =
-    configQuery.data?.customization?.textColor ?? DEFAULT_TEXT_COLOR;
-  const colorSchemePreference =
-    configQuery.data?.customization?.colorScheme ?? "system";
-  const allowAnonymousComments =
-    configQuery.data?.settings?.allowAnonymousComments ?? false;
+  const brandColor = configQuery.data?.customization?.brandColor ?? DEFAULT_BRAND_COLOR;
+  const textColor = configQuery.data?.customization?.textColor ?? DEFAULT_TEXT_COLOR;
+  const colorSchemePreference = configQuery.data?.customization?.colorScheme ?? "system";
+  const allowAnonymousComments = configQuery.data?.settings?.allowAnonymousComments ?? false;
   const activeProvider: AuthProvider | null =
     provider ?? (allowAnonymousComments ? "anonymous" : null);
-  const resolvedColorScheme = resolveColorScheme(
-    colorSchemePreference,
-    hostColorScheme,
-  );
+  const resolvedColorScheme = resolveColorScheme(colorSchemePreference, hostColorScheme);
 
   useEffect(() => {
     const target = widgetRootRef.current;
@@ -323,13 +301,8 @@ function WidgetRoute() {
       }
 
       if (data?.type === "bizme:viewport") {
-        if (
-          typeof data.iframeTop === "number" &&
-          typeof data.viewportHeight === "number"
-        ) {
-          setDialogTop(
-            `${Math.max(24, data.viewportHeight / 2 - data.iframeTop)}px`,
-          );
+        if (typeof data.iframeTop === "number" && typeof data.viewportHeight === "number") {
+          setDialogTop(`${Math.max(24, data.viewportHeight / 2 - data.iframeTop)}px`);
         }
         return;
       }
@@ -344,16 +317,12 @@ function WidgetRoute() {
 
       void loadAuthSession()
         .then((session) => {
-          setStatusMessage(
-            session ? `Commenting as ${session.name}.` : "Login completed.",
-          );
+          setStatusMessage(session ? `Commenting as ${session.name}.` : "Login completed.");
         })
         .catch((error) => {
           setProvider(null);
           setStatusMessage(
-            error instanceof Error
-              ? error.message
-              : "Unable to load login session.",
+            error instanceof Error ? error.message : "Unable to load login session.",
           );
         });
     }
@@ -390,10 +359,7 @@ function WidgetRoute() {
         pageUrl,
         limit: COMMENTS_PAGE_SIZE,
         offset: pageParam,
-        visitorId:
-          activeProvider === "anonymous"
-            ? (visitorIdRef.current ?? undefined)
-            : undefined,
+        visitorId: activeProvider === "anonymous" ? (visitorIdRef.current ?? undefined) : undefined,
         authorProvider: activeProvider ?? undefined,
       });
     },
@@ -490,11 +456,7 @@ function WidgetRoute() {
     if (search.installKey) url.searchParams.set("installKey", search.installKey);
     url.searchParams.set("pageUrl", pageUrl);
 
-    window.open(
-      url.toString(),
-      "bizme-auth",
-      "popup=yes,width=520,height=640",
-    );
+    window.open(url.toString(), "bizme-auth", "popup=yes,width=520,height=640");
   };
 
   const handleSubmit = async () => {
@@ -533,13 +495,9 @@ function WidgetRoute() {
         throw new Error("Comment endpoint did not return a comment.");
       }
 
-      const attachments = await uploadCommentImages(
-        response.comment.id,
-        selectedFiles,
-        {
-          visitorId: anonymousVisitorId,
-        },
-      );
+      const attachments = await uploadCommentImages(response.comment.id, selectedFiles, {
+        visitorId: anonymousVisitorId,
+      });
       const createdComment = {
         ...response.comment,
         attachments,
@@ -558,9 +516,7 @@ function WidgetRoute() {
         return;
       }
 
-      setStatusMessage(
-        error instanceof Error ? error.message : "Unable to submit comment.",
-      );
+      setStatusMessage(error instanceof Error ? error.message : "Unable to submit comment.");
     } finally {
       setIsSubmitting(false);
     }
@@ -570,17 +526,12 @@ function WidgetRoute() {
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      setFiles((current) => [
-        ...current,
-        ...Array.from(event.target.files ?? []),
-      ]);
+      setFiles((current) => [...current, ...Array.from(event.target.files ?? [])]);
     }
   };
 
   const handleRemoveFile = (index: number) => {
-    setFiles((current) =>
-      current.filter((_, itemIndex) => itemIndex !== index),
-    );
+    setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
 
     if (uploadInputRef.current) {
       uploadInputRef.current.value = "";
@@ -667,25 +618,18 @@ function WidgetRoute() {
                   className="hidden"
                   id="bizme-file-upload"
                 />
-                <GalleryLinear
-                  color={brandColor}
-                  className="size-5 text-primary"
-                />
+                <GalleryLinear color={brandColor} className="size-5 text-primary" />
               </label>
             </PromptInputAction>
 
-            <PromptInputAction
-              tooltip={activeProvider ? "Submit comment" : "Login to comment"}
-            >
+            <PromptInputAction tooltip={activeProvider ? "Submit comment" : "Login to comment"}>
               <Button
                 variant="default"
                 size="sm"
                 className="min-w-25 text-white hover:text-white"
                 style={{ backgroundColor: brandColor }}
                 onClick={handleSubmit}
-                disabled={
-                  isSubmitting || Boolean(activeProvider && input.trim().length === 0)
-                }
+                disabled={isSubmitting || Boolean(activeProvider && input.trim().length === 0)}
               >
                 {isSubmitting ? (
                   <LoadingDots color="#fff" />
@@ -731,7 +675,6 @@ function WidgetRoute() {
           />
         </WidgetCommentProvider>
       </div>
-
     </div>
   );
 }
@@ -742,50 +685,31 @@ function CommentList({
   isFetchingNextPage,
   hasNextPage,
   loadMoreRef,
-  isChildList = false,
 }: {
   listKey: string;
   isLoading?: boolean;
   isFetchingNextPage?: boolean;
   hasNextPage?: boolean;
   loadMoreRef?: RefObject<HTMLDivElement | null>;
-  isChildList?: boolean;
 }) {
   const commentIds = useCommentIds(listKey);
 
   return (
-    <div
-      className={
-        isChildList
-          ? "mt-4 flex flex-col gap-4"
-          : "flex flex-col rounded-lg border bg-background p-4"
-      }
-    >
+    <div className="flex flex-col rounded-lg border bg-background p-4">
       {isLoading ? (
-        <div className="py-4 text-sm text-center text-muted-foreground">
-          Loading comments...
-        </div>
+        <div className="py-4 text-sm text-center text-muted-foreground">Loading comments...</div>
       ) : null}
-      {!isChildList && !isLoading && commentIds.length === 0 ? (
+      {!isLoading && commentIds.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-6 text-center text-muted-foreground">
           <SolarInboxUnreadLinear className="size-10" />
           <p className="text-sm">No comments yet. Start the conversation.</p>
         </div>
       ) : null}
       {!isLoading
-        ? commentIds.map((commentId) => (
-            <CommentCard
-              key={commentId}
-              commentId={commentId}
-              isChild={isChildList}
-            />
-          ))
+        ? commentIds.map((commentId) => <CommentCard key={commentId} commentId={commentId} />)
         : null}
-      {!isChildList && !isLoading && commentIds.length > 0 ? (
-        <div
-          ref={loadMoreRef}
-          className="py-3 text-center text-xs text-muted-foreground"
-        >
+      {!isLoading && commentIds.length > 0 ? (
+        <div ref={loadMoreRef} className="py-3 text-center text-xs text-muted-foreground">
           {isFetchingNextPage
             ? "Loading more comments..."
             : hasNextPage
@@ -797,13 +721,7 @@ function CommentList({
   );
 }
 
-function CommentCard({
-  commentId,
-  isChild = false,
-}: {
-  commentId: string;
-  isChild?: boolean;
-}) {
+function CommentCard({ commentId, isChild = false }: { commentId: string; isChild?: boolean }) {
   const comment = useComment(commentId);
   const {
     brandColor,
@@ -837,23 +755,11 @@ function CommentCard({
   const isLoadingReplies = loadingRepliesCommentId === comment.id;
 
   return (
-    <div
-      className={
-        isChild
-          ? "relative flex gap-3"
-          : "border-b py-4 first:pt-0 last:border-b-0"
-      }
-    >
+    <div className={isChild ? "relative py-2" : "border-b py-4 first:pt-0 last:border-b-0"}>
       <div className="relative w-full">
-        {replyIds.length > 0 ? (
-          <div className="absolute top-10 bottom-5 left-5 w-px bg-border" />
-        ) : null}
-
         <div className="relative flex gap-3">
           <Avatar size="lg">
-            {comment.avatar ? (
-              <AvatarImage src={comment.avatar} alt={comment.author} />
-            ) : null}
+            {comment.avatar ? <AvatarImage src={comment.avatar} alt={comment.author} /> : null}
             <AvatarFallback>{getInitials(comment.author)}</AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
@@ -863,9 +769,7 @@ function CommentCard({
                   <h3 className="truncate font-sans text-sm font-semibold text-foreground">
                     {comment.author}
                   </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {comment.date}
-                  </span>
+                  <span className="text-xs text-muted-foreground">{comment.date}</span>
                   {comment.isPinned ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       <PinIcon className="size-3 fill-current" />
@@ -877,9 +781,7 @@ function CommentCard({
                   <div className="mt-2 space-y-2">
                     <textarea
                       value={editingBody}
-                      onChange={(event) =>
-                        onEditingBodyChange(event.target.value)
-                      }
+                      onChange={(event) => onEditingBodyChange(event.target.value)}
                       aria-label="Edit comment"
                       className="min-h-20 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     />
@@ -894,11 +796,7 @@ function CommentCard({
                       >
                         Save
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={onCancelEdit}
-                      >
+                      <Button variant="outline" size="sm" onClick={onCancelEdit}>
                         Cancel
                       </Button>
                     </div>
@@ -911,10 +809,7 @@ function CommentCard({
                     {comment.attachments.length > 0 ? (
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {comment.attachments.map((attachment) => (
-                          <CommentImageDialog
-                            key={attachment.id}
-                            image={attachment}
-                          />
+                          <CommentImageDialog key={attachment.id} image={attachment} />
                         ))}
                       </div>
                     ) : null}
@@ -923,10 +818,7 @@ function CommentCard({
               </div>
 
               {isEditing ? null : (
-                <CommentMenu
-                  onEdit={() => onEdit(comment)}
-                  onDelete={() => onDelete(comment)}
-                />
+                <CommentMenu onEdit={() => onEdit(comment)} onDelete={() => onDelete(comment)} />
               )}
             </div>
 
@@ -935,11 +827,7 @@ function CommentCard({
                 <LikeIcon color={brandColor} />
                 <span className="ml-1 text-[#888888]">{comment.likes}</span>
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onReply(comment)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => onReply(comment)}>
                 <ChatLinear color={brandColor} />
                 <span className="ml-1 text-[#888888]">{comment.replies}</span>
               </Button>
@@ -964,12 +852,7 @@ function CommentCard({
                   >
                     {isReplying ? <LoadingDots color="#fff" /> : "Reply"}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onCancelReply}
-                    disabled={isReplying}
-                  >
+                  <Button variant="outline" size="sm" onClick={onCancelReply} disabled={isReplying}>
                     Cancel
                   </Button>
                 </div>
@@ -992,7 +875,11 @@ function CommentCard({
         </div>
 
         {replyIds.length > 0 ? (
-          <CommentList listKey={replyListKey} isChildList />
+          <CommentReplyThread>
+            {replyIds.map((replyId) => (
+              <CommentCard key={replyId} commentId={replyId} isChild />
+            ))}
+          </CommentReplyThread>
         ) : null}
       </div>
     </div>
