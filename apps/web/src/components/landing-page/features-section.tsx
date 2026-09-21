@@ -15,13 +15,13 @@ export default function Features() {
             </span>{" "}
             features for your blog
           </h2>
-          <p className="text-pretty text-lg text-neutral-500">
+          <p className="text-pretty text-md sm:text-lg text-neutral-500">
             Enhance your content with our comprehensive features, designed to provide a seamless and
             engaging experience for your audience.
           </p>
         </div>
-        <div className="mx-auto mt-14 grid w-full max-w-5xl grid-cols-1 sm:grid-cols-2 sm:px-4">
-          <div className="contents divide-neutral-200 max-sm:divide-y sm:divide-x">
+        <div className="mx-auto mt-2 sm:mt-14 grid w-full max-w-5xl grid-cols-1 sm:grid-cols-2 sm:px-4">
+          <div className="contents  divide-neutral-200 max-sm:divide-y sm:divide-x">
             <FeatureCard
               title="Live comments from your audience"
               description="Receive comments from your audience and engage with them in real-time"

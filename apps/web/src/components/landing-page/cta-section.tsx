@@ -38,6 +38,12 @@ const previewComments: PreviewComment[] = [
   },
 ];
 
+const composerPlaceholders = [
+  "What's on your mind...",
+  "Is this free and opensource?",
+  "How can I get started!",
+] as const;
+
 export const CTASession = () => {
   return (
     <section>
@@ -63,7 +69,10 @@ export const CTASession = () => {
           <div className="relative overflow-visible rounded-xl border bg-gray-50 p-1 sm:p-1.5 shadow-sm ring-muted ">
             <div className="rounded-lg border bg-white p-4 sm:p-6">
               <div className="flex flex-col gap-6">
-                <CommentComposer uploadId="landing-comment-file-upload" />
+                <CommentComposer
+                  uploadId="landing-comment-file-upload"
+                  animatedPlaceholders={composerPlaceholders}
+                />
                 <div className=" flex-col hidden sm:flex">
                   {previewComments.map((comment) => (
                     <PreviewCommentItem key={comment.id} comment={comment} />
