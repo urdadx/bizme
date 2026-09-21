@@ -12,9 +12,9 @@ export function Setup() {
               3 easy steps
             </span>{" "}
           </h2>
-          <p className="text-pretty text-lg text-neutral-500">
-            Add Bizme comments to your website in minutes. Create your site, install the script, and
-            start receiving comments.
+          <p className="text-pretty text-md sm:text-lg text-neutral-500">
+            Add Bizme to your website in minutes. Create your site, install the script, and
+            start engaging.
           </p>
         </div>
         <div className="mt-8 grid grid-cols-1 gap-10 pt-4 sm:mt-14 md:grid-cols-3 md:gap-6 lg:gap-8">

@@ -87,11 +87,10 @@ export function LandingShare() {
                   Add Bizme with one script tag
                 </div>
                 <p className="mt-1 text-xs text-neutral-500">
-                  Paste the embed snippet into your site to load your comment
-                  section.
+                  Paste the embed snippet into your site
                 </p>
               </div>
-              <div className="rounded-lg border bg-muted px-3 py-2 text-left font-mono text-xs text-neutral-600">
+              <div className="rounded-lg border bg-black text-white px-3 py-2 text-left font-mono text-xs">
                 {
                   '<script src="https://cdn.bizme.com/widget.js" data-site-id="bzm_8x4k2" async></script>'
                 }
@@ -102,13 +101,11 @@ export function LandingShare() {
             <div className="flex justify-center items-center"></div>
             <div className="space-y-2 pt-3 text-center">
               <div className="text-sm font-medium  text-neutral-900">
-                Install your framework integration
+                Install for your framework
               </div>
-              <p className="text-xs text-neutral-500">
-                Use Bizme with your favorite JavaScript framework.
-              </p>
+
             </div>
-            <div className="flex flex-wrap justify-center gap-4 pt-5">
+            <div className="flex flex-wrap justify-center gap-4 pt-8">
               {frameworks.map((framework) => (
                 <div
                   key={framework.id}
@@ -122,7 +119,7 @@ export function LandingShare() {
                     className={cn(
                       "h-12 w-12 rounded-full hover:bg-gray-100",
                       selectedCommand === framework.command &&
-                        "border-primary bg-primary/5",
+                      "border-primary border-2 bg-primary/5",
                     )}
                   >
                     <framework.icon className="size-6" />
