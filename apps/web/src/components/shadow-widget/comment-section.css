@@ -28,6 +28,7 @@
 
 .bizme-comments__title {
   margin: 0;
+  color: var(--bizme-comments-text);
   font-size: 16px;
   font-weight: 600;
 }
@@ -283,7 +284,7 @@
   width: 34px;
   height: 34px;
   margin: 0 auto 12px;
-  color: var(--bizme-comments-muted);
+  color: var(--bizme-comments-accent);
 }
 
 .bizme-comments__state-copy {

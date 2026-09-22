@@ -5,7 +5,8 @@
 
 .bizme-widget {
   --bizme-font: Inter, ui-sans-serif, system-ui, sans-serif;
-  width: 100%;
+  width: min(100%, 640px);
+  margin-inline: auto;
 }
 
 .bizme-widget__body {

@@ -57,6 +57,7 @@
   resize: none;
   overflow-y: auto;
   color: var(--bizme-composer-text);
+  -webkit-text-fill-color: var(--bizme-composer-text);
   font: inherit;
   line-height: 1.65;
   background: transparent;
@@ -66,6 +67,7 @@
 
 .bizme-composer__textarea::placeholder {
   color: var(--bizme-composer-muted);
+  -webkit-text-fill-color: var(--bizme-composer-muted);
   opacity: 0.78;
 }
 
