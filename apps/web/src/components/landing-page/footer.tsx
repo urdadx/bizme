@@ -29,7 +29,7 @@ const links = [
 
 export function FooterSection() {
   return (
-    <footer className="relative overflow-hidden border-y py-16 md:py-32">
+    <footer className="relative overflow-hidden py-16 md:py-32">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-70"

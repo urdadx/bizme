@@ -61,10 +61,10 @@ export const CTASession = () => {
       />
       <div className="absolute inset-0 flex overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)]">
         <div className="relative -mr-px w-1/2 [mask-image:linear-gradient(to_right,black_55%,transparent_100%)]">
-          <DitherGradient from="blue" direction="left" cell={5} opacity={0.04} />
+          <DitherGradient from="blue" direction="left" cell={5} opacity={0.07} />
         </div>
         <div className="relative -ml-px w-1/2 [mask-image:linear-gradient(to_left,black_55%,transparent_100%)]">
-          <DitherGradient from="blue" direction="right" cell={5} opacity={0.04} />
+          <DitherGradient from="blue" direction="right" cell={5} opacity={0.07} />
         </div>
       </div>
       <div className="relative pt-16 md:pt-24">

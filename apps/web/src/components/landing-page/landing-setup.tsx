@@ -31,15 +31,12 @@ export function Setup() {
                 <DitherGradient from="red" direction="right" cell={4} opacity={0.8} />
                 <DitherGradient from="red" direction="left" cell={4} opacity={0.18} />
                 <div className="relative flex h-28 w-full max-w-62.5 items-center rounded-xl border bg-white px-4 shadow-sm">
-                  <div className="flex items-center justify-center">
+                  <div className="w-full flex items-center justify-between">
                     <div className="relative z-1 flex size-12 shrink-0 items-center justify-center rounded-full border bg-white shadow-xs">
                       <RiGlobalLine className="size-6 text-gray-600" />
                     </div>
-                    <div className="relative h-px w-20 bg-blue-200">
-                      <span className="setup-data-trail absolute -top-px left-0 h-0.5 w-1.5 rounded-full bg-blue-500" />
-                      <span className="setup-data-trail absolute -top-px left-0 h-0.5 w-1.5 rounded-full bg-blue-500 [animation-delay:0.14s]" />
-                      <span className="setup-data-trail absolute -top-px left-0 h-0.5 w-1.5 rounded-full bg-blue-400 [animation-delay:0.28s]" />
-                      <span className="setup-data-trail absolute -top-px left-0 h-0.5 w-1.5 rounded-full bg-blue-300 [animation-delay:0.42s]" />
+                    <div className="relative h-0.5 w-full overflow-hidden">
+                      <span className="setup-data-trail absolute inset-0" />
                     </div>
                     <div className="relative z-1 flex size-12 shrink-0 items-center justify-center rounded-full border bg-white shadow-xs">
                       <BrandLogo className="size-8" />

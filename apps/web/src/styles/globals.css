@@ -199,24 +199,21 @@ body:has(.bizme-widget.dark) {
 }
 
 @keyframes setup-data-flow {
-  0% {
-    opacity: 0;
-    transform: translateX(0) scale(0.7);
-  }
-  15% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(4.625rem) scale(1);
+  to {
+    background-position-x: 1rem;
   }
 }
 
 .setup-data-trail {
-  animation: setup-data-flow 0.7s linear infinite;
+  background-image: repeating-linear-gradient(
+    to right,
+    color-mix(in oklab, var(--primary) 45%, transparent) 0,
+    color-mix(in oklab, var(--primary) 45%, transparent) 0.4rem,
+    transparent 0.4rem,
+    transparent 1rem
+  );
+  background-position-x: 0;
+  animation: setup-data-flow 0.35s linear infinite;
 }
 
 @keyframes setup-chat-typing {
