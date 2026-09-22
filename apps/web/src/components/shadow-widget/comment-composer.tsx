@@ -1,33 +1,47 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 
 import "./comment-composer.css";
+import { ImageIcon, XIcon } from "./icons";
 
 type ComposerAttachment = {
   id: string;
   name: string;
   url: string;
   revokeOnRemove: boolean;
+  file?: File;
 };
 
 type ShadowCommentComposerProps = {
   defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
   disabled?: boolean;
   isSubmitting?: boolean;
+  compact?: boolean;
   previewAttachments?: { name: string; url: string }[];
-  submitLabel?: "Comment" | "Reply";
+  submitLabel?: ReactNode;
+  onSubmit?: (value: string, files: File[]) => Promise<void> | void;
+  onFilesChange?: (files: File[]) => void;
+  hideAttachments?: boolean;
 };
 
 export function ShadowCommentComposer({
   defaultValue = "",
+  value: controlledValue,
+  onValueChange,
   disabled = false,
   isSubmitting = false,
+  compact = false,
   previewAttachments = [],
   submitLabel = "Comment",
+  onSubmit,
+  onFilesChange,
+  hideAttachments = false,
 }: ShadowCommentComposerProps) {
   const inputId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const objectUrlsRef = useRef(new Set<string>());
-  const [value, setValue] = useState(defaultValue);
+  const [internalValue, setInternalValue] = useState(defaultValue);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [attachments, setAttachments] = useState<ComposerAttachment[]>(() =>
@@ -37,6 +51,10 @@ export function ShadowCommentComposer({
       revokeOnRemove: false,
     })),
   );
+  const [files, setFiles] = useState<File[]>([]);
+
+  const value = controlledValue ?? internalValue;
+  const isControlled = controlledValue !== undefined;
 
   useEffect(() => {
     const objectUrls = objectUrlsRef.current;
@@ -45,6 +63,10 @@ export function ShadowCommentComposer({
     };
   }, []);
 
+  useEffect(() => {
+    onFilesChange?.(files);
+  }, [files, onFilesChange]);
+
   function resizeTextarea() {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -52,10 +74,19 @@ export function ShadowCommentComposer({
     textarea.style.height = `${Math.min(textarea.scrollHeight, 220)}px`;
   }
 
-  function addFiles(files: File[]) {
-    const images = files.filter((file) => file.type.startsWith("image/"));
+  function updateValue(nextValue: string) {
+    if (isControlled) {
+      onValueChange?.(nextValue);
+    } else {
+      setInternalValue(nextValue);
+    }
+    resizeTextarea();
+  }
 
-    setError(images.length === files.length ? null : "Only image attachments are supported.");
+  function addFiles(nextFiles: File[]) {
+    const images = nextFiles.filter((file) => file.type.startsWith("image/"));
+
+    setError(images.length === nextFiles.length ? null : "Only image attachments are supported.");
     const newAttachments = images.map((file) => {
       const url = URL.createObjectURL(file);
       objectUrlsRef.current.add(url);
@@ -64,9 +95,11 @@ export function ShadowCommentComposer({
         name: file.name,
         url,
         revokeOnRemove: true,
+        file,
       };
     });
     setAttachments((current) => [...current, ...newAttachments]);
+    setFiles((current) => [...current, ...images]);
   }
 
   function handleFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -75,9 +108,17 @@ export function ShadowCommentComposer({
   }
 
   function removeAttachment(id: string) {
+    const target = attachments.find((item) => item.id === id);
+
+    if (target?.file) {
+      setFiles((current) => current.filter((file) => file !== target.file));
+    }
+
     setAttachments((current) => {
-      const attachment = current.find((item) => item.id === id);
-      if (attachment?.revokeOnRemove) {
+      const index = current.findIndex((item) => item.id === id);
+      if (index === -1) return current;
+      const attachment = current[index];
+      if (attachment.revokeOnRemove) {
         URL.revokeObjectURL(attachment.url);
         objectUrlsRef.current.delete(attachment.url);
       }
@@ -85,15 +126,44 @@ export function ShadowCommentComposer({
     });
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function clearTransientAttachments() {
+    setAttachments((current) =>
+      current.filter((attachment) => {
+        if (attachment.revokeOnRemove) {
+          URL.revokeObjectURL(attachment.url);
+          objectUrlsRef.current.delete(attachment.url);
+        }
+        return !attachment.revokeOnRemove;
+      }),
+    );
+    setFiles([]);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!value.trim() || disabled || isSubmitting) return;
-    setValue("");
+    const body = value.trim();
+    if (!body || disabled || isSubmitting) return;
+
+    if (onSubmit) {
+      try {
+        await onSubmit(body, files);
+      } catch {
+        return;
+      }
+      if (!isControlled) setInternalValue("");
+      clearTransientAttachments();
+      resizeTextarea();
+      return;
+    }
+
+    updateValue("");
+    clearTransientAttachments();
+    resizeTextarea();
   }
 
   return (
     <form
-      className={`bizme-composer${disabled ? " bizme-composer--disabled" : ""}`}
+      className={`bizme-composer${compact ? " bizme-composer--compact" : ""}${disabled ? " bizme-composer--disabled" : ""}`}
       onSubmit={handleSubmit}
     >
       <div
@@ -113,17 +183,15 @@ export function ShadowCommentComposer({
         onDrop={(event) => {
           event.preventDefault();
           setIsDragging(false);
-          if (!disabled && !isSubmitting) addFiles(Array.from(event.dataTransfer.files));
+          if (!disabled && !isSubmitting && !hideAttachments)
+            addFiles(Array.from(event.dataTransfer.files));
         }}
       >
         <textarea
           ref={textareaRef}
           className="bizme-composer__textarea"
           value={value}
-          onChange={(event) => {
-            setValue(event.target.value);
-            resizeTextarea();
-          }}
+          onChange={(event) => updateValue(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
               event.preventDefault();
@@ -136,7 +204,7 @@ export function ShadowCommentComposer({
           rows={1}
         />
 
-        {attachments.length > 0 ? (
+        {attachments.length > 0 && !hideAttachments ? (
           <ul className="bizme-composer__attachments" aria-label="Attachments">
             {attachments.map((attachment) => (
               <li className="bizme-composer__attachment" key={attachment.id}>
@@ -148,7 +216,7 @@ export function ShadowCommentComposer({
                   onClick={() => removeAttachment(attachment.id)}
                   aria-label={`Remove ${attachment.name}`}
                 >
-                  <XIcon />
+                  <XIcon className="bizme-composer__icon" />
                 </button>
               </li>
             ))}
@@ -159,23 +227,27 @@ export function ShadowCommentComposer({
 
         <div className="bizme-composer__toolbar">
           <div className="bizme-composer__tools">
-            <input
-              id={inputId}
-              className="bizme-composer__file-input"
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleFiles}
-              disabled={disabled || isSubmitting}
-            />
-            <label
-              className="bizme-composer__icon-button"
-              htmlFor={inputId}
-              title="Attach images"
-              aria-label="Attach images"
-            >
-              <ImageIcon />
-            </label>
+            {!hideAttachments ? (
+              <>
+                <input
+                  id={inputId}
+                  className="bizme-composer__file-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFiles}
+                  disabled={disabled || isSubmitting}
+                />
+                <label
+                  className="bizme-composer__icon-button"
+                  htmlFor={inputId}
+                  title="Attach images"
+                  aria-label="Attach images"
+                >
+                  <ImageIcon className="bizme-composer__icon" />
+                </label>
+              </>
+            ) : null}
           </div>
 
           <button
@@ -195,24 +267,5 @@ export function ShadowCommentComposer({
         </div>
       </div>
     </form>
-  );
-}
-
-function ImageIcon() {
-  return (
-    <svg className="bizme-composer__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <g stroke="currentColor" strokeLinecap="round" strokeWidth="1.5">
-        <path d="M22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12s0-7.071 1.464-8.536C4.93 2 7.286 2 12 2" />
-        <path d="m2 12.5 1.752-1.533a2.3 2.3 0 0 1 3.14.105l4.29 4.29a2 2 0 0 0 2.564.222l.299-.21a3 3 0 0 1 3.731.225L21 18.5m-6-13h3.5m0 0H22m-3.5 0V9m0-3.5V2" />
-      </g>
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg className="bizme-composer__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path d="m8 8 8 8m0-8-8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
   );
 }

@@ -320,71 +320,7 @@ export function CommentsTable() {
           </Select>
         </div>
       </div>
-      <div className="space-y-3 md:hidden">
-        {areCommentsPending ? (
-          <div className="flex min-h-28 items-center justify-center rounded-xl border">
-            <Loader />
-          </div>
-        ) : table.getRowModel().rows.length === 0 ? (
-          <div className="flex min-h-28 items-center justify-center rounded-xl border px-4 text-center text-sm text-muted-foreground">
-            {data.length === 0 ? "No comments yet." : "No comments match your filters."}
-          </div>
-        ) : (
-          table.getRowModel().rows.map((row) => (
-            <article key={row.id} className="rounded-xl border p-4">
-              <div className="flex min-w-0 items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Avatar size="sm">
-                    <AvatarImage src={row.original.avatar} alt={row.original.commenter} />
-                    <AvatarFallback>
-                      {row.original.commenter.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{row.original.commenter}</p>
-                    <p className="truncate text-xs text-muted-foreground">{row.original.page}</p>
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={<Button variant="outline" size="icon-sm" aria-label="Open actions" />}
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40 min-w-40">
-                    <DropdownMenuItem
-                      render={
-                        <Link to="/comments/$commentId" params={{ commentId: row.original.id }} />
-                      }
-                    >
-                      <EyeLinear />
-                      View details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={deleteComment.isPending}
-                      className="text-red-500"
-                      onClick={() => setDeleteTargetId(row.original.id)}
-                    >
-                      <TrashLines color="red" />
-                      Delete comment
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <p className="mt-3 line-clamp-3 break-words text-sm text-muted-foreground">
-                {row.original.preview}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span>{row.original.likes} likes</span>
-                <span>{row.original.replies} replies</span>
-                <span className="sm:ml-auto">{row.original.lastActivity}</span>
-              </div>
-            </article>
-          ))
-        )}
-      </div>
-
-      <div className="hidden overflow-hidden rounded-xl border md:block">
+      <div className="w-full min-w-0 rounded-xl border">
         <Table>
           <TableHeader className="bg-gray-50">
             {table.getHeaderGroups().map((headerGroup) => (

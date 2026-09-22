@@ -16,8 +16,9 @@ export function ShadowPopover({
   useEffect(() => {
     function close(event: PointerEvent | KeyboardEvent) {
       if (event instanceof KeyboardEvent && event.key !== "Escape") return;
-      if (event instanceof PointerEvent && detailsRef.current?.contains(event.target as Node))
-        return;
+      if (event instanceof PointerEvent && detailsRef.current) {
+        if (event.composedPath().includes(detailsRef.current)) return;
+      }
       detailsRef.current?.removeAttribute("open");
     }
 

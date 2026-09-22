@@ -1,0 +1,6 @@
+import type { SVGProps } from "react"
+export function HugeExternalIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" {...props}>{/* Icon from Huge Icons by Hugeicons - undefined */}<path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M11.1 3c-3.65.007-5.56.096-6.782 1.318C3 5.636 3 7.757 3 12c0 4.242 0 6.364 1.318 7.682S7.757 21 12 21s6.363 0 7.68-1.318c1.222-1.221 1.312-3.133 1.318-6.782m-.442-9.404l-9.507 9.563m9.507-9.563c-.494-.494-3.822-.448-4.525-.438m4.525.438c.494.495.448 3.827.438 4.531" /></svg>
+  )
+}

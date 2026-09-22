@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "pnpm --filter @better-comments/comment-widget build",
+    "prebuild": "pnpm --filter @better-comments/comment-widget build && pnpm build:embed",
     "build": "vite build",
+    "build:embed": "vite build --config vite.embed.config.ts && node scripts/copy-embed.mjs",
     "serve": "vite preview",
     "dev": "vite dev"
   },

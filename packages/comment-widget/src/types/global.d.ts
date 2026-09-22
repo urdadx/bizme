@@ -18,8 +18,22 @@ export interface BizmeGlobal {
   q?: BizmeQueuedCall[];
 }
 
+export interface BizmeWidgetMountOptions {
+  installKey: string;
+  apiUrl: string;
+  pageUrl?: string;
+  pageTitle?: string;
+  hostColorScheme?: "light" | "dark";
+}
+
+export interface BizmeWidgetApi {
+  mount(container: Element, options: BizmeWidgetMountOptions): void;
+  unmount(container: Element): void;
+}
+
 declare global {
   interface Window {
     Bizme?: BizmeGlobal;
+    BizmeWidget?: BizmeWidgetApi;
   }
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { uploadCommentImages } from "@/lib/comment-attachments";
+import { env } from "@better-comments/env/web";
 import { useTRPC } from "@/utils/trpc";
 import { CommentListItem, type CommentReply } from "./comment-list-item";
 
@@ -101,7 +102,10 @@ export function CommentsList({
 		try {
 			setError(null);
 			const reply = await replyComment.mutateAsync({ id, body });
-			await Promise.all([uploadCommentImages(reply.id, images), invalidateDetail()]);
+			await Promise.all([
+				uploadCommentImages(reply.id, images, { baseUrl: env.VITE_SERVER_URL }),
+				invalidateDetail(),
+			]);
 			setReplyingTo(null);
 		} catch (error) {
 			setError(error instanceof Error ? error.message : "Unable to submit reply.");

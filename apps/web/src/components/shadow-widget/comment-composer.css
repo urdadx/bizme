@@ -238,6 +238,16 @@
   opacity: 0.64;
 }
 
+.bizme-composer--compact .bizme-composer__shell {
+  min-height: 66px;
+  padding: 9px 12px;
+  border-radius: 12px;
+}
+
+.bizme-composer--compact .bizme-composer__textarea {
+  min-height: 40px;
+}
+
 @keyframes bizme-composer-spin {
   to {
     transform: rotate(360deg);

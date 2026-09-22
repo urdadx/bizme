@@ -1,14 +1,14 @@
 (function() {
 	//#region src/sdk.ts
 	const ROOT_ID = "bizme-comments-root";
-	const IFRAME_ID = "bizme-comments-iframe";
 	let root = null;
-	let iframe = null;
-	let onMessage = null;
-	let onViewportChange = null;
+	let mountContainer = null;
 	let themeObserver = null;
 	let themeMediaQuery = null;
 	let themeMediaListener = null;
+	let activeInitOptions = null;
+	let lastHostColorScheme = "light";
+	let embedScriptPromise = null;
 	function inferDefaultServerUrl() {
 		const currentScript = document.currentScript;
 		if (currentScript?.src) return new URL(currentScript.src, window.location.href).origin;
@@ -39,30 +39,16 @@
 		if (cssColorScheme.includes("light") && !cssColorScheme.includes("dark")) return "light";
 		return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 	}
-	function postTheme(initOptions) {
-		iframe?.contentWindow?.postMessage({
-			type: "bizme:theme",
-			colorScheme: getHostColorScheme(initOptions)
-		}, "*");
+	function notifyHostTheme() {
+		if (!activeInitOptions) return;
+		const nextColorScheme = getHostColorScheme(activeInitOptions);
+		if (nextColorScheme === lastHostColorScheme) return;
+		lastHostColorScheme = nextColorScheme;
+		window.dispatchEvent(new CustomEvent("bizme:host-theme", { detail: { colorScheme: nextColorScheme } }));
 	}
-	function postViewport() {
-		if (!iframe) return;
-		const rect = iframe.getBoundingClientRect();
-		iframe.contentWindow?.postMessage({
-			type: "bizme:viewport",
-			iframeTop: rect.top,
-			viewportHeight: window.innerHeight
-		}, "*");
-	}
-	function watchHostEnvironment(initOptions) {
-		const notify = () => {
-			postTheme(initOptions);
-			postViewport();
-		};
-		onViewportChange = () => window.requestAnimationFrame(notify);
-		window.addEventListener("scroll", onViewportChange, { passive: true });
-		window.addEventListener("resize", onViewportChange);
-		themeObserver = new MutationObserver(notify);
+	function watchHostEnvironment() {
+		notifyHostTheme();
+		themeObserver = new MutationObserver(notifyHostTheme);
 		themeObserver.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: [
@@ -84,81 +70,80 @@
 			]
 		});
 		themeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-		themeMediaListener = notify;
+		themeMediaListener = notifyHostTheme;
 		themeMediaQuery.addEventListener("change", themeMediaListener);
-		notify();
 	}
-	function buildWidgetUrl(initOptions) {
+	function loadEmbedBundle(serverUrl) {
+		if (!embedScriptPromise) embedScriptPromise = new Promise((resolve, reject) => {
+			const script = document.createElement("script");
+			script.src = `${serverUrl}/widget-embed.js`;
+			script.async = true;
+			script.onload = () => resolve();
+			script.onerror = () => reject(/* @__PURE__ */ new Error(`Failed to load Bizme widget bundle from ${script.src}`));
+			document.head.appendChild(script);
+		});
+		return embedScriptPromise;
+	}
+	async function mountWidget(initOptions, shadowRoot) {
 		const serverUrl = normalizeUrl(initOptions.serverUrl, inferDefaultServerUrl());
 		const apiUrl = normalizeUrl(initOptions.apiUrl, serverUrl);
-		const url = new URL("/widget", serverUrl);
-		url.searchParams.set("installKey", initOptions.installKey);
-		url.searchParams.set("apiUrl", apiUrl);
-		url.searchParams.set("pageUrl", initOptions.pageUrl ?? window.location.href);
-		url.searchParams.set("pageTitle", initOptions.pageTitle ?? document.title);
-		url.searchParams.set("hostOrigin", window.location.origin);
-		url.searchParams.set("hostColorScheme", getHostColorScheme(initOptions));
-		return url.toString();
-	}
-	function createIframe(initOptions) {
-		const nextRoot = document.createElement("div");
-		const nextIframe = document.createElement("iframe");
-		nextRoot.id = ROOT_ID;
-		nextRoot.style.width = "100%";
-		nextRoot.style.minWidth = "0";
-		nextIframe.id = IFRAME_ID;
-		nextIframe.title = "Bizme comments";
-		nextIframe.src = buildWidgetUrl(initOptions);
-		nextIframe.loading = "lazy";
-		nextIframe.referrerPolicy = "strict-origin-when-cross-origin";
-		nextIframe.style.display = "block";
-		nextIframe.style.width = "100%";
-		nextIframe.style.height = "1px";
-		nextIframe.style.border = "0";
-		nextIframe.style.overflow = "hidden";
-		nextIframe.style.background = "transparent";
-		nextRoot.appendChild(nextIframe);
-		getTarget(initOptions).appendChild(nextRoot);
-		return {
-			nextRoot,
-			nextIframe
-		};
+		const hostColorScheme = getHostColorScheme(initOptions);
+		lastHostColorScheme = hostColorScheme;
+		const styleLink = document.createElement("link");
+		styleLink.rel = "stylesheet";
+		styleLink.href = `${serverUrl}/widget-embed.css`;
+		shadowRoot.appendChild(styleLink);
+		if (!mountContainer) return;
+		try {
+			await loadEmbedBundle(serverUrl);
+		} catch {
+			mountContainer.textContent = "Unable to load comments.";
+			return;
+		}
+		if (!mountContainer) return;
+		window.BizmeWidget?.mount(mountContainer, {
+			installKey: initOptions.installKey,
+			apiUrl,
+			pageUrl: initOptions.pageUrl,
+			pageTitle: initOptions.pageTitle,
+			hostColorScheme
+		});
 	}
 	function init(initOptions) {
 		if (!initOptions.installKey) throw new Error("Bizme init requires installKey");
 		destroy();
-		const dom = createIframe(initOptions);
-		root = dom.nextRoot;
-		iframe = dom.nextIframe;
-		onMessage = (event) => {
-			if (event.source !== iframe?.contentWindow) return;
-			const data = event.data;
-			if (data?.type === "bizme:resize" && typeof data.height === "number") {
-				iframe.style.height = `${Math.max(1, Math.ceil(data.height))}px`;
-				postViewport();
-			}
-		};
-		window.addEventListener("message", onMessage);
-		iframe.addEventListener("load", () => watchHostEnvironment(initOptions), { once: true });
+		activeInitOptions = initOptions;
+		lastHostColorScheme = getHostColorScheme(initOptions);
+		const nextRoot = document.createElement("div");
+		nextRoot.id = ROOT_ID;
+		nextRoot.style.width = "100%";
+		nextRoot.style.minWidth = "0";
+		const nextShadowRoot = nextRoot.attachShadow({ mode: "open" });
+		const nextMountContainer = document.createElement("div");
+		nextMountContainer.style.width = "100%";
+		nextMountContainer.style.minWidth = "0";
+		nextShadowRoot.appendChild(nextMountContainer);
+		mountContainer = nextMountContainer;
+		root = nextRoot;
+		getTarget(initOptions).appendChild(nextRoot);
+		mountWidget(initOptions, nextShadowRoot);
+		watchHostEnvironment();
 	}
 	function destroy() {
-		if (onMessage) {
-			window.removeEventListener("message", onMessage);
-			onMessage = null;
-		}
-		if (onViewportChange) {
-			window.removeEventListener("scroll", onViewportChange);
-			window.removeEventListener("resize", onViewportChange);
-			onViewportChange = null;
+		if (mountContainer) {
+			try {
+				window.BizmeWidget?.unmount(mountContainer);
+			} catch {}
+			mountContainer = null;
 		}
 		themeObserver?.disconnect();
 		themeObserver = null;
 		if (themeMediaQuery && themeMediaListener) themeMediaQuery.removeEventListener("change", themeMediaListener);
 		themeMediaQuery = null;
 		themeMediaListener = null;
+		activeInitOptions = null;
 		root?.remove();
 		root = null;
-		iframe = null;
 	}
 	function open() {
 		root?.removeAttribute("hidden");

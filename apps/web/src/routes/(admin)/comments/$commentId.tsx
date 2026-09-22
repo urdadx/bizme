@@ -6,6 +6,7 @@ import Spinner from "@/components/ui/spinner";
 import { CommentImageDialog } from "@/components/widget/comment-image-dialog";
 import { uploadCommentImages } from "@/lib/comment-attachments";
 import { useTRPC } from "@/utils/trpc";
+import { env } from "@better-comments/env/web";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ChevronsDown, ChevronsUp } from "lucide-react";
@@ -49,7 +50,7 @@ function RouteComponent() {
 	async function handleReply(body: string, _images: File[]) {
 		const reply = await replyComment.mutateAsync({ id: commentId, body });
 		await Promise.all([
-			uploadCommentImages(reply.id, _images),
+			uploadCommentImages(reply.id, _images, { baseUrl: env.VITE_SERVER_URL }),
 			queryClient.invalidateQueries({
 				queryKey: trpc.comments.detail.queryOptions({ id: commentId }).queryKey,
 			}),

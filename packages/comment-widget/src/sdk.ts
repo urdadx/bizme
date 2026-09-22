@@ -19,15 +19,15 @@ type BizmeGlobal = {
 };
 
 const ROOT_ID = "bizme-comments-root";
-const IFRAME_ID = "bizme-comments-iframe";
 
 let root: HTMLDivElement | null = null;
-let iframe: HTMLIFrameElement | null = null;
-let onMessage: ((event: MessageEvent) => void) | null = null;
-let onViewportChange: (() => void) | null = null;
+let mountContainer: HTMLDivElement | null = null;
 let themeObserver: MutationObserver | null = null;
 let themeMediaQuery: MediaQueryList | null = null;
 let themeMediaListener: (() => void) | null = null;
+let activeInitOptions: BizmeInitOptions | null = null;
+let lastHostColorScheme: "light" | "dark" = "light";
+let embedScriptPromise: Promise<void> | null = null;
 
 function inferDefaultServerUrl() {
   const currentScript = document.currentScript as HTMLScriptElement | null;
@@ -93,38 +93,23 @@ function getHostColorScheme(initOptions: BizmeInitOptions) {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-function postTheme(initOptions: BizmeInitOptions) {
-  iframe?.contentWindow?.postMessage(
-    { type: "bizme:theme", colorScheme: getHostColorScheme(initOptions) },
-    "*",
+function notifyHostTheme() {
+  if (!activeInitOptions) return;
+
+  const nextColorScheme = getHostColorScheme(activeInitOptions);
+
+  if (nextColorScheme === lastHostColorScheme) return;
+
+  lastHostColorScheme = nextColorScheme;
+  window.dispatchEvent(
+    new CustomEvent("bizme:host-theme", { detail: { colorScheme: nextColorScheme } }),
   );
 }
 
-function postViewport() {
-  if (!iframe) return;
+function watchHostEnvironment() {
+  notifyHostTheme();
 
-  const rect = iframe.getBoundingClientRect();
-  iframe.contentWindow?.postMessage(
-    {
-      type: "bizme:viewport",
-      iframeTop: rect.top,
-      viewportHeight: window.innerHeight,
-    },
-    "*",
-  );
-}
-
-function watchHostEnvironment(initOptions: BizmeInitOptions) {
-  const notify = () => {
-    postTheme(initOptions);
-    postViewport();
-  };
-
-  onViewportChange = () => window.requestAnimationFrame(notify);
-  window.addEventListener("scroll", onViewportChange, { passive: true });
-  window.addEventListener("resize", onViewportChange);
-
-  themeObserver = new MutationObserver(notify);
+  themeObserver = new MutationObserver(notifyHostTheme);
   themeObserver.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["class", "data-theme", "data-color-scheme", "data-mode", "style"],
@@ -138,51 +123,59 @@ function watchHostEnvironment(initOptions: BizmeInitOptions) {
   }
 
   themeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  themeMediaListener = notify;
+  themeMediaListener = notifyHostTheme;
   themeMediaQuery.addEventListener("change", themeMediaListener);
-
-  notify();
 }
 
-function buildWidgetUrl(initOptions: BizmeInitOptions) {
+function loadEmbedBundle(serverUrl: string) {
+  if (!embedScriptPromise) {
+    embedScriptPromise = new Promise<void>((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `${serverUrl}/widget-embed.js`;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () =>
+        reject(new Error(`Failed to load Bizme widget bundle from ${script.src}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  return embedScriptPromise;
+}
+
+async function mountWidget(initOptions: BizmeInitOptions, shadowRoot: ShadowRoot) {
   const serverUrl = normalizeUrl(initOptions.serverUrl, inferDefaultServerUrl());
   const apiUrl = normalizeUrl(initOptions.apiUrl, serverUrl);
-  const url = new URL("/widget", serverUrl);
+  const hostColorScheme = getHostColorScheme(initOptions);
+  lastHostColorScheme = hostColorScheme;
 
-  url.searchParams.set("installKey", initOptions.installKey);
-  url.searchParams.set("apiUrl", apiUrl);
-  url.searchParams.set("pageUrl", initOptions.pageUrl ?? window.location.href);
-  url.searchParams.set("pageTitle", initOptions.pageTitle ?? document.title);
-  url.searchParams.set("hostOrigin", window.location.origin);
-  url.searchParams.set("hostColorScheme", getHostColorScheme(initOptions));
+  const styleLink = document.createElement("link");
+  styleLink.rel = "stylesheet";
+  styleLink.href = `${serverUrl}/widget-embed.css`;
+  shadowRoot.appendChild(styleLink);
 
-  return url.toString();
-}
+  if (!mountContainer) {
+    return;
+  }
 
-function createIframe(initOptions: BizmeInitOptions) {
-  const nextRoot = document.createElement("div");
-  const nextIframe = document.createElement("iframe");
+  try {
+    await loadEmbedBundle(serverUrl);
+  } catch {
+    mountContainer.textContent = "Unable to load comments.";
+    return;
+  }
 
-  nextRoot.id = ROOT_ID;
-  nextRoot.style.width = "100%";
-  nextRoot.style.minWidth = "0";
+  if (!mountContainer) {
+    return;
+  }
 
-  nextIframe.id = IFRAME_ID;
-  nextIframe.title = "Bizme comments";
-  nextIframe.src = buildWidgetUrl(initOptions);
-  nextIframe.loading = "lazy";
-  nextIframe.referrerPolicy = "strict-origin-when-cross-origin";
-  nextIframe.style.display = "block";
-  nextIframe.style.width = "100%";
-  nextIframe.style.height = "1px";
-  nextIframe.style.border = "0";
-  nextIframe.style.overflow = "hidden";
-  nextIframe.style.background = "transparent";
-
-  nextRoot.appendChild(nextIframe);
-  getTarget(initOptions).appendChild(nextRoot);
-
-  return { nextRoot, nextIframe };
+  window.BizmeWidget?.mount(mountContainer, {
+    installKey: initOptions.installKey,
+    apiUrl,
+    pageUrl: initOptions.pageUrl,
+    pageTitle: initOptions.pageTitle,
+    hostColorScheme,
+  });
 }
 
 function init(initOptions: BizmeInitOptions) {
@@ -192,37 +185,36 @@ function init(initOptions: BizmeInitOptions) {
 
   destroy();
 
-  const dom = createIframe(initOptions);
-  root = dom.nextRoot;
-  iframe = dom.nextIframe;
+  activeInitOptions = initOptions;
+  lastHostColorScheme = getHostColorScheme(initOptions);
 
-  onMessage = (event) => {
-    if (event.source !== iframe?.contentWindow) {
-      return;
-    }
+  const nextRoot = document.createElement("div");
+  nextRoot.id = ROOT_ID;
+  nextRoot.style.width = "100%";
+  nextRoot.style.minWidth = "0";
 
-    const data = event.data as { type?: string; height?: number } | null;
+  const nextShadowRoot = nextRoot.attachShadow({ mode: "open" });
+  const nextMountContainer = document.createElement("div");
+  nextMountContainer.style.width = "100%";
+  nextMountContainer.style.minWidth = "0";
+  nextShadowRoot.appendChild(nextMountContainer);
 
-    if (data?.type === "bizme:resize" && typeof data.height === "number") {
-      iframe.style.height = `${Math.max(1, Math.ceil(data.height))}px`;
-      postViewport();
-    }
-  };
+  mountContainer = nextMountContainer;
+  root = nextRoot;
+  getTarget(initOptions).appendChild(nextRoot);
 
-  window.addEventListener("message", onMessage);
-  iframe.addEventListener("load", () => watchHostEnvironment(initOptions), { once: true });
+  void mountWidget(initOptions, nextShadowRoot);
+  watchHostEnvironment();
 }
 
 function destroy() {
-  if (onMessage) {
-    window.removeEventListener("message", onMessage);
-    onMessage = null;
-  }
-
-  if (onViewportChange) {
-    window.removeEventListener("scroll", onViewportChange);
-    window.removeEventListener("resize", onViewportChange);
-    onViewportChange = null;
+  if (mountContainer) {
+    try {
+      window.BizmeWidget?.unmount(mountContainer);
+    } catch {
+      // Ignore cleanup errors; the DOM is removed below regardless.
+    }
+    mountContainer = null;
   }
 
   themeObserver?.disconnect();
@@ -235,9 +227,9 @@ function destroy() {
   themeMediaQuery = null;
   themeMediaListener = null;
 
+  activeInitOptions = null;
   root?.remove();
   root = null;
-  iframe = null;
 }
 
 function open() {

@@ -9,12 +9,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { PinIcon } from "lucide-react";
 import { useState } from "react";
 import { SquareIcon } from "@/assets/icons/square-icon";
 import { AtSignIcon } from "@/assets/icons/at-sign-icon";
+import { SolarPinIcon } from "@/assets/icons/pin-icon";
+import { HugeExternalIcon } from "@/assets/icons/external-icon"
 
-type CommentClassification = "legitimate" | "spam";
+type CommentClassification =
+	"legitimate" | "spam";
 
 const classificationConfig = {
 	legitimate: {
@@ -166,7 +168,8 @@ export const CommentsMeta = ({
 					<div className="flex items-center gap-2">
 						<a href={page.url} target="_blank" rel="noreferrer">
 							<Button variant="outline" size="sm">
-								<ExternalLink color="black" />
+								<HugeExternalIcon />
+								<span className="text-gray-500">Open</span>
 							</Button>
 						</a>
 
@@ -175,13 +178,13 @@ export const CommentsMeta = ({
 							size="sm"
 							disabled={isPinning || !onPinChange}
 							onClick={() => onPinChange?.(!comment.isPinned)}>
-							<PinIcon
+							<SolarPinIcon
 								className={cn(
 									"size-4",
 									comment.isPinned && "fill-current",
 								)}
 							/>
-							<span>{comment.isPinned ? "Pinned" : "Pin"}</span>
+							<span className="text-gray-500">{comment.isPinned ? "Pinned" : "Pin"}</span>
 						</Button>
 					</div>
 					<Button
