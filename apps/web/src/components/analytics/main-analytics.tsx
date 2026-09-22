@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { type ChartConfig } from "@/components/ui/chart";
+import { type ChartConfig } from "@/components/dither-kit/chart-context";
 import {
   Select,
   SelectContent,
@@ -28,11 +28,11 @@ const TIME_RANGE_ITEMS = [
 const chartConfig = {
   comments: {
     label: "Comments",
-    color: "var(--chart-4)",
+    color: "orange",
   },
   reactions: {
     label: "Reactions",
-    color: "var(--chart-2)",
+    color: "green",
   },
 } satisfies ChartConfig;
 
@@ -41,7 +41,7 @@ export function MainAnalytics({ timeRange }: { timeRange: TimeRange }) {
   const [showReactions, setShowReactions] = React.useState(true);
   const trpc = useTRPC();
   const { data: overviewData } = useSuspenseQuery(
-    trpc.analytics.overview.queryOptions({ timeRange })
+    trpc.analytics.overview.queryOptions({ timeRange }),
   );
   const chartData = overviewData.chartData;
   const hasData =

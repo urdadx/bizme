@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { GithubSVG } from "@/assets/icons/github-svg";
 import { BrandLogo } from "@/components/brand-logo";
+import { DitherGradient } from "@/components/dither-kit/gradient";
 
 const links = [
   {
@@ -28,8 +29,14 @@ const links = [
 
 export function FooterSection() {
   return (
-    <footer className="py-16 md:py-32">
-      <div className="mx-auto max-w-5xl px-6">
+    <footer className="relative overflow-hidden py-16 md:py-32">
+      <div className="absolute -bottom-16 -left-16 h-56 w-96 overflow-hidden rounded-full">
+        <DitherGradient from="blue" direction="up" cell={5} opacity={0.32} />
+      </div>
+      <div className="absolute -bottom-20 -right-20 h-64 w-96 overflow-hidden rounded-full">
+        <DitherGradient from="red" direction="up" cell={6} opacity={0.24} />
+      </div>
+      <div className="relative mx-auto max-w-5xl px-6">
         <Link to="/" aria-label="go home" className="mx-auto block size-fit">
           <BrandLogo className="size-8" />{" "}
         </Link>

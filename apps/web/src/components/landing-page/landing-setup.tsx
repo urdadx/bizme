@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { DitherGradient } from "@/components/dither-kit/gradient";
 import { RiCodeSSlashLine, RiGlobalLine } from "@remixicon/react";
 
 export function Setup() {
@@ -13,8 +14,8 @@ export function Setup() {
             </span>{" "}
           </h2>
           <p className="text-pretty text-md sm:text-lg text-neutral-500">
-            Add Bizme to your website in minutes. Create your site, install the script, and
-            start engaging.
+            Add Bizme to your website in minutes. Create your site, install the script, and start
+            engaging.
           </p>
         </div>
         <div className="mt-8 grid grid-cols-1 gap-10 pt-4 sm:mt-14 md:grid-cols-3 md:gap-6 lg:gap-8">
@@ -25,8 +26,9 @@ export function Setup() {
             </div>
             <CardContent className="p-3 bg-white rounded-lg border">
               {/* Visual section with flexible height */}
-              <div className="bg-linear-to-br rounded-lg from-blue-200 via-blue-100 to-gray-200 relative min-h-fit flex items-center justify-center py-4">
-                <div className="w-full max-w-62.5 rounded-lg bg-white p-4 shadow-xs">
+              <div className="relative min-h-fit overflow-hidden rounded-lg flex items-center justify-center py-4">
+                <DitherGradient from="red" direction="up" cell={4} opacity={0.5} />
+                <div className="relative w-full max-w-62.5 rounded-lg bg-white p-4 shadow-xs">
                   <div className="flex flex-col items-center space-y-3">
                     <div className="relative">
                       <RiGlobalLine className="w-12 h-12 text-blue-400" />
@@ -54,8 +56,9 @@ export function Setup() {
             </div>
             <CardContent className="p-3 bg-white rounded-lg border">
               {/* Visual section with flexible height */}
-              <div className="bg-linear-to-br rounded-lg from-blue-200 via-blue-100 to-gray-200 relative min-h-fit flex items-center justify-center py-4">
-                <div className="w-full max-w-62.5 rounded-lg bg-white p-3 shadow-xs">
+              <div className="relative min-h-fit overflow-hidden rounded-lg flex items-center justify-center py-4">
+                <DitherGradient from="green" direction="up" cell={4} opacity={0.5} />
+                <div className="relative w-full max-w-62.5 rounded-lg bg-white p-3 shadow-xs">
                   <div className="flex flex-col items-center space-y-3">
                     <div className="relative">
                       <RiCodeSSlashLine className="w-12 h-12 text-blue-400" />
@@ -85,8 +88,9 @@ export function Setup() {
             </div>
             <CardContent className="p-3 bg-white rounded-lg border">
               {/* Visual section with flexible height */}
-              <div className="bg-linear-to-br rounded-lg from-blue-200 via-blue-100 to-gray-200 relative py-4 px-4 flex items-center justify-center">
-                <div className="bg-white rounded-lg p-4.75 shadow-xs w-full max-w-65">
+              <div className="relative overflow-hidden rounded-lg py-4 px-4 flex items-center justify-center">
+                <DitherGradient from="blue" direction="up" cell={4} opacity={0.5} />
+                <div className="relative bg-white rounded-lg p-4.75 shadow-xs w-full max-w-65">
                   <div className="space-y-3">
                     <div className="flex justify-end items-center space-x-2">
                       <div className="bg-blue-500 text-white text-xs px-3 py-2 rounded-lg max-w-[80%]">
