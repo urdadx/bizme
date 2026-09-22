@@ -53,13 +53,9 @@ export function CommentFeed({
         </ol>
       )}
 
-      {!isLoading && commentIds.length > 0 ? (
+      {!isLoading && commentIds.length > 0 && (isFetchingNextPage || hasNextPage) ? (
         <p ref={loadMoreRef} className="bizme-comments__foot">
-          {isFetchingNextPage
-            ? "Loading more comments..."
-            : hasNextPage
-              ? "\u200b"
-              : "You're all caught up."}
+          {isFetchingNextPage ? "Loading more comments..." : "\u200b"}
         </p>
       ) : null}
     </section>
