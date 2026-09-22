@@ -434,6 +434,7 @@ function WidgetRoot({
         <ShadowCommentComposer
           disabled={missingWidgetConfig}
           isSubmitting={isSubmitting}
+          allowEmptySubmit={!activeProvider}
           submitLabel={
             activeProvider ? (
               "Comment"

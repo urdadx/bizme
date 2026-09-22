@@ -17,6 +17,7 @@ type ShadowCommentComposerProps = {
   onValueChange?: (value: string) => void;
   disabled?: boolean;
   isSubmitting?: boolean;
+  allowEmptySubmit?: boolean;
   compact?: boolean;
   previewAttachments?: { name: string; url: string }[];
   submitLabel?: ReactNode;
@@ -31,6 +32,7 @@ export function ShadowCommentComposer({
   onValueChange,
   disabled = false,
   isSubmitting = false,
+  allowEmptySubmit = false,
   compact = false,
   previewAttachments = [],
   submitLabel = "Comment",
@@ -142,7 +144,7 @@ export function ShadowCommentComposer({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const body = value.trim();
-    if (!body || disabled || isSubmitting) return;
+    if ((!body && !allowEmptySubmit) || disabled || isSubmitting) return;
 
     if (onSubmit) {
       try {
@@ -253,7 +255,7 @@ export function ShadowCommentComposer({
           <button
             className="bizme-composer__submit"
             type="submit"
-            disabled={disabled || isSubmitting || !value.trim()}
+            disabled={disabled || isSubmitting || (!allowEmptySubmit && !value.trim())}
           >
             {isSubmitting ? (
               <>
