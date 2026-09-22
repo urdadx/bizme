@@ -44,7 +44,7 @@ export default function FAQs() {
 							Questions
 						</span>{" "}
 					</h2>
-					<p className="text-muted-foreground text-lg mt-4 text-balance">
+					<p className="text-muted-foreground text-md sm:text-lg mt-4 text-balance">
 						Find quick answers about installing, customizing, and moderating
 						comments with Bizme.
 					</p>

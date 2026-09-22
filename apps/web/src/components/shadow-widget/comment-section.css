@@ -72,6 +72,7 @@
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   gap: 12px;
+  color: var(--bizme-comments-text);
 }
 
 .bizme-comments__avatar {
@@ -110,6 +111,7 @@
 
 .bizme-comments__author {
   overflow: hidden;
+  color: var(--bizme-comments-text);
   font-size: 13px;
   font-weight: 600;
   text-overflow: ellipsis;
@@ -133,7 +135,7 @@
 
 .bizme-comments__message {
   margin: 5px 0 0;
-  color: color-mix(in srgb, var(--bizme-comments-text) 78%, var(--bizme-comments-muted));
+  color: var(--bizme-comments-text);
   font-size: 13px;
   line-height: 1.65;
   white-space: pre-wrap;

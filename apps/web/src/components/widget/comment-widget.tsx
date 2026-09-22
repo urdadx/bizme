@@ -27,8 +27,8 @@ import { WidgetCommentProvider } from "./widget-context";
 import "./widget.css";
 
 const DEFAULT_BRAND_COLOR = "#6170F8";
-const DEFAULT_TEXT_COLOR = "#1F2937";
-const DEFAULT_DARK_TEXT_COLOR = "#F8FAFC";
+const LIGHT_TEXT_COLOR = "#191B20";
+const DARK_TEXT_COLOR = "#F8FAFC";
 const VISITOR_STORAGE_KEY = "bizme_visitor_id";
 const BLOCKED_COMMENTER_MESSAGE = "This commenter is blocked";
 const COMMENTS_PAGE_SIZE = 20;
@@ -171,16 +171,13 @@ function WidgetRoot({
   });
 
   const brandColor = configQuery.data?.customization?.brandColor ?? DEFAULT_BRAND_COLOR;
-  const textColor = configQuery.data?.customization?.textColor ?? DEFAULT_TEXT_COLOR;
   const colorSchemePreference = configQuery.data?.customization?.colorScheme ?? "system";
   const allowAnonymousComments = configQuery.data?.settings?.allowAnonymousComments ?? false;
   const activeProvider: AuthProvider | null =
     provider ?? (allowAnonymousComments ? "anonymous" : null);
   const resolvedColorScheme = resolveColorScheme(colorSchemePreference, hostScheme);
   const effectiveTextColor =
-    resolvedColorScheme === "dark" && textColor === DEFAULT_TEXT_COLOR
-      ? DEFAULT_DARK_TEXT_COLOR
-      : textColor;
+    resolvedColorScheme === "dark" ? DARK_TEXT_COLOR : LIGHT_TEXT_COLOR;
 
   useEffect(() => {
     function handleHostTheme(event: Event) {
