@@ -1,14 +1,14 @@
 import {
-	type ColumnFiltersState,
-	type ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	getFilteredRowModel,
-	getPaginationRowModel,
-	getSortedRowModel,
-	type PaginationState,
-	type SortingState,
-	useReactTable,
+  type ColumnFiltersState,
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  type PaginationState,
+  type SortingState,
+  useReactTable,
 } from "@tanstack/react-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -20,28 +20,28 @@ import { DeleteConfirmationDialog } from "@/components/delete-confirmation-dialo
 import Loader from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-	SelectTrigger,
-	SelectValue,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { EyeLinear } from "@/assets/icons/eye-icon";
@@ -50,417 +50,432 @@ import { useTRPC } from "@/utils/trpc";
 import { Link } from "@tanstack/react-router";
 
 type CommentRow = {
-	id: string;
-	commenter: string;
-	authorProvider: "anonymous" | "google" | "github" | "email";
-	avatar: string;
-	preview: string;
-	page: string;
-	pageUrl: string | null;
-	likes: number;
-	replies: number;
-	status: "visible" | "pending" | "hidden" | "deleted";
-	isPinned: boolean;
-	lastActivity: string;
+  id: string;
+  commenter: string;
+  authorProvider: "anonymous" | "google" | "github" | "email";
+  avatar: string;
+  preview: string;
+  page: string;
+  pageUrl: string | null;
+  likes: number;
+  replies: number;
+  status: "visible" | "pending" | "hidden" | "deleted";
+  isPinned: boolean;
+  lastActivity: string;
 };
 
 type CommenterFilter = "all" | CommentRow["authorProvider"];
 type CommentPageFilter = "all" | CommentRow["page"];
 
 const commenterFilterItems = [
-	{ label: "All commenters", value: "all" },
-	{ label: "GitHub", value: "github" },
-	{ label: "Google", value: "google" },
-	{ label: "Email", value: "email" },
-	{ label: "Anonymous", value: "anonymous" },
+  { label: "All commenters", value: "all" },
+  { label: "GitHub", value: "github" },
+  { label: "Google", value: "google" },
+  { label: "Email", value: "email" },
+  { label: "Anonymous", value: "anonymous" },
 ] satisfies { label: string; value: CommenterFilter }[];
 
 function getColumns({
-	onDelete,
-	isDeleting,
+  onDelete,
+  isDeleting,
 }: {
-	onDelete: (id: string) => void;
-	isDeleting: boolean;
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
 }): ColumnDef<CommentRow>[] {
-	return [
-		{
-			accessorKey: "commenter",
-			header: "Commenter",
-			filterFn: (row, _columnId, filterValue) =>
-				row.original.authorProvider === filterValue,
-			cell: ({ row }) => (
-				<div className="flex items-center gap-2">
-					<Avatar size="sm">
-						<AvatarImage
-							src={row.original.avatar}
-							alt={row.original.commenter}
-						/>
-						<AvatarFallback>
-							{row.original.commenter.slice(0, 2).toUpperCase()}
-						</AvatarFallback>
-					</Avatar>
-					<span className="block max-w-44 truncate font-medium md:max-w-56">
-						{row.getValue("commenter")}
-					</span>
-				</div>
-			),
-			minSize: 220,
-		},
-		{
-			accessorKey: "preview",
-			header: "Preview",
-			cell: ({ row }) => (
-				<span className="block max-w-56 truncate text-muted-foreground md:max-w-80">
-					{row.getValue("preview")}
-				</span>
-			),
-			minSize: 280,
-		},
-		{
-			accessorKey: "likes",
-			header: "Likes",
-			cell: ({ row }) => (
-				<span className="text-muted-foreground">{row.getValue("likes")}</span>
-			),
-			minSize: 100,
-		},
-		{
-			accessorKey: "replies",
-			header: "Replies",
-			cell: ({ row }) => (
-				<span className="text-muted-foreground">{row.getValue("replies")}</span>
-			),
-			minSize: 100,
-		},
-		{
-			accessorKey: "lastActivity",
-			header: "Last activity",
-			cell: ({ row }) => (
-				<span className="text-muted-foreground">
-					{row.getValue("lastActivity")}
-				</span>
-			),
-			minSize: 140,
-		},
-		{
-			id: "actions",
-			header: "Actions",
-			cell: ({ row }) => (
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="outline"
-								size="icon-sm"
-								aria-label="Open actions"
-							/>
-						}>
-						<MoreHorizontal className="h-4 w-4" />
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-40 min-w-40">
-						<DropdownMenuItem
-							render={<Link to="/comments/$commentId" params={{ commentId: row.original.id }} />}>
-							<EyeLinear />
-							View details
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							disabled={isDeleting}
-							className="text-red-500"
-							onClick={() => onDelete(row.original.id)}>
-							<TrashLines color="red" />
-							Delete comment
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			),
-			enableSorting: false,
-			size: 88,
-		},
-	];
+  return [
+    {
+      accessorKey: "commenter",
+      header: "Commenter",
+      filterFn: (row, _columnId, filterValue) => row.original.authorProvider === filterValue,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <Avatar size="sm">
+            <AvatarImage src={row.original.avatar} alt={row.original.commenter} />
+            <AvatarFallback>{row.original.commenter.slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <span className="block max-w-44 truncate font-medium md:max-w-56">
+            {row.getValue("commenter")}
+          </span>
+        </div>
+      ),
+      minSize: 220,
+    },
+    {
+      accessorKey: "preview",
+      header: "Preview",
+      cell: ({ row }) => (
+        <span className="block max-w-56 truncate text-muted-foreground md:max-w-80">
+          {row.getValue("preview")}
+        </span>
+      ),
+      minSize: 280,
+    },
+    {
+      accessorKey: "likes",
+      header: "Likes",
+      cell: ({ row }) => <span className="text-muted-foreground">{row.getValue("likes")}</span>,
+      minSize: 100,
+    },
+    {
+      accessorKey: "replies",
+      header: "Replies",
+      cell: ({ row }) => <span className="text-muted-foreground">{row.getValue("replies")}</span>,
+      minSize: 100,
+    },
+    {
+      accessorKey: "lastActivity",
+      header: "Last activity",
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.getValue("lastActivity")}</span>
+      ),
+      minSize: 140,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={<Button variant="outline" size="icon-sm" aria-label="Open actions" />}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40 min-w-40">
+            <DropdownMenuItem
+              render={<Link to="/comments/$commentId" params={{ commentId: row.original.id }} />}
+            >
+              <EyeLinear />
+              View details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={isDeleting}
+              className="text-red-500"
+              onClick={() => onDelete(row.original.id)}
+            >
+              <TrashLines color="red" />
+              Delete comment
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+      enableSorting: false,
+      size: 88,
+    },
+  ];
 }
 
 export function CommentsTable() {
-	const trpc = useTRPC();
-	const queryClient = useQueryClient();
-	const {
-		data: commentsData,
-		error: commentsError,
-		isPending: areCommentsPending,
-	} = useQuery(trpc.comments.list.queryOptions());
-	const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
-	const [error, setError] = useState<string | null>(null);
-	const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-	const [pagination, setPagination] = useState<PaginationState>({
-		pageIndex: 0,
-		pageSize: 10,
-	});
-	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-	const [globalFilter, setGlobalFilter] = useState("");
-	const [sorting, setSorting] = useState<SortingState>([
-		{
-			id: "lastActivity",
-			desc: false,
-		},
-	]);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const {
+    data: commentsData,
+    error: commentsError,
+    isPending: areCommentsPending,
+  } = useQuery(trpc.comments.list.queryOptions());
+  const deleteComment = useMutation(trpc.comments.delete.mutationOptions());
+  const [error, setError] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([
+    {
+      id: "lastActivity",
+      desc: false,
+    },
+  ]);
 
-	async function handleDelete(id: string) {
-		try {
-			setError(null);
-			await deleteComment.mutateAsync({ id });
-			setDeleteTargetId(null);
-			await queryClient.invalidateQueries({
-				queryKey: trpc.comments.list.queryOptions().queryKey,
-			});
-		} catch (error) {
-			setError(error instanceof Error ? error.message : "Unable to delete comment.");
-		}
-	}
+  async function handleDelete(id: string) {
+    try {
+      setError(null);
+      await deleteComment.mutateAsync({ id });
+      setDeleteTargetId(null);
+      await queryClient.invalidateQueries({
+        queryKey: trpc.comments.list.queryOptions().queryKey,
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to delete comment.");
+    }
+  }
 
-	const data = commentsData ?? [];
-	const commentPageFilterItems = [
-		{ label: "All pages", value: "all" },
-		...Array.from(new Set(data.map((comment) => comment.page))).map((page) => ({
-			label: page,
-			value: page,
-		})),
-	] satisfies { label: string; value: CommentPageFilter }[];
+  const data = commentsData ?? [];
+  const commentPageFilterItems = [
+    { label: "All pages", value: "all" },
+    ...Array.from(new Set(data.map((comment) => comment.page))).map((page) => ({
+      label: page,
+      value: page,
+    })),
+  ] satisfies { label: string; value: CommentPageFilter }[];
 
-	const columns = getColumns({
-		onDelete: setDeleteTargetId,
-		isDeleting: deleteComment.isPending,
-	});
+  const columns = getColumns({
+    onDelete: setDeleteTargetId,
+    isDeleting: deleteComment.isPending,
+  });
 
-	const table = useReactTable({
-		data,
-		columns,
-		enableSortingRemoval: false,
-		getCoreRowModel: getCoreRowModel(),
-		getFilteredRowModel: getFilteredRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		globalFilterFn: (row, _columnId, filterValue) => {
-			const value = String(filterValue).trim().toLowerCase();
+  const table = useReactTable({
+    data,
+    columns,
+    enableSortingRemoval: false,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const value = String(filterValue).trim().toLowerCase();
 
-			if (!value) {
-				return true;
-			}
+      if (!value) {
+        return true;
+      }
 
-			return (
-				row.original.commenter.toLowerCase().includes(value) ||
-				row.original.preview.toLowerCase().includes(value) ||
-				row.original.page.toLowerCase().includes(value)
-			);
-		},
-		onColumnFiltersChange: setColumnFilters,
-		onGlobalFilterChange: setGlobalFilter,
-		onPaginationChange: setPagination,
-		onSortingChange: setSorting,
-		state: {
-			columnFilters,
-			globalFilter,
-			pagination,
-			sorting,
-		},
-	});
+      return (
+        row.original.commenter.toLowerCase().includes(value) ||
+        row.original.preview.toLowerCase().includes(value) ||
+        row.original.page.toLowerCase().includes(value)
+      );
+    },
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    state: {
+      columnFilters,
+      globalFilter,
+      pagination,
+      sorting,
+    },
+  });
 
-	return (
-		<div className="space-y-4">
-			<DeleteConfirmationDialog
-				open={Boolean(deleteTargetId)}
-				onOpenChange={(open) => !open && setDeleteTargetId(null)}
-				onConfirm={() => deleteTargetId && void handleDelete(deleteTargetId)}
-				isDeleting={deleteComment.isPending}
-				disabled={!deleteTargetId}
-			/>
-			{error ? <p className="text-sm text-destructive">{error}</p> : null}
-			{commentsError ? (
-				<p className="text-sm text-destructive">{commentsError.message}</p>
-			) : null}
-			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
-					<div className="relative w-full sm:max-w-sm">
-						<Input
-							placeholder="Search comments..."
-							className="h-9 w-full pl-9"
-							value={globalFilter}
-							onChange={(event) =>
-								table.setGlobalFilter(event.target.value)
-							}
-						/>
-						<SearchLinear className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					</div>
-					<Select
-						items={commentPageFilterItems}
-						defaultValue="all"
-						modal={false}
-						onValueChange={(value) => {
-							if (typeof value === "string") {
-								table.getColumn("page")?.setFilterValue(
-									value === "all" ? undefined : value,
-								);
-							}
-						}}>
-						<SelectTrigger className="w-full sm:w-44">
-							<SelectValue placeholder="All pages" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectGroup>
-								<SelectLabel>Page</SelectLabel>
-								{commentPageFilterItems.map((item) => (
-									<SelectItem
-										key={item.value}
-										value={item.value}>
-										{item.label}
-									</SelectItem>
-								))}
-							</SelectGroup>
-						</SelectContent>
-					</Select>
-					<Select
-						items={commenterFilterItems}
-						defaultValue="all"
-						modal={false}
-						onValueChange={(value) => {
-							if (typeof value === "string") {
-								table.getColumn("commenter")?.setFilterValue(
-									value === "all" ? undefined : value,
-								);
-							}
-						}}>
-						<SelectTrigger className="w-full sm:w-44">
-							<SelectValue placeholder="All commenters" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectGroup>
-								<SelectLabel>Commenter</SelectLabel>
-								{commenterFilterItems.map((item) => (
-									<SelectItem
-										key={item.value}
-										value={item.value}>
-										{item.label}
-									</SelectItem>
-								))}
-							</SelectGroup>
-						</SelectContent>
-					</Select>
-				</div>
-			</div>
-			<div className="max-w-sm overflow-hidden rounded-xl border md:max-w-full">
-				<Table>
-					<TableHeader className="bg-gray-50">
-						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow
-								key={headerGroup.id}
-								className="hover:bg-transparent">
-								{headerGroup.headers.map((header) => (
-									<TableHead
-										key={header.id}
-										className="h-11"
-										style={{
-											width: `${header.getSize()}px`,
-										}}>
-										{header.isPlaceholder ? null : header.column.getCanSort() ? (
-											<div
-												className={cn(
-													"flex h-full select-none items-center justify-between gap-2",
-													header.column.getCanSort() &&
-														"cursor-pointer",
-												)}
-												onClick={header.column.getToggleSortingHandler()}
-												onKeyDown={(event) => {
-													if (
-														event.key ===
-															"Enter" ||
-														event.key ===
-															" "
-													) {
-														event.preventDefault();
-														header.column.getToggleSortingHandler()?.(
-															event,
-														);
-													}
-												}}
-												tabIndex={0}>
-												{flexRender(
-													header.column
-														.columnDef
-														.header,
-													header.getContext(),
-												)}
-											</div>
-										) : (
-											flexRender(
-												header.column.columnDef
-													.header,
-												header.getContext(),
-											)
-										)}
-									</TableHead>
-								))}
-							</TableRow>
-						))}
-					</TableHeader>
-					<TableBody>
-						{areCommentsPending ? (
-							<TableRow>
-								<TableCell
-									colSpan={columns.length}
-									className="h-14 text-center">
-									<Loader />
-								</TableCell>
-							</TableRow>
-						) : table.getRowModel().rows.length === 0 ? (
-							<TableRow>
-								<TableCell
-									colSpan={columns.length}
-									className="h-24 text-center text-sm text-muted-foreground">
-									{data.length === 0
-										? "No comments yet."
-										: "No comments match your filters."}
-								</TableCell>
-							</TableRow>
-						) : (
-							table.getRowModel().rows.map((row) => (
-								<TableRow key={row.id}>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell
-											key={cell.id}
-											className="h-14">
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
-										</TableCell>
-									))}
-								</TableRow>
-							))
-						)}
-					</TableBody>
-				</Table>
-			</div>
+  return (
+    <div className="min-w-0 space-y-4">
+      <DeleteConfirmationDialog
+        open={Boolean(deleteTargetId)}
+        onOpenChange={(open) => !open && setDeleteTargetId(null)}
+        onConfirm={() => deleteTargetId && void handleDelete(deleteTargetId)}
+        isDeleting={deleteComment.isPending}
+        disabled={!deleteTargetId}
+      />
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {commentsError ? <p className="text-sm text-destructive">{commentsError.message}</p> : null}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full flex-col gap-3 sm:max-w-3xl sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-sm">
+            <Input
+              placeholder="Search comments..."
+              className="h-9 w-full pl-9"
+              value={globalFilter}
+              onChange={(event) => table.setGlobalFilter(event.target.value)}
+            />
+            <SearchLinear className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
+          <Select
+            items={commentPageFilterItems}
+            defaultValue="all"
+            modal={false}
+            onValueChange={(value) => {
+              if (typeof value === "string") {
+                table.getColumn("page")?.setFilterValue(value === "all" ? undefined : value);
+              }
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="All pages" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Page</SelectLabel>
+                {commentPageFilterItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Select
+            items={commenterFilterItems}
+            defaultValue="all"
+            modal={false}
+            onValueChange={(value) => {
+              if (typeof value === "string") {
+                table.getColumn("commenter")?.setFilterValue(value === "all" ? undefined : value);
+              }
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="All commenters" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Commenter</SelectLabel>
+                {commenterFilterItems.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="space-y-3 md:hidden">
+        {areCommentsPending ? (
+          <div className="flex min-h-28 items-center justify-center rounded-xl border">
+            <Loader />
+          </div>
+        ) : table.getRowModel().rows.length === 0 ? (
+          <div className="flex min-h-28 items-center justify-center rounded-xl border px-4 text-center text-sm text-muted-foreground">
+            {data.length === 0 ? "No comments yet." : "No comments match your filters."}
+          </div>
+        ) : (
+          table.getRowModel().rows.map((row) => (
+            <article key={row.id} className="rounded-xl border p-4">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Avatar size="sm">
+                    <AvatarImage src={row.original.avatar} alt={row.original.commenter} />
+                    <AvatarFallback>
+                      {row.original.commenter.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{row.original.commenter}</p>
+                    <p className="truncate text-xs text-muted-foreground">{row.original.page}</p>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={<Button variant="outline" size="icon-sm" aria-label="Open actions" />}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40 min-w-40">
+                    <DropdownMenuItem
+                      render={
+                        <Link to="/comments/$commentId" params={{ commentId: row.original.id }} />
+                      }
+                    >
+                      <EyeLinear />
+                      View details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={deleteComment.isPending}
+                      className="text-red-500"
+                      onClick={() => setDeleteTargetId(row.original.id)}
+                    >
+                      <TrashLines color="red" />
+                      Delete comment
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <p className="mt-3 line-clamp-3 break-words text-sm text-muted-foreground">
+                {row.original.preview}
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span>{row.original.likes} likes</span>
+                <span>{row.original.replies} replies</span>
+                <span className="sm:ml-auto">{row.original.lastActivity}</span>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
 
-			<div className="flex items-center justify-between gap-3">
-				<p className="text-sm text-muted-foreground">
-					Page {table.getState().pagination.pageIndex + 1} of{" "}
-					{table.getPageCount()}
-				</p>
-				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => table.previousPage()}
-						disabled={!table.getCanPreviousPage()}>
-						Previous
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => table.nextPage()}
-						disabled={!table.getCanNextPage()}>
-						Next
-					</Button>
-				</div>
-			</div>
-		</div>
-	);
+      <div className="hidden overflow-hidden rounded-xl border md:block">
+        <Table>
+          <TableHeader className="bg-gray-50">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className="h-11"
+                    style={{
+                      width: `${header.getSize()}px`,
+                    }}
+                  >
+                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                      <div
+                        className={cn(
+                          "flex h-full select-none items-center justify-between gap-2",
+                          header.column.getCanSort() && "cursor-pointer",
+                        )}
+                        onClick={header.column.getToggleSortingHandler()}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            header.column.getToggleSortingHandler()?.(event);
+                          }
+                        }}
+                        tabIndex={0}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </div>
+                    ) : (
+                      flexRender(header.column.columnDef.header, header.getContext())
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {areCommentsPending ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-14 text-center">
+                  <Loader />
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-sm text-muted-foreground"
+                >
+                  {data.length === 0 ? "No comments yet." : "No comments match your filters."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="h-14">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }
