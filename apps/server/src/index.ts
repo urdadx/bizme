@@ -53,7 +53,7 @@ app.use(
   "/*",
   cors({
     origin: (origin, c) => {
-      if (c.req.path.startsWith("/embed/")) {
+      if (c.req.path.startsWith("/embed/") || c.req.path === "/comment-attachments") {
         return origin;
       }
 
