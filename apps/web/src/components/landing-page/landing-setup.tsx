@@ -30,7 +30,7 @@ export function Setup() {
               <div className="relative min-h-44 overflow-hidden rounded-lg bg-white ring-1 ring-inset ring-black/5 flex items-end justify-center px-4 pb-4 pt-10">
                 <DitherGradient from="red" direction="right" cell={4} opacity={0.8} />
                 <DitherGradient from="red" direction="left" cell={4} opacity={0.18} />
-                <div className="relative w-full max-w-62.5 rounded-xl border bg-white px-4 py-6 shadow-sm">
+                <div className="relative flex h-28 w-full max-w-62.5 items-center rounded-xl border bg-white px-4 shadow-sm">
                   <div className="flex items-center justify-center">
                     <div className="relative z-1 flex size-12 shrink-0 items-center justify-center rounded-full border bg-white shadow-xs">
                       <RiGlobalLine className="size-6 text-gray-600" />
@@ -67,8 +67,8 @@ export function Setup() {
               <div className="relative min-h-44 overflow-hidden rounded-lg bg-white ring-1 ring-inset ring-black/5 flex items-end justify-center px-4 pb-4 pt-10">
                 <DitherGradient from="blue" direction="right" cell={4} opacity={0.8} />
                 <DitherGradient from="blue" direction="left" cell={4} opacity={0.18} />
-                <div className="relative w-full max-w-62.5 rounded-xl border bg-white p-3 shadow-sm">
-                  <div className="flex flex-col items-center space-y-3">
+                <div className="relative flex h-28 w-full max-w-62.5 items-center rounded-xl border bg-white p-3 shadow-sm">
+                  <div className="flex w-full flex-col items-center space-y-3">
                     <div className="relative">
                       <RiCodeSSlashLine className="w-12 h-12 text-blue-400" />
                     </div>
@@ -100,8 +100,8 @@ export function Setup() {
               <div className="relative min-h-44 overflow-hidden rounded-lg bg-white ring-1 ring-inset ring-black/5 flex items-end justify-center px-4 pb-4 pt-10">
                 <DitherGradient from="green" direction="right" cell={4} opacity={0.8} />
                 <DitherGradient from="green" direction="left" cell={4} opacity={0.18} />
-                <div className="relative bg-white rounded-xl border p-4.75 shadow-sm w-full max-w-65">
-                  <div className="space-y-3">
+                <div className="relative flex h-28 bg-white rounded-xl border p-4.75 shadow-sm w-full max-w-65 items-center">
+                  <div className="w-full space-y-3">
                     <div className="flex justify-end items-center space-x-2">
                       <div className="bg-blue-500 text-white text-xs px-3 py-2 rounded-lg max-w-[80%]">
                         Love this update!
