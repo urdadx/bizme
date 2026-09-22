@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { cn } from "./lib";
 import { rgb } from "./palette";
 import { BAYER4, fillOf, type PixelBloom, type PixelColor, pixelBloomStyle } from "./pixel";
@@ -112,7 +112,7 @@ export function DitherGradient({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bloomRef = useRef<HTMLCanvasElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const wrap = wrapRef.current;
     const canvas = canvasRef.current;
     if (!wrap || !canvas) return;

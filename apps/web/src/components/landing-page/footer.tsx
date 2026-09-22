@@ -29,12 +29,24 @@ const links = [
 
 export function FooterSection() {
   return (
-    <footer className="relative overflow-hidden py-16 md:py-32">
-      <div className="absolute -bottom-16 -left-16 h-56 w-96 overflow-hidden rounded-full">
-        <DitherGradient from="blue" direction="up" cell={5} opacity={0.32} />
-      </div>
-      <div className="absolute -bottom-20 -right-20 h-64 w-96 overflow-hidden rounded-full">
-        <DitherGradient from="red" direction="up" cell={6} opacity={0.24} />
+    <footer className="relative overflow-hidden border-y py-16 md:py-32">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-70"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgb(229 229 229) 1px, transparent 1px), linear-gradient(to bottom, rgb(229 229 229) 1px, transparent 1px)",
+          backgroundSize: "110px 110px",
+          backgroundPosition: "center top",
+        }}
+      />
+      <div className="absolute inset-0 flex overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)]">
+        <div className="relative -mr-px w-1/2">
+          <DitherGradient from="blue" direction="left" cell={5} opacity={0.035} />
+        </div>
+        <div className="relative -ml-px w-1/2">
+          <DitherGradient from="blue" direction="right" cell={5} opacity={0.035} />
+        </div>
       </div>
       <div className="relative mx-auto max-w-5xl px-6">
         <Link to="/" aria-label="go home" className="mx-auto block size-fit">

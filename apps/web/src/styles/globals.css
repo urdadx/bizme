@@ -197,3 +197,81 @@ body:has(.bizme-widget.dark) {
     @apply font-display;
   }
 }
+
+@keyframes setup-data-flow {
+  0% {
+    opacity: 0;
+    transform: translateX(0) scale(0.7);
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(4.625rem) scale(1);
+  }
+}
+
+.setup-data-trail {
+  animation: setup-data-flow 0.7s linear infinite;
+}
+
+@keyframes setup-chat-typing {
+  0%,
+  38% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  45%,
+  92% {
+    opacity: 0;
+    transform: translateY(0.25rem) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes setup-chat-message {
+  0%,
+  40% {
+    opacity: 0;
+    transform: translateY(0.25rem) scale(0.96);
+  }
+  48%,
+  92% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0.25rem) scale(0.96);
+  }
+}
+
+@keyframes setup-typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-0.2rem);
+  }
+}
+
+.setup-chat-typing {
+  animation: setup-chat-typing 4s ease-in-out infinite;
+}
+
+.setup-chat-message {
+  animation: setup-chat-message 4s ease-in-out infinite;
+}
+
+.setup-typing-dot {
+  animation: setup-typing-dot 0.75s ease-in-out infinite;
+}

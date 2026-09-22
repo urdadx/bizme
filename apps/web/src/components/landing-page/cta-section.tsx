@@ -49,15 +49,27 @@ const composerPlaceholders = [
 export const CTASession = () => {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute -left-24 top-16 h-72 w-80 rotate-6 overflow-hidden rounded-full">
-        <DitherGradient from="blue" direction="right" cell={5} opacity={0.35} />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-70"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgb(229 229 229) 1px, transparent 1px), linear-gradient(to bottom, rgb(229 229 229) 1px, transparent 1px)",
+          backgroundSize: "110px 110px",
+          backgroundPosition: "center top",
+        }}
+      />
+      <div className="absolute inset-0 flex overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)]">
+        <div className="relative -mr-px w-1/2 [mask-image:linear-gradient(to_right,black_55%,transparent_100%)]">
+          <DitherGradient from="blue" direction="left" cell={5} opacity={0.04} />
+        </div>
+        <div className="relative -ml-px w-1/2 [mask-image:linear-gradient(to_left,black_55%,transparent_100%)]">
+          <DitherGradient from="blue" direction="right" cell={5} opacity={0.04} />
+        </div>
       </div>
-      <div className="absolute -right-28 bottom-4 h-64 w-96 -rotate-6 overflow-hidden rounded-full">
-        <DitherGradient from="purple" direction="left" cell={6} opacity={0.28} />
-      </div>
-      <div className="relative pt-16 md:pt-32">
+      <div className="relative pt-16 md:pt-24">
         <div className="relative z-1 mx-auto max-w-7xl px-6">
-          <div className="max-w-3xl text-center sm:mx-auto lg:mr-auto lg:mt-0 lg:w-4/5">
+          <div className="mx-auto max-w-3xl text-center">
             <h1 className="mt-8 text-balance text-4xl font-semibold md:text-5xl xl:text-6xl xl:leading-[1.3] instrument-serif-regular">
               Beautiful comment section for your{" "}
               <span className="relative z-1 inline-block rounded bg-primary/10 px-1 text-primary">
@@ -75,7 +87,7 @@ export const CTASession = () => {
 
         <div className="relative z-1 my-12 w-full mx-auto max-w-5xl px-3 sm:px-6">
           <div className="relative overflow-visible rounded-xl border bg-gray-50 p-1 sm:p-1.5 shadow-sm ring-muted ">
-            <div className="rounded-lg border bg-white p-4 sm:p-6">
+            <div className="rounded-lg border bg-white p-4 sm:p-4">
               <div className="flex flex-col gap-6">
                 <CommentComposer
                   uploadId="landing-comment-file-upload"
