@@ -204,7 +204,7 @@ export const CommentsMeta = ({
 						</AvatarFallback>
 					</Avatar>
 					<div className="min-w-0">
-						<h3 className="truncate text-sm font-semibold">
+						<h3 className="truncate text-sm font-sans font-semibold">
 							{comment.author}
 						</h3>
 						<p className="text-xs text-muted-foreground">
