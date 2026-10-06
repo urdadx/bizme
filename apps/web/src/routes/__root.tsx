@@ -3,9 +3,13 @@ import { Toaster } from "@/components/ui/sonner";
 import type { QueryClient } from "@tanstack/react-query";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { TRPCOptionsProxy } from "@trpc/tanstack-react-query";
+import { env } from "@better-comments/env/web";
 
 import ogImage from "@/assets/og-image.png";
 import appCss from "../index.css?url";
+
+const ogImageUrl = new URL(ogImage, env.VITE_FRONTEND_ORIGIN).href;
+
 export interface RouterAppContext {
 	trpc: TRPCOptionsProxy<AppRouter>;
 	queryClient: QueryClient;
@@ -44,15 +48,15 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			},
 			{
 				property: "og:image",
-				content: ogImage,
+				content: ogImageUrl,
 			},
 			{
 				property: "og:image:width",
-				content: "1334",
+				content: "1338",
 			},
 			{
 				property: "og:image:height",
-				content: "644",
+				content: "654",
 			},
 			{
 				name: "twitter:card",
@@ -69,7 +73,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 			},
 			{
 				name: "twitter:image",
-				content: ogImage,
+				content: ogImageUrl,
 			},
 		],
 		links: [

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bizme Launch</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #f7f9fc; font-family: Arial, sans-serif; color: #101828; }
+    #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #f7f9fc; }
+    .clip { position: absolute; inset: 0; overflow: hidden; }
+    .ground { position: absolute; inset: 0; background: #f7f9fc; }
+    .grid { position: absolute; inset: 0; opacity: .28; background-image: radial-gradient(#98a2b3 1.5px, transparent 1.5px); background-size: 30px 30px; }
+    .scene { position: absolute; inset: 0; padding: 96px 120px; }
+    .eyebrow { margin-bottom: 28px; color: #1769aa; font-size: 24px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    h1, h2, p { margin: 0; }
+    h1 { max-width: 1420px; font-size: 114px; line-height: .95; letter-spacing: -.065em; }
+    h2 { font-size: 76px; line-height: 1; letter-spacing: -.045em; }
+    .blue { color: #3988dc; }
+    .sub { margin-top: 32px; max-width: 780px; color: #667085; font-size: 34px; line-height: 1.35; }
+    .brand { display: flex; align-items: center; gap: 20px; font-size: 34px; font-weight: 800; }
+    .brand-mark { width: 58px; height: 58px; border-radius: 15px; display: grid; place-items: center; color: white; background: #3988dc; box-shadow: 0 12px 28px rgba(57,136,220,.25); }
+    .brand-mark svg { width: 34px; height: 34px; }
+    .opening-copy { position: absolute; left: 120px; top: 270px; }
+    .bubble-field { position: absolute; right: 120px; top: 145px; width: 570px; height: 760px; }
+    .bubble { position: absolute; padding: 24px 30px; border: 1px solid #d0d5dd; border-radius: 28px 28px 28px 8px; background: white; box-shadow: 0 18px 50px rgba(16,24,40,.08); color: #344054; font-size: 25px; }
+    .bubble:nth-child(1) { top: 30px; left: 90px; }
+    .bubble:nth-child(2) { top: 210px; right: 0; border-radius: 28px 28px 8px 28px; background: #3988dc; color: white; }
+    .bubble:nth-child(3) { top: 405px; left: 10px; }
+    .bubble:nth-child(4) { top: 575px; right: 40px; border-radius: 28px 28px 8px 28px; }
+    .wipe { position: absolute; inset: 0; background: #3988dc; transform-origin: left center; }
+    .split { display: grid; grid-template-columns: 650px 1fr; gap: 72px; height: 100%; align-items: center; }
+    .panel { border: 1px solid #d0d5dd; border-radius: 28px; background: white; box-shadow: 0 28px 80px rgba(16,24,40,.12); overflow: hidden; }
+    .toolbar { height: 72px; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #eaecf0; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: #d0d5dd; }
+    .thread { padding: 32px; }
+    .comment { display: grid; grid-template-columns: 58px 1fr auto; gap: 18px; padding: 24px 0; border-bottom: 1px solid #eaecf0; }
+    .avatar { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 800; background: #175cd3; }
+    .name { color: #131313; font-size: 22px; font-weight: 750; }
+    .text { margin-top: 8px; color: #323232; font-size: 21px; }
+    .status { align-self: start; padding: 9px 14px; border-radius: 999px; color: #067647; background: #dcfae6; font-size: 17px; font-weight: 700; }
+    .composer { padding: 28px; border: 1px solid #d0d5dd; border-radius: 22px; }
+    .composer-input { height: 160px; padding: 24px; color: #707784; border: 1px solid #eaecf0; border-radius: 18px; font-size: 22px; }
+    .composer-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+    .swatches { display: flex; gap: 16px; margin: 30px 0; }
+    .swatch { width: 76px; height: 76px; border-radius: 20px; border: 7px solid white; box-shadow: 0 0 0 1px #d0d5dd, 0 9px 20px rgba(16,24,40,.08); }
+    .swatch:nth-child(1) { background:#3988dc; }.swatch:nth-child(2) { background:#7f56d9; }.swatch:nth-child(3) { background:#f79009; }.swatch:nth-child(4) { background:#12b76a; }
+    .button { padding: 15px 24px; border-radius: 13px; color: white; background: #3988dc; font-size: 20px; font-weight: 700; }
+    .dashboard { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; padding: 28px; }
+    .metric { padding: 24px; min-height: 140px; border: 1px solid #eaecf0; border-radius: 20px; }
+    .metric-label { color: #667085; font-size: 18px; }
+    .metric-value { margin-top: 12px; font-size: 46px; font-weight: 800; letter-spacing: -.04em; }
+    .chart { grid-column: 1 / -1; height: 330px; padding: 32px; border: 1px solid #eaecf0; border-radius: 20px; }
+    .chart svg { width: 100%; height: 100%; overflow: visible; }
+    .chart-line { fill: none; stroke: #3988dc; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-fill { fill: url(#fade); opacity: .5; }
+    .closing { display: grid; place-items: center; text-align: center; background: #101828; color: white; }
+    .closing .brand { justify-content: center; margin-bottom: 56px; }
+    .closing h2 { max-width: 1400px; font-size: 104px; }
+    .closing .sub { max-width: 1000px; color: #b9c4d3; }
+    .code { margin-top: 44px; padding: 18px 28px; border: 1px solid #344054; border-radius: 14px; background: #1d2939; color: #84caff; font: 22px monospace; }
+  </style>
+</head>
+<body>
+  <div data-hf-id="hf-lh19" id="root" data-composition-id="bizme-launch" data-start="0" data-duration="25" data-width="1920" data-height="1080" data-fps="30">
+    
+    
+    
+    
+    
+    
+    
+    <section data-hf-id="hf-uik4" id="scene-opening" class="clip" data-start="0" data-duration="5" data-track-index="0">
+      <div data-hf-id="hf-ygft" class="ground"></div><div data-hf-id="hf-kxq8" class="grid"></div>
+      <div style="background-image: linear-gradient(135deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.04) 100%)" data-hf-id="hf-wua0" class="scene">
+        <div style="position: relative; left: 50.5px; top: 0px" data-hf-id="hf-nzfy" class="brand">Bizme</div>
+        <div data-hf-id="hf-850y" class="opening-copy"><div data-hf-id="hf-ijst" class="eyebrow">Audience engagement, rebuilt</div><h1 data-hf-id="hf-cmd1" id="open-title">Your audience is<br data-hf-id="hf-x5px">already <span data-hf-id="hf-8vq9" class="blue">talking.</span></h1><p data-hf-id="hf-clp9" class="sub" id="open-sub">Bring the conversation home.</p></div>
+        <div data-hf-studio-original-inline-translate="" style="translate: 79.871px -49px" data-hf-id="hf-q9zd" class="bubble-field"><div data-hf-id="hf-ay2b" class="bubble">This changed how I think about it.</div><div data-hf-id="hf-rr8e" class="bubble">Can you share the next part?</div><div data-hf-id="hf-6mbw" class="bubble">The example finally made it click.</div><div data-hf-id="hf-27pi" class="bubble">More like this, please.</div></div>
+      </div>
+    </section>
+    <section style="clip-path: inset(80.93px 0px 62.31px 0px); background-image: url(&quot;login-image.png&quot;); background-position: center; background-repeat: no-repeat; background-size: contain" data-hf-id="hf-er8y" id="scene-comments" class="clip" data-start="5" data-duration="6" data-track-index="1">
+      <div data-hf-id="hf-p66l" class="ground"></div>
+      <div data-hf-studio-original-inline-translate="" data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-box-height="1080" data-hf-studio-original-box-width="1920" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" style="background-image: url(&quot;register-image.png&quot;); background-position: center; background-repeat: no-repeat; background-size: contain; color: rgb(255, 255, 255); --hf-studio-width: 1670px; --hf-studio-height: 940px; width: 1670px; height: 940px; min-width: 0px; min-height: 0px; max-width: none; max-height: none; box-sizing: border-box; translate: 106.53px 67.675px; clip-path: inset(88.99px 0px 69.62px 0px)" data-hf-id="hf-tuig" class="scene split">
+        <div data-hf-id="hf-yeow"><h2 data-hf-id="hf-nocb">Every reader becomes part of the story.</h2><p style="color: rgb(255, 255, 255)" data-hf-id="hf-ic95" class="sub">Reply, moderate, and keep the best conversations moving.</p></div>
+        <div data-hf-id="hf-grb3" class="panel" id="comments-panel"><div data-hf-id="hf-6uyx" class="toolbar"><span style="color: rgb(255, 0, 0)" data-hf-id="hf-9gry" class="dot"></span><span data-hf-id="hf-zcc2" class="dot"></span><span data-hf-id="hf-zqn3" class="dot"></span></div><div data-hf-studio-original-inline-translate="" data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-box-height="388" data-hf-studio-original-box-width="956" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" style="backdrop-filter: none; --hf-studio-width: 975px; --hf-studio-height: 396px; width: 975px; height: 396px; min-width: 0px; min-height: 0px; max-width: none; max-height: none; box-sizing: border-box; translate: -9.5px 0px" data-hf-id="hf-jyqg" class="thread">
+          <div data-hf-id="hf-8l7z" class="comment"><div style="background-image: url(&quot;olivia-rhye (2).webp&quot;); background-position: center; background-repeat: no-repeat; background-size: contain" data-hf-id="hf-93ry" class="avatar"></div><div data-hf-id="hf-y7yw"><div data-hf-id="hf-w8oz" class="name">Olivia Rhye</div><div data-hf-id="hf-wu79" class="text">This is the clearest explanation I’ve read.</div></div><div data-hf-id="hf-8ghz" class="status">2 likes</div></div>
+          <div data-hf-id="hf-eyrz" class="comment"><div style="background-image: url(&quot;drew-cano.webp&quot;); background-position: center; background-repeat: no-repeat; background-size: contain" data-hf-id="hf-coj7" class="avatar"></div><div data-hf-id="hf-x11t"><div data-hf-id="hf-5z24" class="name">Drew Cano</div><div data-hf-id="hf-pll4" class="text">How would this work for a small team?</div></div><div data-hf-id="hf-xeeg" class="status">4 likes</div></div>
+          <div data-hf-id="hf-ekgy" class="comment"><div style="background-image: url(&quot;phoenix-baker (2).webp&quot;); background-position: center; background-repeat: no-repeat; background-size: contain" data-hf-id="hf-ap02" class="avatar"></div><div data-hf-id="hf-xfcu"><div data-hf-id="hf-zieh" class="name">Maya</div><div data-hf-id="hf-h0hn" class="text">Following for the next article.</div></div><div data-hf-id="hf-t9qb" class="status">10 likes</div></div>
+        </div></div>
+      </div>
+      <div data-hf-id="hf-0zjp" class="wipe" id="wipe-comments"></div>
+    </section>
+    <section data-hf-id="hf-cuaa" id="scene-customize" class="clip" data-start="11" data-duration="6" data-track-index="0">
+      <div data-hf-id="hf-qd3o" class="ground"></div><div data-hf-id="hf-6qwo" class="grid"></div>
+      <div data-hf-id="hf-sxao" class="scene split">
+        <div data-hf-id="hf-w8fr"><div data-hf-id="hf-wi9p" class="eyebrow">Your brand, everywhere</div><h2 data-hf-id="hf-k0ug">Make the conversation feel like yours.</h2><p data-hf-id="hf-q5kl" class="sub">Colors, type, themes, and corners, all tuned in real time.</p><div data-hf-id="hf-41co" class="swatches"><div data-hf-id="hf-3s6c" class="swatch"></div><div data-hf-id="hf-hi58" class="swatch"></div><div data-hf-id="hf-gb85" class="swatch"></div><div data-hf-id="hf-gpj6" class="swatch"></div></div></div>
+        <div data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-box-height="418" data-hf-studio-original-box-width="958" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" style="--hf-studio-width: 975px; --hf-studio-height: 426px; width: 975px; height: 426px; min-width: 0px; min-height: 0px; max-width: none; max-height: none; box-sizing: border-box" data-hf-id="hf-eaio" class="panel" id="custom-panel"><div data-hf-id="hf-78ly" style="padding:44px"><div data-hf-studio-original-inline-translate="" data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-box-height="290" data-hf-studio-original-box-width="885" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" style="--hf-studio-width: 920px; --hf-studio-height: 301px; width: 920px; height: 301px; min-width: 0px; min-height: 0px; max-width: none; max-height: none; box-sizing: border-box; translate: -17.5px -5.5px" data-hf-id="hf-cydq" class="composer"><div style="font-size: 24px" data-hf-id="hf-sggg" class="composer-input">Write a comment...</div><div data-hf-id="hf-3swr" class="composer-foot"><span data-hf-id="hf-5mxa" style="color:#1769aa;font-size:28px"></span><span style="font-size: 24px" data-hf-id="hf-9298" class="button" id="theme-button">Comment</span></div></div><p data-hf-id="hf-n79g" style="margin-top:18px;text-align:center;color:#707784;font-size:17px">Powered by Bizme</p></div></div>
+      </div>
+    </section>
+    <section data-hf-id="hf-qwui" id="scene-analytics" class="clip" data-start="17" data-duration="5" data-track-index="0">
+      <div data-hf-id="hf-pysn" class="ground"></div>
+      <div data-hf-id="hf-rqdl" class="scene split">
+        <div data-hf-id="hf-wmqs"><div data-hf-id="hf-zh7i" class="eyebrow">Clear insight</div><h2 data-hf-id="hf-629y">Know what resonates.</h2><p data-hf-id="hf-8ydv" class="sub">See engagement, reactions, and top-performing pages at a glance.</p></div>
+        <div data-hf-id="hf-r61p" class="panel" id="analytics-panel"><div data-hf-id="hf-v70k" class="dashboard"><div data-hf-id="hf-dq4c" class="metric"><div data-hf-id="hf-0gmt" class="metric-label">Total comments</div><div data-hf-id="hf-rtx2" class="metric-value" id="count-comments">0</div></div><div data-hf-id="hf-q6lw" class="metric"><div data-hf-id="hf-qi2s" class="metric-label">Engagement rate</div><div data-hf-id="hf-w495" class="metric-value" id="count-rate">0%</div></div><div data-hf-id="hf-ozot" class="metric"><div data-hf-id="hf-17wu" class="metric-label">Unique readers</div><div data-hf-id="hf-z5j8" class="metric-value" id="count-readers">0</div></div><div data-hf-id="hf-ntnc" class="chart"><svg data-hf-id="hf-qntv" viewBox="0 0 900 270"><defs data-hf-id="hf-mh0t"><lineargradient data-hf-id="hf-mspo" id="fade" x1="0" y1="0" x2="0" y2="1"><stop data-hf-id="hf-lnye" offset="0" stop-color="#3988dc" stop-opacity=".4" /><stop data-hf-id="hf-6c3t" offset="1" stop-color="#3988dc" stop-opacity="0" /></lineargradient></defs><path data-hf-id="hf-lzqm" class="chart-fill" d="M10 230 C130 240 155 145 260 170 S410 215 475 122 S620 35 705 95 S820 65 890 38 L890 270 L10 270Z" /><path data-hf-id="hf-zg7c" id="chart-line" class="chart-line" d="M10 230 C130 240 155 145 260 170 S410 215 475 122 S620 35 705 95 S820 65 890 38" /></svg></div></div></div>
+      </div>
+    </section>
+    <section style="border-color: rgb(24, 118, 193); color: rgb(23, 105, 170); background-image: linear-gradient(135deg, rgba(0, 0, 0, 0) 0%, rgba(255, 255, 255, 0.04) 100%)" data-hf-id="hf-a141" id="scene-closing" class="clip" data-start="22" data-duration="3" data-track-index="0">
+      <div style="background-color: rgb(23, 105, 170); background-image: url(&quot;register-image.png&quot;); background-position: center; background-repeat: no-repeat; background-size: contain" data-hf-id="hf-91it" class="scene closing"><div data-hf-id="hf-vftp"><div data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-box-height="0" data-hf-studio-original-box-width="1425" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" style="--hf-studio-width: 1425px; --hf-studio-height: 1px; width: 1425px; height: 1px; min-width: 0px; min-height: 0px; max-width: none; max-height: none; box-sizing: border-box; position: relative; left: 0px; top: 0px; font-size: 40px" data-hf-id="hf-jrjm" class="brand"> </div><h2 data-hf-id="hf-lt7y">Turn readers into a community.</h2><p data-hf-studio-original-display="" data-hf-studio-original-box-sizing="" data-hf-studio-original-flex-shrink="" data-hf-studio-original-flex-grow="" data-hf-studio-original-flex-basis="" data-hf-studio-original-max-height="" data-hf-studio-original-max-width="" data-hf-studio-original-min-height="" data-hf-studio-original-min-width="" data-hf-studio-original-box-height="46" data-hf-studio-original-box-width="1000" data-hf-studio-original-height="" data-hf-studio-original-width="" data-hf-studio-box-size="true" style="--hf-studio-width: 1425px; --hf-studio-height: 66px; width: 1425px; height: 66px; min-width: 0px; min-height: 0px; max-width: none; max-height: none; box-sizing: border-box; color: rgb(255, 255, 255)" data-hf-id="hf-93rv" class="sub">Live comments. Useful insights. One simple embed.</p><div style="font-size: 35px; color: rgb(255, 255, 255); clip-path: inset(0px 341.54px 0px 392.31px)" data-hf-id="hf-wwk9" class="code"><span data-hf-id="hf-us76" style="font-weight: 700">https://bizme.urdadx.com</span></div></div></div>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+    <script>
+gsap.set("#custom-panel", { x: -8.5, y: 0 });
+gsap.set("#scene-comments", { rotationX: -7, rotationY: 1 });
+gsap.set("#scene-comments", { x: 18.462, y: 2.308 });
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(".brand", { opacity: 0, y: -24 }, { opacity: 1, y: 0, duration: .7, ease: "power3.out" }, .15)
+        .fromTo("#open-title", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 1, ease: "power4.out" }, .45)
+        .fromTo("#open-sub", { opacity: 0, y: 25 }, { opacity: 1, y: 0, duration: .7 }, 1.25)
+        .fromTo(".bubble", { opacity: 0, scale: .86, y: 30 }, { opacity: 1, scale: 1, y: 0, stagger: .42, duration: .6, ease: "back.out(1.5)" }, .7)
+        .fromTo("#wipe-comments", { scaleX: 1 }, { scaleX: 0, duration: .75, ease: "power4.inOut" }, 5)
+        .fromTo("#comments-panel", { opacity: 0, x: 90 }, { opacity: 1, x: 0, duration: .8, ease: "power3.out" }, 5.45)
+        .fromTo("#comments-panel .comment", { opacity: 0, y: 28 }, { opacity: 1, y: 0, stagger: .55, duration: .55 }, 6.1)
+        .fromTo("#custom-panel", { opacity: 0, scale: .94 }, { opacity: 1, scale: 1, duration: .8, ease: "power3.out" }, 11.15)
+        .fromTo(".swatch", { opacity: 0, y: 28 }, { opacity: 1, y: 0, stagger: .25, duration: .5 }, 11.5)
+        .to("#theme-button", { backgroundColor: "#7f56d9", duration: .45 }, 13)
+        .to("#theme-button", { backgroundColor: "#f79009", duration: .45 }, 14)
+        .to("#theme-button", { backgroundColor: "#12b76a", duration: .45 }, 15)
+        .to("#theme-button", { backgroundColor: "#3988dc", duration: .45 }, 16)
+        .fromTo("#analytics-panel", { opacity: 0, x: 90 }, { opacity: 1, x: 0, duration: .8, ease: "power3.out" }, 17.1)
+        .fromTo("#chart-line", { strokeDasharray: 1200, strokeDashoffset: 1200 }, { strokeDashoffset: 0, duration: 2.5, ease: "power2.inOut" }, 17.7)
+        .fromTo(".chart-fill", { opacity: 0 }, { opacity: .5, duration: 1.3 }, 19.1)
+        .fromTo(".closing > div", { opacity: 0, scale: .92 }, { opacity: 1, scale: 1, duration: .8, ease: "power3.out" }, 22.1)
+        .fromTo(".code", { opacity: 0, y: 25 }, { opacity: 1, y: 0, duration: .6 }, 23.15);
+      const counter = { comments: 0, rate: 0, readers: 0 };
+      tl.to(counter, { comments: 1428, rate: 57.1, readers: 512, duration: 2.1, ease: "power2.out", onUpdate: () => {
+        document.querySelector("#count-comments").textContent = Math.round(counter.comments).toLocaleString();
+        document.querySelector("#count-rate").textContent = counter.rate.toFixed(1) + "%";
+        document.querySelector("#count-readers").textContent = Math.round(counter.readers).toLocaleString();
+      }}, 17.6);
+      window.__timelines["bizme-launch"] = tl;
+    </script>
+  </div>
+</body>
+</html>
