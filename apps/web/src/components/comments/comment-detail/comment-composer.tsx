@@ -27,11 +27,13 @@ export function CommentComposer({
   onSubmit,
   isSubmitting = false,
   animatedPlaceholders,
+  alwaysEnableSubmit = false,
 }: {
   uploadId?: string;
   onSubmit?: (body: string, images: File[]) => Promise<void> | void;
   isSubmitting?: boolean;
   animatedPlaceholders?: readonly string[];
+  alwaysEnableSubmit?: boolean;
   customization?: {
     brandColor?: string;
     textColor?: string;
@@ -232,7 +234,7 @@ export function CommentComposer({
             variant="default"
             size="sm"
             className="min-w-14 text-white hover:text-white"
-            disabled={isSubmitting || input.trim().length === 0}
+            disabled={isSubmitting || (!alwaysEnableSubmit && input.trim().length === 0)}
             onClick={handleSubmit}
           >
             {isSubmitting ? <LoadingDots color="#fff" /> : "Reply"}

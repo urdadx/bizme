@@ -1,10 +1,9 @@
+import heroBackground from "@/assets/hero-balloon.webp";
 import { ChatLinear } from "@/assets/icons/chat-icon";
 import { LikeIcon } from "@/assets/icons/like-icon";
 import { CommentComposer } from "@/components/comments/comment-detail/comment-composer";
 import { CommentReplyThread } from "@/components/comments/comment-reply-thread";
-import { DitherGradient } from "@/components/dither-kit/gradient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreVerticalIcon } from "lucide-react";
 
 type PreviewComment = {
   id: string;
@@ -49,24 +48,6 @@ const composerPlaceholders = [
 export const CTASession = () => {
   return (
     <section className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-70"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgb(229 229 229) 1px, transparent 1px), linear-gradient(to bottom, rgb(229 229 229) 1px, transparent 1px)",
-          backgroundSize: "110px 110px",
-          backgroundPosition: "center top",
-        }}
-      />
-      <div className="absolute inset-0 flex overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)]">
-        <div className="relative -mr-px w-1/2 [mask-image:linear-gradient(to_right,black_55%,transparent_100%)]">
-          <DitherGradient from="blue" direction="left" cell={5} opacity={0.07} />
-        </div>
-        <div className="relative -ml-px w-1/2 [mask-image:linear-gradient(to_left,black_55%,transparent_100%)]">
-          <DitherGradient from="blue" direction="right" cell={5} opacity={0.07} />
-        </div>
-      </div>
       <div className="relative pt-16 md:pt-24">
         <div className="relative z-1 mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-3xl text-center">
@@ -85,19 +66,26 @@ export const CTASession = () => {
           </div>
         </div>
 
-        <div className="relative z-1 my-12 w-full mx-auto max-w-5xl px-3 sm:px-6">
-          <div className="relative overflow-visible rounded-xl border bg-gray-50 p-1 sm:p-1.5 shadow-sm ring-muted ">
-            <div className="rounded-lg border bg-white p-4 sm:p-4">
-              <div className="flex flex-col gap-6">
+        <div className="relative z-1 my-12 w-full mx-auto max-w-7xl px-3 sm:px-6">
+          <div className="relative overflow-hidden rounded-2xl px-4 pt-20 pb-12 sm:px-16 sm:pt-40 sm:pb-20">
+            <img
+              src={heroBackground}
+              alt=""
+              aria-hidden
+              className="pointer-events-none absolute inset-0 size-full object-cover select-none"
+            />
+            <div className="relative mx-auto max-w-3xl rounded-2xl bg-white/90 p-3 shadow-xl shadow-black/10 ring-1 ring-black/5 backdrop-blur sm:p-4">
+              <div className="[&_textarea]:text-base [&_textarea]:placeholder:text-neutral-600">
                 <CommentComposer
                   uploadId="landing-comment-file-upload"
                   animatedPlaceholders={composerPlaceholders}
+                  alwaysEnableSubmit
                 />
-                <div className=" flex-col hidden sm:flex">
-                  {previewComments.map((comment) => (
-                    <PreviewCommentItem key={comment.id} comment={comment} />
-                  ))}
-                </div>
+              </div>
+              <div className="mt-4 hidden sm:block">
+                {previewComments.map((comment) => (
+                  <PreviewCommentItem key={comment.id} comment={comment} />
+                ))}
               </div>
             </div>
           </div>
@@ -107,67 +95,41 @@ export const CTASession = () => {
   );
 };
 
-function PreviewCommentItem({
-  comment,
-  isChild = false,
-}: {
-  comment: PreviewComment;
-  isChild?: boolean;
-}) {
+function PreviewCommentItem({ comment }: { comment: PreviewComment }) {
   return (
-    <div className={isChild ? "py-2" : "border-b py-4 first:pt-0 last:border-b-0"}>
-      <div className="relative flex gap-3">
-        <Avatar size="lg">
-          <AvatarImage src={comment.avatar} alt={comment.author} />
-          <AvatarFallback>{comment.author.slice(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
+    <div className="relative flex gap-3">
+      <Avatar size="lg">
+        <AvatarImage src={comment.avatar} alt={comment.author} />
+        <AvatarFallback>{comment.author.slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="truncate font-sans text-sm font-semibold text-[#444242]">
-                  {comment.author}
-                </h3>
-                <span className="text-xs text-muted-foreground">{comment.date}</span>
-              </div>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">{comment.content}</p>
-            </div>
-
-            <button
-              type="button"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-black hover:bg-secondary"
-              aria-label="Open comment options"
-            >
-              <MoreVerticalIcon className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="mt-2 flex items-center gap-4">
-            <button
-              type="button"
-              className="inline-flex h-8 items-center rounded-md px-2 text-sm hover:bg-secondary"
-            >
-              <LikeIcon />
-              <span className="ml-1 text-[#888888]">{comment.likes}</span>
-            </button>
-            <button
-              type="button"
-              className="inline-flex h-8 items-center rounded-md px-2 text-sm hover:bg-secondary"
-            >
-              <ChatLinear />
-              <span className="ml-1 text-[#888888]">{comment.replies.length}</span>
-            </button>
-          </div>
-
-          {comment.replies.length > 0 ? (
-            <CommentReplyThread className="ml-0">
-              {comment.replies.map((reply) => (
-                <PreviewCommentItem key={reply.id} comment={reply} isChild />
-              ))}
-            </CommentReplyThread>
-          ) : null}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h3 className="truncate font-sans text-sm font-semibold text-[#444242]">
+            {comment.author}
+          </h3>
+          <span className="text-xs text-muted-foreground">{comment.date}</span>
         </div>
+        <p className="mt-0.5 text-sm leading-6 text-muted-foreground">{comment.content}</p>
+
+        <div className="mt-1.5 flex items-center gap-4 text-xs text-[#888888]">
+          <span className="inline-flex items-center gap-1">
+            <LikeIcon className="size-3.5" />
+            {comment.likes}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <ChatLinear className="size-3.5" />
+            {comment.replies.length}
+          </span>
+        </div>
+
+        {comment.replies.length > 0 ? (
+          <CommentReplyThread className="ml-0">
+            {comment.replies.map((reply) => (
+              <PreviewCommentItem key={reply.id} comment={reply} />
+            ))}
+          </CommentReplyThread>
+        ) : null}
       </div>
     </div>
   );
