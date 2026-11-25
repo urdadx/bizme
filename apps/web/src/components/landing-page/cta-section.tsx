@@ -66,7 +66,7 @@ export const CTASession = () => {
           </div>
         </div>
 
-        <div className="relative z-1 my-12 w-full mx-auto max-w-7xl px-3 sm:px-6">
+        <div className="relative z-1 mt-12 w-full mx-auto max-w-7xl px-3 sm:px-6">
           <div className="relative overflow-hidden rounded-2xl px-4 pt-20 pb-12 sm:px-16 sm:pt-40 sm:pb-20">
             <img
               src={heroBackground}

@@ -6,7 +6,7 @@ import { SampleChat } from "./sample-chat";
 
 export default function Features() {
   return (
-    <section id="features" className="py-12 md:py-20">
+    <section id="features" className="pt-4 pb-12 md:pt-8 md:pb-20">
       <div className="mx-auto max-w-5xl space-y-8 px-4 sm:px-6 md:space-y-16">
         <div className="relative z-10 mx-auto max-w-xl space-y-4 text-center md:space-y-6">
           <h2 className="instrument-serif-regular italic text-3xl lg:text-4xl">
